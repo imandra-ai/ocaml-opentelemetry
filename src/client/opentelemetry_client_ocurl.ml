@@ -12,6 +12,7 @@ let[@inline] (let@) f x = f x
 
 let default_url = "http://localhost:4318"
 let url = ref (try Sys.getenv "OTEL_EXPORTER_OTLP_ENDPOINT" with _ -> default_url)
+let get_url () = !url
 let set_url s = url := s
 
 let lock_ : (unit -> unit) ref = ref ignore
@@ -42,10 +43,16 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
 
   let cleanup () = Curl.cleanup curl
 
+  open Opentelemetry.Proto
   open Opentelemetry.Collector
 
+  type error = [
+    | `Status of int * Status.status
+    | `Failure of string
+  ]
+
   (* send the content to the remote endpoint/path *)
-  let send_ ~path ~decode (bod:string) : ('a, int * Status.status) result =
+  let send_ ~path ~decode (bod:string) : ('a, error) result =
     Curl.reset curl;
     Curl.set_url curl (!url ^ path);
     Curl.set_httppost curl [];
@@ -61,25 +68,31 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
     Buffer.clear buf_res;
     Curl.set_writefunction curl
       (fun s -> Buffer.add_string buf_res s; String.length s);
-    match Curl.perform curl with
-    | () ->
-      let code = Curl.get_responsecode curl in
-      let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
-      if code >= 200 && code < 300 then (
-        let res = decode dec in
-        Ok res
-      ) else (
-        let status = Status.decode_status dec in
-        Error (code, status)
-      )
-    | exception Curl.CurlException (_, code, msg) ->
-      let status = Status.default_status
-          ~code:(Int32.of_int code) ~message:(Bytes.unsafe_of_string msg) () in
-      Error(code, status)
+    try
+      match Curl.perform curl with
+      | () ->
+        let code = Curl.get_responsecode curl in
+        (* TODO: check content-encoding header *)
+        let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
+        if code >= 200 && code < 300 then (
+          let res = decode dec in
+          Ok res
+        ) else (
+          let status = Status.decode_status dec in
+          Error (`Status (code, status))
+        )
+      | exception Curl.CurlException (_, code, msg) ->
+        let status = Status.default_status
+            ~code:(Int32.of_int code) ~message:(Bytes.unsafe_of_string msg) () in
+        Error(`Status (code, status))
+    with e -> Error (`Failure (Printexc.to_string e))
 
-  let report_err_ code status =
-    Format.eprintf "@[<2>opentelemetry: export failed with@ http code=%d@ status %a@]@."
-      code Status.pp_status status
+  let report_err_ = function
+    | `Failure msg ->
+      Format.eprintf "@[<2>opentelemetry: export failed: %s@]@." msg
+    | `Status (code, status) ->
+      Format.eprintf "@[<2>opentelemetry: export failed with@ http code=%d@ status %a@]@."
+        code Status.pp_status status
 
   let send_trace (tr:Trace_service.export_trace_service_request) : unit =
     let@() = with_lock_ in
@@ -90,7 +103,7 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
         (Pbrt.Encoder.to_string encoder)
     with
     | Ok () -> ()
-    | Error (code, status) -> report_err_ code status
+    | Error err -> report_err_ err
 
   let send_metrics (m:Metrics_service.export_metrics_service_request) : unit =
     let@() = with_lock_ in
@@ -101,7 +114,7 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
         (Pbrt.Encoder.to_string encoder);
     with
     | Ok () -> ()
-    | Error (code, status) -> report_err_ code status
+    | Error err -> report_err_ err
 end
 
 let setup_ () =

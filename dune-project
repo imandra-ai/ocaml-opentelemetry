@@ -15,9 +15,8 @@
  (depends
    (ocaml (>= "4.08"))
    (dune (>= "2.3"))
+   ptime
    (ocaml-protoc (>= 2.1)))
- (depopts
-   ptime)
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 

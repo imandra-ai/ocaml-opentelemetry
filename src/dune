@@ -2,11 +2,7 @@
  (name opentelemetry)
  (synopsis "API for opentelemetry instrumentation")
  (flags :standard -warn-error -a+8)
- (libraries
-   (select timestamp_clock.ml from
-           (ptime ptime.clock.os -> timestamp_clock.ptime.ml)
-           (unix -> timestamp_clock.unix.ml))
-   ocaml-protoc)
+ (libraries ptime ptime.clock.os ocaml-protoc)
  (public_name opentelemetry))
 
 ; ### protobuf rules ###
