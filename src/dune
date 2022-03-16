@@ -1,0 +1,78 @@
+(library
+ (name opentelemetry)
+ (synopsis "API for opentelemetry instrumentation")
+ (flags :standard -warn-error -a+8)
+ (libraries
+   (select timestamp_clock.ml from
+           (ptime ptime.clock.os -> timestamp_clock.ptime.ml)
+           (unix -> timestamp_clock.unix.ml))
+   ocaml-protoc)
+ (public_name opentelemetry))
+
+; ### protobuf rules ###
+
+(rule
+  (targets status_types.ml status_types.mli
+           status_pb.ml status_pb.mli
+           status_pp.ml status_pp.mli)
+  (deps (:file status.proto))
+  (action (run ocaml-protoc %{file} -ml_out . -pp -binary)))
+
+(rule
+  (targets common_types.ml common_types.mli
+           common_pb.ml common_pb.mli
+           common_pp.ml common_pp.mli)
+  (deps
+    (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/common/v1/common.proto))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
+
+(rule
+  (targets resource_types.ml resource_types.mli
+           resource_pb.ml resource_pb.mli
+           resource_pp.ml resource_pp.mli)
+  (deps
+    (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
+
+(rule
+  (targets trace_types.ml trace_types.mli
+           trace_pb.ml trace_pb.mli
+           trace_pp.ml trace_pp.mli)
+  (deps
+    (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/trace/v1/trace.proto))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
+
+(rule
+  (targets metrics_types.ml metrics_types.mli
+           metrics_pb.ml metrics_pb.mli
+           metrics_pp.ml metrics_pp.mli)
+  (deps
+    (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/metrics/v1/metrics.proto))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
+
+(rule
+  (targets metrics_service_types.ml
+           metrics_service_pp.ml metrics_service_pp.mli
+           metrics_service_pb.ml metrics_service_pb.mli)
+  (deps (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/metrics/v1/metrics_service.proto))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
+
+(rule
+  (targets trace_service_types.ml
+           trace_service_pp.ml trace_service_pp.mli
+           trace_service_pb.ml trace_service_pb.mli)
+  (deps
+    (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/trace/v1/trace_service.proto))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
