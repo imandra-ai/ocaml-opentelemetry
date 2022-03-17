@@ -171,9 +171,14 @@ module Span : sig
 
   val id : t -> Span_id.t
 
+  type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
+
   val create :
     ?kind:kind ->
     ?id:id ->
+    ?trace_state:string ->
+    ?service_name:string ->
+    ?attrs:key_value list ->
     trace_id:Trace_id.t ->
     ?parent:id ->
     ?links:(Trace_id.t * Span_id.t * string) list ->
@@ -201,14 +206,42 @@ end = struct
     | Span_kind_producer
     | Span_kind_consumer
 
+  type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
+
   let create
       ?(kind=Span_kind_unspecified)
       ?(id=Span_id.create())
+      ?trace_state
+      ?service_name
+      ?(attrs=[])
       ~trace_id ?parent ?(links=[])
       ~start_time ~end_time
       name : t * id =
     let trace_id = Trace_id.to_bytes trace_id in
     let parent_span_id = Option.map Span_id.to_bytes parent in
+
+    let attributes =
+      let open Proto.Common in
+      let l = List.map
+          (fun (k,v) ->
+             let value = match v with
+               | `Int i -> Some (Int_value (Int64.of_int i))
+               | `String s -> Some (String_value s)
+               | `Bool b -> Some (Bool_value b)
+               | `None -> None
+             in
+             default_key_value ~key:k ~value ())
+          attrs
+      in
+      let l = match service_name with
+        | None -> l
+        | Some v ->
+          default_key_value ~key:"service.name"
+            ~value:(Some (String_value v)) () :: l
+      in
+      l
+    in
+
     let links =
       List.map
         (fun (trace_id,span_id,trace_state) ->
@@ -221,6 +254,8 @@ end = struct
       default_span
         ~trace_id ?parent_span_id
         ~span_id:(Span_id.to_bytes id)
+        ~attributes
+        ?trace_state
         ~kind ~name ~links
         ~start_time_unix_nano:start_time
         ~end_time_unix_nano:end_time
@@ -244,13 +279,16 @@ module Trace = struct
     Collector.send_trace [rs]
 
   let with_
+      ?trace_state ?service_name ?attrs
       ?kind ?(trace_id=Trace_id.create()) ?parent ?links
       name (f:Trace_id.t * Span_id.t -> 'a) : 'a =
     let start_time = Timestamp_ns.now_unix_ns() in
     let span_id = Span_id.create() in
     let finally() =
       let span, _ =
-        Span.create ?kind ~trace_id ?parent ?links ~id:span_id
+        Span.create
+          ?kind ~trace_id ?parent ?links ~id:span_id
+          ?trace_state ?service_name ?attrs
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
           name in
       emit [span];

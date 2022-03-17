@@ -7,7 +7,7 @@ let run () =
   Printf.printf "collector is on %S\n%!" (Opentelemetry_client_ocurl.get_url());
   let i = ref 0 in
   while true do
-    let@ (tr,sp) = T.Trace.with_ "loop" in
+    let@ (tr,sp) = T.Trace.with_ ~service_name:"t1" "loop" in
     Unix.sleepf 2.;
 
     let gc = Gc.stat() in
