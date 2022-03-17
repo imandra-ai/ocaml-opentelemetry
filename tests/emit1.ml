@@ -13,9 +13,9 @@ let run () =
     let gc = Gc.stat() in
     T.Metrics.(
       emit [
-        gauge ~name:"i" [int !i];
-        gauge ~name:"major-heap-words" [int gc.Gc.heap_words];
-        sum ~name:"minor-allocated" [float gc.Gc.minor_words];
+        gauge ~name:"ocaml_opentracing.test.i" [int !i];
+        gauge ~name:"ocaml_opentracing.test.major_heap_words" [int gc.Gc.heap_words];
+        sum ~name:"ocaml_opentracing.test.minor_allocated" [float gc.Gc.minor_words];
       ]);
 
     incr i;
