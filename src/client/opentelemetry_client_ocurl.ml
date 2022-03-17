@@ -10,6 +10,8 @@ open Opentelemetry
 
 let[@inline] (let@) f x = f x
 
+let debug_ = ref (try bool_of_string @@ Sys.getenv "DEBUG" with _ -> false)
+
 let default_url = "http://localhost:4318"
 let url = ref (try Sys.getenv "OTEL_EXPORTER_OTLP_ENDPOINT" with _ -> default_url)
 let get_url () = !url
@@ -67,10 +69,10 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
       begin
         let i = ref 0 in
         (fun n ->
-           Printf.eprintf "curl asks for %d bytes\n%!" n;
+           if !debug_ then Printf.eprintf "curl asks for %d bytes\n%!" n;
            let len = min n (String.length bod - !i) in
            let s = String.sub bod !i len in
-           Printf.eprintf "gave curl %d bytes\n%!" len;
+           if !debug_ then Printf.eprintf "gave curl %d bytes\n%!" len;
            i := !i + len;
            s)
       end;
@@ -82,8 +84,7 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
       match Curl.perform curl with
       | () ->
         let code = Curl.get_responsecode curl in
-        (* TODO: check content-encoding header *)
-        Printf.eprintf "result body: %S\n%!" (Buffer.contents buf_res);
+        if !debug_ then Printf.eprintf "result body: %S\n%!" (Buffer.contents buf_res);
         let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
         if code >= 200 && code < 300 then (
           let res = decode dec in
@@ -107,7 +108,7 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
 
   let send_trace (tr:Trace_service.export_trace_service_request) : unit =
     let@() = with_lock_ in
-    Format.eprintf "send trace %a@." Trace_service.pp_export_trace_service_request tr;
+    if !debug_ then Format.eprintf "send trace %a@." Trace_service.pp_export_trace_service_request tr;
     Pbrt.Encoder.reset encoder;
     Trace_service.encode_export_trace_service_request tr encoder;
     match
@@ -119,6 +120,7 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
 
   let send_metrics (m:Metrics_service.export_metrics_service_request) : unit =
     let@() = with_lock_ in
+    if !debug_ then Format.eprintf "send metrics %a@." Metrics_service.pp_export_metrics_service_request m;
     Pbrt.Encoder.reset encoder;
     Metrics_service.encode_export_metrics_service_request m encoder;
     match
