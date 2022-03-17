@@ -38,6 +38,8 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
   let encoder = Pbrt.Encoder.create()
   let buf_res = Buffer.create 256
 
+  let rand_ = Random.State.make_self_init()
+
   (* http client *)
   let curl : Curl.t = Curl.init ()
 
@@ -54,17 +56,25 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
   (* send the content to the remote endpoint/path *)
   let send_ ~path ~decode (bod:string) : ('a, error) result =
     Curl.reset curl;
+    Curl.set_verbose curl true;
     Curl.set_url curl (!url ^ path);
     Curl.set_httppost curl [];
-    Curl.set_httpheader curl ["content-type: application/x-protobuf"];
+    Curl.set_httpheader curl ["Content-Type: application/x-protobuf"];
     (* write body *)
+    Curl.set_post curl true;
+    Curl.set_postfieldsize curl (String.length bod);
     Curl.set_readfunction curl
       begin
         let i = ref 0 in
         (fun n ->
+           Printf.eprintf "curl asks for %d bytes\n%!" n;
            let len = min n (String.length bod - !i) in
-           String.sub bod !i len)
+           let s = String.sub bod !i len in
+           Printf.eprintf "gave curl %d bytes\n%!" len;
+           i := !i + len;
+           s)
       end;
+    (* read result's body *)
     Buffer.clear buf_res;
     Curl.set_writefunction curl
       (fun s -> Buffer.add_string buf_res s; String.length s);
@@ -73,6 +83,7 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
       | () ->
         let code = Curl.get_responsecode curl in
         (* TODO: check content-encoding header *)
+        Printf.eprintf "result body: %S\n%!" (Buffer.contents buf_res);
         let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
         if code >= 200 && code < 300 then (
           let res = decode dec in
@@ -96,6 +107,7 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
 
   let send_trace (tr:Trace_service.export_trace_service_request) : unit =
     let@() = with_lock_ in
+    Format.eprintf "send trace %a@." Trace_service.pp_export_trace_service_request tr;
     Pbrt.Encoder.reset encoder;
     Trace_service.encode_export_trace_service_request tr encoder;
     match
@@ -115,6 +127,33 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
     with
     | Ok () -> ()
     | Error err -> report_err_ err
+
+  let rand_bytes_8 () : bytes =
+    let@() = with_lock_ in
+    let b = Bytes.create 8 in
+    for i=0 to 1 do
+      let r = Random.State.bits rand_ in (* 30 bits, of which we use 24 *)
+      Bytes.set b (i*3) (Char.chr (r land 0xff));
+      Bytes.set b (i*3+1) (Char.chr (r lsr 8 land 0xff));
+      Bytes.set b (i*3+2) (Char.chr (r lsr 16 land 0xff));
+    done;
+    let r = Random.State.bits rand_ in
+    Bytes.set b 6 (Char.chr (r land 0xff));
+    Bytes.set b 7 (Char.chr (r lsr 8 land 0xff));
+    b
+
+  let rand_bytes_16 () : bytes =
+    let@() = with_lock_ in
+    let b = Bytes.create 16 in
+    for i=0 to 4 do
+      let r = Random.State.bits rand_ in (* 30 bits, of which we use 24 *)
+      Bytes.set b (i*3) (Char.chr (r land 0xff));
+      Bytes.set b (i*3+1) (Char.chr (r lsr 8 land 0xff));
+      Bytes.set b (i*3+2) (Char.chr (r lsr 16 land 0xff));
+    done;
+    let r = Random.State.bits rand_ in
+    Bytes.set b 15 (Char.chr (r land 0xff)); (* last byte *)
+    b
 end
 
 let setup_ () =
