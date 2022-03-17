@@ -3,18 +3,20 @@ module T = Opentelemetry
 let spf = Printf.sprintf
 let (let@) f x = f x
 
+let service_name = "t1"
+
 let run () =
   Printf.printf "collector is on %S\n%!" (Opentelemetry_client_ocurl.get_url());
   let i = ref 0 in
   while true do
     let@ (tr,sp) = T.Trace.with_ ~kind:T.Span.Span_kind_producer
-        ~service_name:"t1" "outer.loop" ~attrs:["i", `Int !i] in
+        ~service_name "loop.outer" ~attrs:["i", `Int !i] in
 
     for j=0 to 4 do
 
       let@ (_,sp) = T.Trace.with_ ~kind:T.Span.Span_kind_internal
-          ~trace_id:tr
-          ~service_name:"t1" ~attrs:["j", `Int j]
+          ~trace_id:tr ~parent:sp
+          ~service_name ~attrs:["j", `Int j]
           "loop.inner" in
       Unix.sleepf 2.;
 
@@ -32,7 +34,7 @@ let run () =
         let@ _ =
           T.Trace.with_ ~kind:T.Span.Span_kind_internal
             ~trace_id:tr ~parent:sp
-            ~service_name:"t1"
+            ~service_name
             "alloc" in
         (* allocate some stuff *)
         let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
