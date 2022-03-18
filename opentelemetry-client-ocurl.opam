@@ -12,6 +12,7 @@ depends: [
   "dune" {>= "2.3"}
   "opentelemetry" {= version}
   "ocaml-protoc" {>= "2.1"}
+  "odoc" {with-doc}
   "ocurl"
 ]
 build: [

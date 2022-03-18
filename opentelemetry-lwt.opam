@@ -12,6 +12,7 @@ depends: [
   "ocaml" {>= "4.08"}
   "dune" {>= "2.3"}
   "opentelemetry" {= version}
+  "odoc" {with-doc}
   "lwt"
 ]
 build: [

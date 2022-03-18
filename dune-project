@@ -16,6 +16,7 @@
    (ocaml (>= "4.08"))
    (dune (>= "2.3"))
    ptime
+   (odoc :with-doc)
    (ocaml-protoc (>= 2.1)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
@@ -27,6 +28,7 @@
    (ocaml (>= "4.08"))
    (dune (>= "2.3"))
    (opentelemetry (= :version))
+   (odoc :with-doc)
    lwt)
  (tags
   (instrumentation tracing opentelemetry datadog lwt)))
@@ -38,5 +40,6 @@
    (dune (>= "2.3"))
    (opentelemetry (= :version))
    (ocaml-protoc (>= 2.1))
+   (odoc :with-doc)
    ocurl)
   (synopsis "Collector client for opentelemetry, using http + ocurl"))

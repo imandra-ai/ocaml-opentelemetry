@@ -12,6 +12,7 @@ depends: [
   "ocaml" {>= "4.08"}
   "dune" {>= "2.3"}
   "ptime"
+  "odoc" {with-doc}
   "ocaml-protoc" {>= "2.1"}
 ]
 build: [
