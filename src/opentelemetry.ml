@@ -176,6 +176,16 @@ module Span : sig
     | Span_kind_producer
     | Span_kind_consumer
 
+  type nonrec status_code = status_status_code =
+    | Status_code_unset
+    | Status_code_ok
+    | Status_code_error
+
+  type nonrec status = status = {
+    message: string;
+    code: status_code;
+  }
+
   val id : t -> Span_id.t
 
   type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
@@ -186,6 +196,7 @@ module Span : sig
     ?trace_state:string ->
     ?service_name:string ->
     ?attrs:key_value list ->
+    ?status:status ->
     trace_id:Trace_id.t ->
     ?parent:id ->
     ?links:(Trace_id.t * Span_id.t * string) list ->
@@ -203,8 +214,6 @@ end = struct
   type t = span
   type id = Span_id.t
 
-  let id self = Span_id.of_bytes self.span_id
-
   type nonrec kind = span_span_kind =
     | Span_kind_unspecified
     | Span_kind_internal
@@ -215,12 +224,26 @@ end = struct
 
   type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
 
+  type nonrec status_code = status_status_code =
+    | Status_code_unset
+    | Status_code_ok
+    | Status_code_error
+
+  type nonrec status = status = {
+    message: string;
+    code: status_code;
+  }
+
+
+  let id self = Span_id.of_bytes self.span_id
+
   let create
       ?(kind=Span_kind_unspecified)
       ?(id=Span_id.create())
       ?trace_state
       ?service_name
       ?(attrs=[])
+      ?status
       ~trace_id ?parent ?(links=[])
       ~start_time ~end_time
       name : t * id =
@@ -262,7 +285,7 @@ end = struct
         ~trace_id ?parent_span_id
         ~span_id:(Span_id.to_bytes id)
         ~attributes
-        ?trace_state
+        ?trace_state ~status
         ~kind ~name ~links
         ~start_time_unix_nano:start_time
         ~end_time_unix_nano:end_time
@@ -293,16 +316,26 @@ module Trace = struct
       name (f:Trace_id.t * Span_id.t -> 'a) : 'a =
     let start_time = Timestamp_ns.now_unix_ns() in
     let span_id = Span_id.create() in
-    let finally() =
+    let finally ok =
+      let status = match ok with
+        | Ok () -> default_status ~code:Status_code_ok ()
+        | Error e -> default_status ~code:Status_code_error ~message:e () in
       let span, _ =
         Span.create
           ?kind ~trace_id ?parent ?links ~id:span_id
           ?trace_state ?service_name ?attrs
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
+          ~status
           name in
       emit [span];
     in
-    Fun.protect ~finally (fun () -> f (trace_id,span_id))
+    try
+      let x = f (trace_id,span_id) in
+      finally (Ok ());
+      x
+    with e ->
+      finally (Error (Printexc.to_string e));
+      raise e
 end
 
 (** Metrics.
