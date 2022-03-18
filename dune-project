@@ -21,6 +21,17 @@
   (instrumentation tracing opentelemetry datadog jaeger)))
 
 (package
+ (name opentelemetry-lwt)
+ (synopsis "Lwt-compatible instrumentation for https://opentelemetry.io")
+ (depends
+   (ocaml (>= "4.08"))
+   (dune (>= "2.3"))
+   (opentelemetry (= :version))
+   lwt)
+ (tags
+  (instrumentation tracing opentelemetry datadog lwt)))
+
+(package
   (name opentelemetry-client-ocurl)
   (depends
    (ocaml (>= "4.08"))
