@@ -37,5 +37,5 @@ jobs:
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl
 
-      - run: opam exec -- dune build @src/runtest @examples/runtest
+      - run: opam exec -- dune build @runtest
         if: ${{ matrix.os == 'ubuntu-latest' }}
