@@ -30,7 +30,7 @@ let run () =
 
       incr i;
 
-      begin
+      (try
         let@ _ =
           T.Trace.with_ ~kind:T.Span.Span_kind_internal
             ~trace_id:tr ~parent:sp
@@ -40,7 +40,9 @@ let run () =
         let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
         ignore _arr;
         Unix.sleepf 0.1;
-      end;
+        if j=4 && !i mod 13 = 0 then failwith "oh no"; (* simulate a failure *)
+      with Failure _ ->
+        ());
     done;
   done
 
