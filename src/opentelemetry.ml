@@ -70,11 +70,18 @@ end
 module Collector = struct
   open Proto
 
+  (** Sender interface for a message of type [msg].
+      Inspired from Logs' reporter
+      (see {{:https://erratique.ch/software/logs/doc/Logs/index.html#sync} its doc}) *)
+  type 'msg sender = {
+    send: 'a. 'msg -> over:(unit -> unit) -> ret:(unit -> 'a) -> 'a;
+  }
+
   (** Collector client interface. *)
   module type BACKEND = sig
-    val send_trace : Trace_service.export_trace_service_request -> unit
+    val send_trace : Trace_service.export_trace_service_request sender
 
-    val send_metrics : Metrics_service.export_metrics_service_request -> unit
+    val send_metrics : Metrics_service.export_metrics_service_request sender
 
     val rand_bytes_16 : unit -> bytes
     (** Generate 16 bytes of random data *)
@@ -89,21 +96,21 @@ module Collector = struct
 
   let backend : backend option ref = ref None
 
-  let send_trace (l:Trace.resource_spans list) : unit =
+  let send_trace (l:Trace.resource_spans list) ~over ~ret =
     match !backend with
-    | None -> ()
+    | None -> over(); ret()
     | Some (module B) ->
       let ev = Trace_service.default_export_trace_service_request
           ~resource_spans:l () in
-      B.send_trace ev
+      B.send_trace.send ev ~over ~ret
 
-  let send_metrics (l:Metrics.resource_metrics list) : unit =
+  let send_metrics (l:Metrics.resource_metrics list) ~over ~ret =
     match !backend with
-    | None -> ()
+    | None -> over(); ret()
     | Some (module B) ->
       let ev = Metrics_service.default_export_metrics_service_request
           ~resource_metrics:l () in
-      B.send_metrics ev
+      B.send_metrics.send ev ~over ~ret
 
   let rand_bytes_16 () =
     match !backend with
@@ -272,12 +279,14 @@ module Trace = struct
 
   type span = Span.t
 
+  (** Sync emitter *)
   let emit (spans:span list) : unit =
     let ils =
       default_instrumentation_library_spans ~spans () in
     let rs = default_resource_spans ~instrumentation_library_spans:[ils] () in
-    Collector.send_trace [rs]
+    Collector.send_trace [rs] ~over:(fun () -> ()) ~ret:(fun () -> ())
 
+  (** Sync span guard *)
   let with_
       ?trace_state ?service_name ?attrs
       ?kind ?(trace_id=Trace_id.create()) ?parent ?links
@@ -351,17 +360,11 @@ module Metrics = struct
   (* TODO: summary *)
   (* TODO: exemplar *)
 
-  (** Emit a bunch of metrics to the collector. *)
+  (** Emit some metrics to the collector (sync). *)
   let emit (l:t list) : unit =
     let lm =
       default_instrumentation_library_metrics ~metrics:l () in
     let rm = default_resource_metrics
         ~instrumentation_library_metrics:[lm] () in
-    Collector.send_metrics [rm]
+    Collector.send_metrics [rm] ~over:ignore ~ret:ignore
 end
-
-(*
-module Span = Span
-module Timestamp = Timestamp
-   *)
-

@@ -55,10 +55,12 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
     | `Failure of string
   ]
 
+  (* TODO: use Curl multi *)
+
   (* send the content to the remote endpoint/path *)
   let send_ ~path ~decode (bod:string) : ('a, error) result =
     Curl.reset curl;
-    Curl.set_verbose curl true;
+    if !debug_ then Curl.set_verbose curl true;
     Curl.set_url curl (!url ^ path);
     Curl.set_httppost curl [];
     Curl.set_httpheader curl ["Content-Type: application/x-protobuf"];
@@ -106,29 +108,40 @@ module Backend() : Opentelemetry.Collector.BACKEND = struct
       Format.eprintf "@[<2>opentelemetry: export failed with@ http code=%d@ status %a@]@."
         code Status.pp_status status
 
-  let send_trace (tr:Trace_service.export_trace_service_request) : unit =
-    let@() = with_lock_ in
-    if !debug_ then Format.eprintf "send trace %a@." Trace_service.pp_export_trace_service_request tr;
-    Pbrt.Encoder.reset encoder;
-    Trace_service.encode_export_trace_service_request tr encoder;
-    match
-      send_ ~path:"/v1/traces" ~decode:(fun _ -> ())
-        (Pbrt.Encoder.to_string encoder)
-    with
-    | Ok () -> ()
-    | Error err -> report_err_ err
+  let send_trace : Trace_service.export_trace_service_request sender = {
+    send=fun tr ~over ~ret ->
+      let@() = with_lock_ in
+      if !debug_ then Format.eprintf "send trace %a@." Trace_service.pp_export_trace_service_request tr;
+      Pbrt.Encoder.reset encoder;
+      Trace_service.encode_export_trace_service_request tr encoder;
+      begin match
+          send_ ~path:"/v1/traces" ~decode:(fun _ -> ())
+            (Pbrt.Encoder.to_string encoder)
+        with
+        | Ok () -> ()
+        | Error err -> report_err_ err
+      end;
+      over();
+      ret()
+  }
 
-  let send_metrics (m:Metrics_service.export_metrics_service_request) : unit =
-    let@() = with_lock_ in
-    if !debug_ then Format.eprintf "send metrics %a@." Metrics_service.pp_export_metrics_service_request m;
-    Pbrt.Encoder.reset encoder;
-    Metrics_service.encode_export_metrics_service_request m encoder;
-    match
-      send_ ~path:"/v1/metrics" ~decode:(fun _ -> ())
-        (Pbrt.Encoder.to_string encoder);
-    with
-    | Ok () -> ()
-    | Error err -> report_err_ err
+  let send_metrics : Metrics_service.export_metrics_service_request sender = {
+    send=fun m ~over ~ret ->
+      let@() = with_lock_ in
+      if !debug_ then Format.eprintf "send metrics %a@." Metrics_service.pp_export_metrics_service_request m;
+      Pbrt.Encoder.reset encoder;
+      Metrics_service.encode_export_metrics_service_request m encoder;
+      begin
+        match
+          send_ ~path:"/v1/metrics" ~decode:(fun _ -> ())
+            (Pbrt.Encoder.to_string encoder);
+        with
+        | Ok () -> ()
+        | Error err -> report_err_ err
+      end;
+      over();
+      ret()
+  }
 
   let rand_bytes_8 () : bytes =
     let@() = with_lock_ in
