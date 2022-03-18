@@ -55,7 +55,7 @@
                -ml_out . -pp -binary)))
 
 (rule
-  (targets metrics_service_types.ml
+  (targets metrics_service_types.ml metrics_service_types.mli
            metrics_service_pp.ml metrics_service_pp.mli
            metrics_service_pb.ml metrics_service_pb.mli)
   (deps (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/metrics/v1/metrics_service.proto))
@@ -64,7 +64,7 @@
                -ml_out . -pp -binary)))
 
 (rule
-  (targets trace_service_types.ml
+  (targets trace_service_types.ml trace_service_types.mli
            trace_service_pp.ml trace_service_pp.mli
            trace_service_pb.ml trace_service_pb.mli)
   (deps
