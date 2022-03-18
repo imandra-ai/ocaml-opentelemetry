@@ -1,5 +1,5 @@
 
-# Opentelemetry
+# Opentelemetry [![build](https://github.com/AestheticIntegration/ocaml-opentelemetry/actions/workflows/main.yml/badge.svg)](https://github.com/AestheticIntegration/ocaml-opentelemetry/actions/workflows/main.yml)
 
 This project provides an API for instrumenting server software
 using [opentelemetry](https://opentelemetry.io/docs), as well as
