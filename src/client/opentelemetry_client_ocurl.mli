@@ -38,6 +38,12 @@ module Config : sig
         Default [None].
     *)
 
+    batch_timeout_ms: int;
+    (** Number of milliseconds after which we will emit a batch, even
+        incomplete.
+        Note that the batch might take longer than that, because this is
+        only checked when a new event occurs. Default 500. *)
+
     thread: bool;
     (** Is there a background thread? Default [true] *)
   }
@@ -46,6 +52,7 @@ module Config : sig
     ?debug:bool -> ?url:string ->
     ?batch_traces:int option ->
     ?batch_metrics:int option ->
+    ?batch_timeout_ms:int ->
     ?thread:bool ->
     unit -> t
   (** Make a configuration *)
