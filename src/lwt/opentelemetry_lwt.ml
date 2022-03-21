@@ -3,6 +3,7 @@ open Lwt.Syntax
 
 module Span_id = Span_id
 module Trace_id = Trace_id
+module Event = Event
 module Span = Span
 module Globals = Globals
 module Timestamp_ns = Timestamp_ns

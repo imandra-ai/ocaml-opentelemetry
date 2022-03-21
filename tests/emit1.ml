@@ -7,13 +7,13 @@ let run () =
   Printf.printf "collector is on %S\n%!" (Opentelemetry_client_ocurl.get_url());
   let i = ref 0 in
   while true do
-    let@ (tr,sp) = T.Trace.with_ ~kind:T.Span.Span_kind_producer
+    let@ scope = T.Trace.with_ ~kind:T.Span.Span_kind_producer
         "loop.outer" ~attrs:["i", `Int !i] in
 
     for j=0 to 4 do
 
-      let@ (_,sp) = T.Trace.with_ ~kind:T.Span.Span_kind_internal
-          ~trace_id:tr ~parent:sp
+      let@ scope = T.Trace.with_ ~kind:T.Span.Span_kind_internal
+          ~trace_id:scope.trace_id ~parent:scope.span_id
           ~attrs:["j", `Int j]
           "loop.inner" in
       Unix.sleepf 2.;
@@ -31,13 +31,15 @@ let run () =
       (try
         let@ _ =
           T.Trace.with_ ~kind:T.Span.Span_kind_internal
-            ~trace_id:tr ~parent:sp
+            ~trace_id:scope.trace_id ~parent:scope.span_id
             "alloc" in
         (* allocate some stuff *)
         let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
         ignore _arr;
         Unix.sleepf 0.1;
         if j=4 && !i mod 13 = 0 then failwith "oh no"; (* simulate a failure *)
+
+        T.Trace.add_event scope @@ T.Event.make "done with alloc";
       with Failure _ ->
         ());
     done;

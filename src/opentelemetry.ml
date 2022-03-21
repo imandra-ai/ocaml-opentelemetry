@@ -184,7 +184,46 @@ module Globals = struct
     List.rev_append (List.filter not_redundant global_attributes) into
 end
 
-(* TODO: Event.t, use it in Span *)
+type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
+
+(**/**)
+let _conv_key_value (k,v) =
+  let open Proto.Common in
+  let value = match v with
+    | `Int i -> Some (Int_value (Int64.of_int i))
+    | `String s -> Some (String_value s)
+    | `Bool b -> Some (Bool_value b)
+    | `None -> None
+  in
+  default_key_value ~key:k ~value ()
+
+(**/**)
+
+(** Events.
+
+    Events occur at a given time and can carry attributes. They always
+    belong in a span. *)
+module Event : sig
+  open Proto.Trace
+  type t = span_event
+
+  val make :
+    ?time_unix_nano:Timestamp_ns.t ->
+    ?attrs:key_value list ->
+    string ->
+    t
+
+end = struct
+  open Proto.Trace
+  type t = span_event
+
+  let make
+      ?(time_unix_nano=Timestamp_ns.now_unix_ns())
+      ?(attrs=[])
+      (name:string) : t =
+    let attrs = List.map _conv_key_value attrs in
+    default_span_event ~time_unix_nano ~name ~attributes:attrs ()
+end
 
 (** Spans.
 
@@ -226,6 +265,7 @@ module Span : sig
     ?trace_state:string ->
     ?service_name:string ->
     ?attrs:key_value list ->
+    ?events:Event.t list ->
     ?status:status ->
     trace_id:Trace_id.t ->
     ?parent:id ->
@@ -273,6 +313,7 @@ end = struct
       ?trace_state
       ?(service_name= !Globals.service_name)
       ?(attrs=[])
+      ?(events=[])
       ?status
       ~trace_id ?parent ?(links=[])
       ~start_time ~end_time
@@ -318,7 +359,7 @@ end = struct
       default_span
         ~trace_id ?parent_span_id
         ~span_id:(Span_id.to_bytes id)
-        ~attributes
+        ~attributes ~events
         ?trace_state ~status
         ~kind ~name ~links
         ~start_time_unix_nano:start_time
@@ -345,13 +386,27 @@ module Trace = struct
     let rs = default_resource_spans ~instrumentation_library_spans:[ils] () in
     Collector.send_trace [rs] ~over:(fun () -> ()) ~ret:(fun () -> ())
 
+  (** Scope to be used with {!with_}. *)
+  type scope = {
+    trace_id: Trace_id.t;
+    span_id: Span_id.t;
+    mutable events: Event.t list;
+  }
+
+  (** Add an event to the scope. It will be aggregated into the span *)
+  let[@inline] add_event (scope:scope) (ev:Event.t) : unit =
+    scope.events <- ev :: scope.events
+
   (** Sync span guard *)
   let with_
       ?trace_state ?service_name ?attrs
       ?kind ?(trace_id=Trace_id.create()) ?parent ?links
-      name (f:Trace_id.t * Span_id.t -> 'a) : 'a =
+      name (f: scope -> 'a) : 'a =
+
     let start_time = Timestamp_ns.now_unix_ns() in
     let span_id = Span_id.create() in
+    let scope = {trace_id;span_id;events=[]} in
+
     let finally ok =
       let status = match ok with
         | Ok () -> default_status ~code:Status_code_ok ()
@@ -359,14 +414,14 @@ module Trace = struct
       let span, _ =
         Span.create
           ?kind ~trace_id ?parent ?links ~id:span_id
-          ?trace_state ?service_name ?attrs
+          ?trace_state ?service_name ?attrs ~events:scope.events
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
           ~status
           name in
       emit [span];
     in
     try
-      let x = f (trace_id,span_id) in
+      let x = f scope in
       finally (Ok ());
       x
     with e ->
