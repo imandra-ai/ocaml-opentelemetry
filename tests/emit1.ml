@@ -46,6 +46,7 @@ let run () =
   done
 
 let () =
+  Sys.catch_break true;
   T.Globals.service_name := "t1";
   T.Globals.service_namespace := Some "ocaml-otel.test";
   Opentelemetry_client_ocurl.with_setup run
