@@ -32,12 +32,7 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext-flags: --with-test
-          opam-pin: false
-          opam-depext: false
-
-      - run: opam pin vendor/atomic/#HEAD -y -n
-
-      - run: opam pin . -n
+          opam-pin: "*.opam,vendor/atomic/*.opam"
 
       - run: opam install . --deps-only --with-test
 
