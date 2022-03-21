@@ -170,14 +170,14 @@ module Globals = struct
     default_instrumentation_library
       ~name:"ocaml-opentelemetry" () (* TODO: version, perhaps with dune subst? *)
 
-  (** Global attributes, set via OTEL_RESOURCE_ATTRIBUTE *)
+  (** Global attributes, set via OTEL_RESOURCE_ATTRIBUTES *)
   let global_attributes : key_value list =
     let parse_pair s = match String.split_on_char '=' s with
       | [a;b] -> default_key_value ~key:a  ~value:(Some (String_value b)) ()
       | _ -> failwith (Printf.sprintf "invalid attribute: %S" s)
     in
     try
-      Sys.getenv "OTEL_RESOURCE_ATTRIBUTE" |> String.split_on_char ','
+      Sys.getenv "OTEL_RESOURCE_ATTRIBUTES" |> String.split_on_char ','
       |> List.map parse_pair
     with _ -> []
 
