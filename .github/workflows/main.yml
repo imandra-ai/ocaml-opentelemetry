@@ -33,6 +33,8 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext-flags: --with-test
 
+      - run: opam pin vendor/atomic/#HEAD -y -n
+
       - run: opam install . --deps-only --with-test
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl
