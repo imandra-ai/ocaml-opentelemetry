@@ -4,6 +4,8 @@ open Opentelemetry
 module Span_id = Span_id
 module Trace_id = Trace_id
 module Span = Span
+module Globals = Globals
+module Timestamp_ns = Timestamp_ns
 
 module Trace = struct
   open Proto.Trace

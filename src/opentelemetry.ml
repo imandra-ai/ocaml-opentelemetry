@@ -153,6 +153,36 @@ end = struct
   let of_bytes b = assert(Bytes.length b=8); b
 end
 
+(** Process-wide metadata, environment variables, etc. *)
+module Globals = struct
+  open Proto.Common
+
+  let service_name = ref "unknown_service"
+  (** Main service name metadata *)
+
+  let service_namespace = ref None
+  (** Namespace for the service *)
+
+  let instrumentation_library =
+    default_instrumentation_library
+      ~name:"ocaml-opentelemetry" () (* TODO: version, perhaps with dune subst? *)
+
+  (** Global attributes, set via OTEL_RESOURCE_ATTRIBUTE *)
+  let global_attributes : key_value list =
+    let parse_pair s = match String.split_on_char '=' s with
+      | [a;b] -> default_key_value ~key:a  ~value:(Some (String_value b)) ()
+      | _ -> failwith (Printf.sprintf "invalid attribute: %S" s)
+    in
+    try
+      Sys.getenv "OTEL_RESOURCE_ATTRIBUTE" |> String.split_on_char ','
+      |> List.map parse_pair
+    with _ -> []
+
+  (* add global attributes to this list *)
+  let merge_global_attributes_ into : _ list =
+    let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
+    List.rev_append (List.filter not_redundant global_attributes) into
+end
 
 (* TODO: Event.t, use it in Span *)
 
@@ -241,7 +271,7 @@ end = struct
       ?(kind=Span_kind_unspecified)
       ?(id=Span_id.create())
       ?trace_state
-      ?service_name
+      ?(service_name= !Globals.service_name)
       ?(attrs=[])
       ?status
       ~trace_id ?parent ?(links=[])
@@ -263,13 +293,17 @@ end = struct
              default_key_value ~key:k ~value ())
           attrs
       in
-      let l = match service_name with
+      let l =
+        default_key_value ~key:"service.name"
+          ~value:(Some (String_value service_name)) () :: l
+      in
+      let l = match !Globals.service_namespace with
         | None -> l
         | Some v ->
-          default_key_value ~key:"service.name"
+          default_key_value ~key:"service.namespace"
             ~value:(Some (String_value v)) () :: l
       in
-      l
+      l |> Globals.merge_global_attributes_
     in
 
     let links =
@@ -305,7 +339,9 @@ module Trace = struct
   (** Sync emitter *)
   let emit (spans:span list) : unit =
     let ils =
-      default_instrumentation_library_spans ~spans () in
+      default_instrumentation_library_spans
+        ~instrumentation_library:(Some Globals.instrumentation_library)
+        ~spans () in
     let rs = default_resource_spans ~instrumentation_library_spans:[ils] () in
     Collector.send_trace [rs] ~over:(fun () -> ()) ~ret:(fun () -> ())
 
@@ -396,7 +432,9 @@ module Metrics = struct
   (** Emit some metrics to the collector (sync). *)
   let emit (l:t list) : unit =
     let lm =
-      default_instrumentation_library_metrics ~metrics:l () in
+      default_instrumentation_library_metrics
+        ~instrumentation_library:(Some Globals.instrumentation_library)
+        ~metrics:l () in
     let rm = default_resource_metrics
         ~instrumentation_library_metrics:[lm] () in
     Collector.send_metrics [rm] ~over:ignore ~ret:ignore
