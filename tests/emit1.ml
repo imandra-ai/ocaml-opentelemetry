@@ -39,7 +39,7 @@ let run () =
         Unix.sleepf 0.1;
         if j=4 && !i mod 13 = 0 then failwith "oh no"; (* simulate a failure *)
 
-        T.Trace.add_event scope @@ T.Event.make "done with alloc";
+        T.Trace.add_event scope (fun()->T.Event.make "done with alloc");
       with Failure _ ->
         ());
     done;
