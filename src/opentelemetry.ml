@@ -79,9 +79,9 @@ module Collector = struct
 
   (** Collector client interface. *)
   module type BACKEND = sig
-    val send_trace : Trace_service.export_trace_service_request sender
+    val send_trace : Trace.resource_spans list sender
 
-    val send_metrics : Metrics_service.export_metrics_service_request sender
+    val send_metrics : Metrics.resource_metrics list sender
 
     val rand_bytes_16 : unit -> bytes
     (** Generate 16 bytes of random data *)
@@ -102,18 +102,12 @@ module Collector = struct
   let send_trace (l:Trace.resource_spans list) ~over ~ret =
     match !backend with
     | None -> over(); ret()
-    | Some (module B) ->
-      let ev = Trace_service.default_export_trace_service_request
-          ~resource_spans:l () in
-      B.send_trace.send ev ~over ~ret
+    | Some (module B) -> B.send_trace.send l ~over ~ret
 
   let send_metrics (l:Metrics.resource_metrics list) ~over ~ret =
     match !backend with
     | None -> over(); ret()
-    | Some (module B) ->
-      let ev = Metrics_service.default_export_metrics_service_request
-          ~resource_metrics:l () in
-      B.send_metrics.send ev ~over ~ret
+    | Some (module B) -> B.send_metrics.send l ~over ~ret
 
   let rand_bytes_16 () =
     match !backend with

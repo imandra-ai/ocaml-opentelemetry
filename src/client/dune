@@ -2,5 +2,5 @@
 (library
   (name opentelemetry_client_ocurl)
   (public_name opentelemetry-client-ocurl)
-  (libraries opentelemetry curl ocaml-protoc))
+  (libraries opentelemetry curl ocaml-protoc threads mtime mtime.clock.os))
 
