@@ -96,6 +96,9 @@ module Collector = struct
 
   let backend : backend option ref = ref None
 
+  (** Is there a configured backend? *)
+  let[@inline] has_backend () : bool = !backend != None
+
   let send_trace (l:Trace.resource_spans list) ~over ~ret =
     match !backend with
     | None -> over(); ret()
@@ -393,9 +396,14 @@ module Trace = struct
     mutable events: Event.t list;
   }
 
-  (** Add an event to the scope. It will be aggregated into the span *)
-  let[@inline] add_event (scope:scope) (ev:Event.t) : unit =
-    scope.events <- ev :: scope.events
+  (** Add an event to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces an event, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_event (scope:scope) (ev:unit -> Event.t) : unit =
+    if Collector.has_backend() then (
+      scope.events <- ev() :: scope.events
+    )
 
   (** Sync span guard *)
   let with_
