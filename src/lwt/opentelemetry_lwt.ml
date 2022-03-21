@@ -47,7 +47,7 @@ module Trace = struct
          let+ () = finally (Ok ()) in
          x)
       (fun e ->
-         let+ () = finally (Error (Printexc.to_string e)) in
+         let* () = finally (Error (Printexc.to_string e)) in
          Lwt.fail e)
 end
 
