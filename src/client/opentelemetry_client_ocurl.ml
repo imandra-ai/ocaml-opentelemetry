@@ -276,6 +276,11 @@ let mk_push (type a) ?batch () : (module PUSH with type elt = a) * (on_full_cb -
   in
   push, ((:=) on_full)
 
+
+(* make an emitter.
+
+   exceptions inside should be caught, see
+   https://opentelemetry.io/docs/reference/specification/error-handling/ *)
 let mk_emitter ~(config:Config.t) () : (module EMITTER) =
   let open Proto in
 
@@ -355,10 +360,19 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     ) else false
   in
 
+  let[@inline] guard f =
+    try f()
+    with e ->
+      Printf.eprintf "opentelemetry-curl: uncaught exception: %s\n%!"
+        (Printexc.to_string e)
+  in
+
   let emit_all_force () =
+    let@ () = guard in
     ignore (emit_traces ~force:true () : bool);
     ignore (emit_metrics ~force:true () : bool);
   in
+
 
   if config.thread then (
     begin
@@ -373,6 +387,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
 
     let bg_thread () =
       while !continue do
+        let@ () = guard in
         if emit_metrics () then ()
         else if emit_traces () then ()
         else (
@@ -382,9 +397,12 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
         )
       done;
       (* flush remaining events *)
-      ignore (emit_traces ~force:true () : bool);
-      ignore (emit_metrics ~force:true () : bool);
-      C.cleanup();
+      begin
+        let@ () = guard in
+        ignore (emit_traces ~force:true () : bool);
+        ignore (emit_metrics ~force:true () : bool);
+        C.cleanup();
+      end
     in
 
     let _: Thread.t = Thread.create bg_thread () in
@@ -424,11 +442,15 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
 
     let module M = struct
       let push_trace e ~over =
+        let@() = guard in
         E_trace.push (e,over);
         if batch_timeout() then emit_all_force()
+
       let push_metrics e ~over =
+        let@() = guard in
         E_metrics.push (e,over);
         if batch_timeout() then emit_all_force()
+
       let cleanup = cleanup
     end in
     (module M)
