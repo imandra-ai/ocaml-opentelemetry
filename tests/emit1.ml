@@ -23,7 +23,7 @@ let run () =
   let i = ref 0 in
   while true do
     let@ scope =
-      T.Trace.with_ ~trace_id:scope.trace_id ~parent:scope.span_id
+      T.Trace.with_
         ~kind:T.Span.Span_kind_producer
         "loop.outer" ~attrs:["i", `Int !i] in
 
