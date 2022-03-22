@@ -38,7 +38,7 @@
   (depends
    (ocaml (>= "4.08"))
    (dune (>= "2.3"))
-   mtime
+   (mtime (>= "1.4")) ; for spans
    ; atomic ; vendored
    (opentelemetry (= :version))
    (ocaml-protoc (>= 2.1))
