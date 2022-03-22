@@ -15,7 +15,9 @@ let run () =
     T.Metrics.(
       emit [
         gauge ~name:"ocaml_opentracing.test.major_heap_words" [int gc.Gc.heap_words];
-        sum ~name:"ocaml_opentracing.test.minor_allocated" [float gc.Gc.minor_words];
+        sum ~name:"ocaml_opentracing.test.minor_allocated" [float gc.Gc.minor_words]
+          ~aggregation_temporality:Aggregation_temporality_cumulative
+        ;
       ]);
   in
   let _al = Gc.create_alarm emit_gc in
