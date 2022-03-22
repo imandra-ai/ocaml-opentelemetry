@@ -39,7 +39,7 @@
    (ocaml (>= "4.08"))
    (dune (>= "2.3"))
    mtime
-   atomic
+   ; atomic ; vendored
    (opentelemetry (= :version))
    (ocaml-protoc (>= 2.1))
    (odoc :with-doc)
