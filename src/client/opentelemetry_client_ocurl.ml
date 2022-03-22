@@ -401,8 +401,9 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     let bg_thread () =
       while !continue do
         let@ () = guard in
-        if emit_metrics () then ()
-        else if emit_traces () then ()
+        let timeout = batch_timeout() in
+        if emit_metrics ~force:timeout () then ()
+        else if emit_traces ~force:timeout () then ()
         else (
           (* wait *)
           let@ () = with_mutex_ m in
