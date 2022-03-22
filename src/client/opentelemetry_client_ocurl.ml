@@ -489,10 +489,14 @@ let setup_ ~(config:Config.t) () =
   Opentelemetry.Collector.backend := Some (module B);
   B.cleanup
 
-let setup ?(config=Config.make()) () =
-  let cleanup = setup_ ~config () in
-  at_exit cleanup
+let setup ?(config=Config.make()) ?(enable=true) () =
+  if enable then (
+    let cleanup = setup_ ~config () in
+    at_exit cleanup
+  )
 
-let with_setup ?(config=Config.make()) () f =
-  let cleanup = setup_ ~config () in
-  Fun.protect ~finally:cleanup f
+let with_setup ?(config=Config.make()) ?(enable=true) () f =
+  if enable then (
+    let cleanup = setup_ ~config () in
+    Fun.protect ~finally:cleanup f
+  ) else f()

@@ -60,10 +60,13 @@ module Config : sig
   val pp : Format.formatter -> t -> unit
 end
 
-val setup : ?config:Config.t -> unit -> unit
+val setup : ?config:Config.t -> ?enable:bool -> unit -> unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.
+    @param enable actually setup the backend (default true). This can
+      be used to enable/disable the setup depending on CLI arguments
+      or environment.
     @param config configuration to use *)
 
-val with_setup : ?config:Config.t -> unit -> (unit -> 'a) -> 'a
+val with_setup : ?config:Config.t -> ?enable:bool -> unit -> (unit -> 'a) -> 'a
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up
     after [f()] returns. *)
