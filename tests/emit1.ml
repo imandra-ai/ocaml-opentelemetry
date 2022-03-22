@@ -6,6 +6,9 @@ let (let@) f x = f x
 let sleep_inner = ref 0.1
 let sleep_outer = ref 2.0
 
+let () = Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> exit 0))
+
+
 let run () =
   Printf.printf "collector is on %S\n%!" (Opentelemetry_client_ocurl.get_url());
 

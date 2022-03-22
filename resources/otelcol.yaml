@@ -1,0 +1,31 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+
+processors:
+  batch:
+    timeout: 10s
+  resourcedetection:
+    detectors: [gce, system]
+
+exporters:
+  logging:
+    loglevel: debug
+    sampling_initial: 5
+    sampling_thereafter: 10
+
+
+service:
+  telemetry:
+    logs:
+      level: debug
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, resourcedetection]
+      exporters: [logging]
+    metrics:
+      receivers: [otlp]
+      processors: [batch, resourcedetection]
+      exporters: [logging]

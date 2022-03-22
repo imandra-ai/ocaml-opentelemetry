@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ocaml-otel-test
+spec:
+  containers:
+  - name: emit
+    image: ocaml-otel-test:latest
+    env:
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
+        # This is picked up by the opentelemetry sdks
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(HOST_IP):4318"
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: "service.name=t1,service.version=1,deployment.environment=poc"
+
