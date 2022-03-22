@@ -20,8 +20,6 @@ let run () =
   in
   let _al = Gc.create_alarm emit_gc in
 
-  let@ scope = T.Trace.with_ "run" in
-
   let i = ref 0 in
   while true do
     let@ scope =
