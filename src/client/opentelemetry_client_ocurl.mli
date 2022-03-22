@@ -64,4 +64,6 @@ val setup : ?config:Config.t -> unit -> unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.
     @param config configuration to use *)
 
-val with_setup : ?config:Config.t -> (unit -> 'a) -> 'a
+val with_setup : ?config:Config.t -> unit -> (unit -> 'a) -> 'a
+(** [with_setup () f] is like [setup(); f()] but takes care of cleaning up
+    after [f()] returns. *)

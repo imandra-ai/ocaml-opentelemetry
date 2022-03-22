@@ -82,4 +82,4 @@ let () =
   Format.printf "@[<2>sleep outer: %.3fs,@ sleep inner: %.3fs,@ config: %a@]@."
     !sleep_outer !sleep_inner Opentelemetry_client_ocurl.Config.pp config;
 
-  Opentelemetry_client_ocurl.with_setup ~config run
+  Opentelemetry_client_ocurl.with_setup ~config () run

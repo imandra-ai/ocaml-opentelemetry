@@ -471,6 +471,6 @@ let setup ?(config=Config.make()) () =
   let cleanup = setup_ ~config () in
   at_exit cleanup
 
-let with_setup ?(config=Config.make()) f =
+let with_setup ?(config=Config.make()) () f =
   let cleanup = setup_ ~config () in
   Fun.protect ~finally:cleanup f
