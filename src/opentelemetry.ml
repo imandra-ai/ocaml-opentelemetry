@@ -486,13 +486,17 @@ module Metrics = struct
   (* TODO: summary *)
   (* TODO: exemplar *)
 
-  (** Emit some metrics to the collector (sync). *)
-  let emit (l:t list) : unit =
+  (** Aggregate metrics into a {!Proto.Metrics.resource_metrics} *)
+  let make_resource_metrics (l:t list) : resource_metrics =
     let lm =
       default_instrumentation_library_metrics
         ~instrumentation_library:(Some Globals.instrumentation_library)
         ~metrics:l () in
-    let rm = default_resource_metrics
-        ~instrumentation_library_metrics:[lm] () in
+    default_resource_metrics
+      ~instrumentation_library_metrics:[lm] ()
+
+  (** Emit some metrics to the collector (sync). *)
+  let emit (l:t list) : unit =
+    let rm = make_resource_metrics l in
     Collector.send_metrics [rm] ~over:ignore ~ret:ignore
 end

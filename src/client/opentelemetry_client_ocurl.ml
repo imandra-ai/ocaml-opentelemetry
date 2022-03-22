@@ -6,6 +6,7 @@
 
 (* TODO *)
 
+module OT = Opentelemetry
 open Opentelemetry
 
 let[@inline] (let@) f x = f x
@@ -73,6 +74,9 @@ type error = [
   | `Status of int * Opentelemetry.Proto.Status.status
   | `Failure of string
 ]
+
+let n_errors = Atomic.make 0
+let n_dropped = Atomic.make 0
 
 let report_err_ = function
   | `Failure msg ->
@@ -267,7 +271,10 @@ let mk_push (type a) ?batch () : (module PUSH with type elt = a) * (on_full_cb -
         let is_big_enough () = FQueue.size q >= n
         let push x =
           if not (FQueue.push q x) || FQueue.size q > n then (
-            !on_full(); (* drop *)
+            !on_full();
+            if not (FQueue.push q x) then (
+              Atomic.incr n_dropped; (* drop item *)
+            )
           )
         let pop_iter_all f = FQueue.pop_iter_all q f
       end in
@@ -308,7 +315,10 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
           (Pbrt.Encoder.to_string encoder)
       with
       | Ok () -> ()
-      | Error err -> report_err_ err
+      | Error err ->
+        (* TODO: log error _via_ otel? *)
+        Atomic.incr n_errors;
+        report_err_ err
     end;
     (* signal completion *)
     List.iter (fun (_,over) -> over()) l;
@@ -326,7 +336,10 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
           (Pbrt.Encoder.to_string encoder)
       with
       | Ok () -> ()
-      | Error err -> report_err_ err
+      | Error err ->
+        (* TODO: log error _via_ otel? *)
+        Atomic.incr n_errors;
+        report_err_ err
     end;
     (* signal completion *)
     List.iter (fun (_,over) -> over()) l;
@@ -474,10 +487,39 @@ module Backend(Arg : sig val config : Config.t end)()
       ret()
   }
 
+  let last_sent_metrics = Atomic.make (Mtime_clock.now())
+  let timeout_sent_metrics = Mtime.Span.(5 * s) (* send metrics from time to time *)
+
+  let additional_metrics () : _ list =
+      (* add exporter metrics to the lot? *)
+      let last_emit = Atomic.get last_sent_metrics in
+      let now = Mtime_clock.now() in
+      let add_own_metrics =
+        let elapsed = Mtime.span last_emit now in
+        Mtime.Span.compare elapsed timeout_sent_metrics > 0
+      in
+
+      if add_own_metrics then (
+        let open OT.Metrics in
+        Atomic.set last_sent_metrics now;
+        [make_resource_metrics [
+            sum ~name:"otel-export.dropped" ~is_monotonic:true [
+              int ~start_time_unix_nano:(Mtime.to_uint64_ns last_emit)
+                ~now:(Mtime.to_uint64_ns now) (Atomic.get n_dropped);
+            ];
+            sum ~name:"otel-export.errors" ~is_monotonic:true [
+              int ~start_time_unix_nano:(Mtime.to_uint64_ns last_emit)
+                ~now:(Mtime.to_uint64_ns now) (Atomic.get n_errors);
+            ];
+          ]]
+      ) else []
+
   let send_metrics : Metrics.resource_metrics list sender = {
     send=fun m ~over ~ret ->
       let@() = with_lock_ in
       if !debug_ then Format.eprintf "send metrics %a@." (Format.pp_print_list Metrics.pp_resource_metrics) m;
+
+      let m = List.rev_append (additional_metrics()) m in
       push_metrics m ~over;
       ret()
   }
