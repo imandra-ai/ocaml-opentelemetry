@@ -184,14 +184,20 @@ end
 type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
 
 (**/**)
+let _conv_value =
+  let open Proto.Common in
+  function
+  | `Int i -> Some (Int_value (Int64.of_int i))
+  | `String s -> Some (String_value s)
+  | `Bool b -> Some (Bool_value b)
+  | `None -> None
+
+(**/**)
+
+(**/**)
 let _conv_key_value (k,v) =
   let open Proto.Common in
-  let value = match v with
-    | `Int i -> Some (Int_value (Int64.of_int i))
-    | `String s -> Some (String_value s)
-    | `Bool b -> Some (Bool_value b)
-    | `None -> None
-  in
+  let value = _conv_value v in
   default_key_value ~key:k ~value ()
 
 (**/**)
@@ -320,17 +326,7 @@ end = struct
 
     let attributes =
       let open Proto.Common in
-      let l = List.map
-          (fun (k,v) ->
-             let value = match v with
-               | `Int i -> Some (Int_value (Int64.of_int i))
-               | `String s -> Some (String_value s)
-               | `Bool b -> Some (Bool_value b)
-               | `None -> None
-             in
-             default_key_value ~key:k ~value ())
-          attrs
-      in
+      let l = List.map _conv_key_value attrs in
       let l =
         default_key_value ~key:"service.name"
           ~value:(Some (String_value service_name)) () :: l
