@@ -472,11 +472,12 @@ module Metrics = struct
 
   (** Sum of all reported measurements over a time interval *)
   let sum ~name ?description ?unit_
-      ?aggregation_temporality ?is_monotonic
+      ?(aggregation_temporality=Aggregation_temporality_cumulative)
+      ?is_monotonic
       (l:number_data_point list) : t =
     let data =
       Sum (default_sum ~data_points:l ?is_monotonic
-             ?aggregation_temporality ()) in
+             ~aggregation_temporality ()) in
     default_metric ~name ?description ?unit_ ~data ()
 
   (* TODO
