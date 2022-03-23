@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: emit
-    image: ocaml-otel-test:latest
+    image: %IMAGE%
     env:
       - name: HOST_IP
         valueFrom:
