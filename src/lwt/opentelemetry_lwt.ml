@@ -13,11 +13,9 @@ module Trace = struct
   include Trace
 
   (** Emit asynchronously *)
-  let emit (spans:span list) : unit Lwt.t =
+  let emit ?service_name ?attrs (spans:span list) : unit Lwt.t =
     let fut, wake = Lwt.wait() in
-    let ils =
-      default_instrumentation_library_spans ~spans () in
-    let rs = default_resource_spans ~instrumentation_library_spans:[ils] () in
+    let rs = make_resource_spans ?service_name ?attrs spans in
     Collector.send_trace [rs]
       ~over:(fun () -> Lwt.wakeup_later wake ())
       ~ret:(fun () -> fut)
@@ -36,11 +34,11 @@ module Trace = struct
       let span, _ =
         Span.create
           ?kind ~trace_id ?parent ?links ~id:span_id
-          ?trace_state ?service_name ?attrs
+          ?trace_state ?attrs
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
           ~status
           name in
-      emit [span]
+      emit ?service_name [span]
     in
     Lwt.catch
       (fun () ->
@@ -57,12 +55,9 @@ module Metrics = struct
   include Metrics
 
   (** Emit some metrics to the collector. *)
-  let emit (l:t list) : unit Lwt.t =
+  let emit ?attrs (l:t list) : unit Lwt.t =
     let fut, wake = Lwt.wait() in
-    let lm =
-      default_instrumentation_library_metrics ~metrics:l () in
-    let rm = default_resource_metrics
-        ~instrumentation_library_metrics:[lm] () in
+    let rm = make_resource_metrics ?attrs l in
     Collector.send_metrics [rm]
       ~over:(fun () -> Lwt.wakeup_later wake ())
       ~ret:(fun () -> fut)

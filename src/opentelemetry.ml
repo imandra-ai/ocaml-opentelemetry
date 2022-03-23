@@ -184,14 +184,20 @@ end
 type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
 
 (**/**)
+let _conv_value =
+  let open Proto.Common in
+  function
+  | `Int i -> Some (Int_value (Int64.of_int i))
+  | `String s -> Some (String_value s)
+  | `Bool b -> Some (Bool_value b)
+  | `None -> None
+
+(**/**)
+
+(**/**)
 let _conv_key_value (k,v) =
   let open Proto.Common in
-  let value = match v with
-    | `Int i -> Some (Int_value (Int64.of_int i))
-    | `String s -> Some (String_value s)
-    | `Bool b -> Some (Bool_value b)
-    | `None -> None
-  in
+  let value = _conv_value v in
   default_key_value ~key:k ~value ()
 
 (**/**)
@@ -260,7 +266,6 @@ module Span : sig
     ?kind:kind ->
     ?id:id ->
     ?trace_state:string ->
-    ?service_name:string ->
     ?attrs:key_value list ->
     ?events:Event.t list ->
     ?status:status ->
@@ -308,7 +313,6 @@ end = struct
       ?(kind=Span_kind_unspecified)
       ?(id=Span_id.create())
       ?trace_state
-      ?(service_name= !Globals.service_name)
       ?(attrs=[])
       ?(events=[])
       ?status
@@ -317,33 +321,7 @@ end = struct
       name : t * id =
     let trace_id = Trace_id.to_bytes trace_id in
     let parent_span_id = Option.map Span_id.to_bytes parent in
-
-    let attributes =
-      let open Proto.Common in
-      let l = List.map
-          (fun (k,v) ->
-             let value = match v with
-               | `Int i -> Some (Int_value (Int64.of_int i))
-               | `String s -> Some (String_value s)
-               | `Bool b -> Some (Bool_value b)
-               | `None -> None
-             in
-             default_key_value ~key:k ~value ())
-          attrs
-      in
-      let l =
-        default_key_value ~key:"service.name"
-          ~value:(Some (String_value service_name)) () :: l
-      in
-      let l = match !Globals.service_namespace with
-        | None -> l
-        | Some v ->
-          default_key_value ~key:"service.namespace"
-            ~value:(Some (String_value v)) () :: l
-      in
-      l |> Globals.merge_global_attributes_
-    in
-
+    let attributes = List.map _conv_key_value attrs in
     let links =
       List.map
         (fun (trace_id,span_id,trace_state) ->
@@ -374,13 +352,33 @@ module Trace = struct
 
   type span = Span.t
 
-  (** Sync emitter *)
-  let emit (spans:span list) : unit =
+  let make_resource_spans ?(service_name = !Globals.service_name) ?(attrs=[]) spans =
     let ils =
       default_instrumentation_library_spans
         ~instrumentation_library:(Some Globals.instrumentation_library)
         ~spans () in
-    let rs = default_resource_spans ~instrumentation_library_spans:[ils] () in
+    let attributes =
+      let open Proto.Common in
+      let l = List.map _conv_key_value attrs in
+      let l =
+        default_key_value ~key:"service.name"
+          ~value:(Some (String_value service_name)) () :: l
+      in
+      let l = match !Globals.service_namespace with
+        | None -> l
+        | Some v ->
+           default_key_value ~key:"service.namespace"
+             ~value:(Some (String_value v)) () :: l
+      in
+      l |> Globals.merge_global_attributes_
+    in
+    let resource = Proto.Resource.default_resource ~attributes () in
+    default_resource_spans
+      ~resource:(Some resource) ~instrumentation_library_spans:[ils] ()
+
+  (** Sync emitter *)
+  let emit ?service_name ?attrs (spans:span list) : unit =
+    let rs = make_resource_spans ?service_name ?attrs spans in
     Collector.send_trace [rs] ~over:(fun () -> ()) ~ret:(fun () -> ())
 
   (** Scope to be used with {!with_}. *)
@@ -414,13 +412,15 @@ module Trace = struct
         | Ok () -> default_status ~code:Status_code_ok ()
         | Error e -> default_status ~code:Status_code_error ~message:e () in
       let span, _ =
+        (* TODO: should the attrs passed to with_ go on the Span (in Span.create) or on the ResourceSpan (in emit)?
+           (question also applies to Opentelemetry_lwt.Trace.with) *)
         Span.create
           ?kind ~trace_id ?parent ?links ~id:span_id
-          ?trace_state ?service_name ?attrs ~events:scope.events
+          ?trace_state ?attrs ~events:scope.events
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
           ~status
           name in
-      emit [span];
+      emit ?service_name [span];
     in
     try
       let x = f scope in
@@ -442,15 +442,22 @@ module Metrics = struct
   (** Number data point, as a float *)
   let float ?start_time_unix_nano
       ?(now=Timestamp_ns.now_unix_ns())
+      ?(attrs=[])
       (d:float) : number_data_point =
-    default_number_data_point ?start_time_unix_nano ~time_unix_nano:now
+    let attributes = attrs |> List.map _conv_key_value in
+    default_number_data_point
+      ?start_time_unix_nano ~time_unix_nano:now
+      ~attributes
       ~value:(As_double d) ()
 
   (** Number data point, as an int *)
   let int ?start_time_unix_nano
       ?(now=Timestamp_ns.now_unix_ns())
+      ?(attrs=[])
       (i:int) : number_data_point =
+    let attributes = attrs |> List.map _conv_key_value in
     default_number_data_point ?start_time_unix_nano ~time_unix_nano:now
+      ~attributes
       ~value:(As_int (Int64.of_int i)) ()
 
   (** Aggregation of a scalar metric, always with the current value *)
@@ -487,16 +494,22 @@ module Metrics = struct
   (* TODO: exemplar *)
 
   (** Aggregate metrics into a {!Proto.Metrics.resource_metrics} *)
-  let make_resource_metrics (l:t list) : resource_metrics =
+  let make_resource_metrics ?(attrs=[]) (l:t list) : resource_metrics =
     let lm =
       default_instrumentation_library_metrics
         ~instrumentation_library:(Some Globals.instrumentation_library)
         ~metrics:l () in
+    let attributes =
+      let open Proto.Common in
+      let l = List.map _conv_key_value attrs in
+      l |> Globals.merge_global_attributes_
+    in
+    let resource = Proto.Resource.default_resource ~attributes () in
     default_resource_metrics
-      ~instrumentation_library_metrics:[lm] ()
+      ~instrumentation_library_metrics:[lm] ~resource:(Some resource) ()
 
   (** Emit some metrics to the collector (sync). *)
-  let emit (l:t list) : unit =
-    let rm = make_resource_metrics l in
+  let emit ?attrs (l:t list) : unit =
+    let rm = make_resource_metrics ?attrs l in
     Collector.send_metrics [rm] ~over:ignore ~ret:ignore
 end
