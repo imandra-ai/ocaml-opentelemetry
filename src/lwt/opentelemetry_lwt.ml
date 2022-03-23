@@ -35,7 +35,7 @@ module Trace = struct
       let span, _ =
         Span.create
           ?kind ~trace_id ?parent ?links ~id:span_id
-          ?trace_state ?attrs
+          ?trace_state ?attrs ~events:scope.events
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
           ~status
           name in
