@@ -120,6 +120,38 @@ module Collector = struct
     | Some (module B) -> B.rand_bytes_8()
 end
 
+module Util_ = struct
+  let bytes_to_hex (b:bytes) : string =
+    let i_to_hex (i:int) =
+      if i < 10 then Char.chr (i + Char.code '0')
+      else Char.chr (i - 10 + Char.code 'a')
+    in
+
+    let res = Bytes.create (2 * Bytes.length b) in
+    for i = 0 to Bytes.length b-1 do
+      let n = Char.code (Bytes.get b i) in
+      Bytes.set res (2 * i) (i_to_hex ((n land 0xf0) lsr 4));
+      Bytes.set res (2 * i + 1) (i_to_hex (n land 0x0f));
+    done;
+    Bytes.unsafe_to_string res
+
+  let bytes_of_hex (s:string) : bytes =
+    let n_of_c = function
+      | '0' .. '9' as c -> Char.code c - Char.code '0'
+      | 'a' .. 'f' as c -> 10 + Char.code c - Char.code 'a'
+      | _ -> failwith "invalid hex char"
+    in
+    assert (String.length s mod 2 = 0);
+    let res = Bytes.make (String.length s / 2) '\x00' in
+    for i=0 to String.length s/2-1 do
+      let n1 = n_of_c (String.get s (2*i)) in
+      let n2 = n_of_c (String.get s (2*i+1)) in
+      let n = (n1 lsl 4) lor n2 in
+      Bytes.set res i (Char.chr n)
+    done;
+    res
+end
+
 (** Trace ID.
 
     This 16 bytes identifier is shared by all spans in one trace. *)
@@ -128,12 +160,16 @@ module Trace_id : sig
   val create : unit -> t
   val to_bytes : t -> bytes
   val of_bytes : bytes -> t
+  val to_hex : t -> string
+  val of_hex : string -> t
 end = struct
   open Proto.Trace
   type t = bytes
   let to_bytes self = self
   let create () : t = Collector.rand_bytes_16()
   let of_bytes b = assert(Bytes.length b=16); b
+  let to_hex self = Util_.bytes_to_hex self
+  let of_hex s = of_bytes (Util_.bytes_of_hex s)
 end
 
 (** Unique ID of a span. *)
@@ -142,12 +178,16 @@ module Span_id : sig
   val create : unit -> t
   val to_bytes : t -> bytes
   val of_bytes : bytes -> t
+  val to_hex : t -> string
+  val of_hex : string -> t
 end = struct
   open Proto.Trace
   type t = bytes
   let to_bytes self = self
   let create () : t = Collector.rand_bytes_8()
   let of_bytes b = assert(Bytes.length b=8); b
+  let to_hex self = Util_.bytes_to_hex self
+  let of_hex s = of_bytes (Util_.bytes_of_hex s)
 end
 
 (** Process-wide metadata, environment variables, etc. *)
