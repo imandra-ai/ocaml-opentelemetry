@@ -3,5 +3,5 @@
   (name opentelemetry_client_ocurl)
   (public_name opentelemetry-client-ocurl)
   (libraries opentelemetry curl ocaml-protoc threads
-             atomic mtime mtime.clock.os))
+             atomic mtime mtime.clock.os re))
 

@@ -15,6 +15,7 @@ depends: [
   "ocaml-protoc" {>= "2.1"}
   "odoc" {with-doc}
   "ocurl"
+  "re"
 ]
 build: [
   ["dune" "subst"] {pinned}

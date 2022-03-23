@@ -24,6 +24,40 @@ let set_mutex ~lock ~unlock : unit =
   lock_ := lock;
   unlock_ := unlock
 
+let container_id_ = ref None
+
+(** Read the container ID from [/proc/self/cgroup], if it exists, and send it in the [Datadog-Container-ID] HTTP header.
+
+    Datadog uses this add container information to traces.
+
+    See https://github.com/DataDog/dd-trace-js/blob/253fce6fceaf776b14b10f19be586b961cbb66ec/packages/dd-trace/src/exporters/agent/docker.js#L5-L8
+ *)
+let read_container_id_ =
+  let proc_self_cgroup = "/proc/self/cgroup" in
+  let uuid_source = "[0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}" in
+  let container_source = "[0-9a-f]{64}" in
+  let task_source = "[0-9a-f]{32}-\\d+" in
+  let re =
+    Re.Pcre.re ~flags:[`MULTILINE]
+      (Printf.sprintf {|.*(%s|%s|%s)(?:\.scope)?$|} uuid_source container_source task_source)
+    |> Re.compile in
+  fun () ->
+  match open_in proc_self_cgroup  with
+  | ic ->
+     Fun.protect ~finally:(fun () -> close_in_noerr ic) (fun () ->
+         match input_line ic with
+         | exception End_of_file -> None
+         | line ->
+            match Re.exec_opt re line with
+            | None -> None
+            | Some groups ->
+               let c_id = Re.Group.get groups 1 in
+               if !debug_ then Printf.eprintf "read container id %S from %s\n%!" c_id proc_self_cgroup;
+               Some c_id
+       )
+  | exception _ -> None
+
+
 module Config = struct
   type t = {
     debug: bool;
@@ -112,7 +146,13 @@ module Curl() : CURL = struct
     if !debug_ then Curl.set_verbose curl true;
     Curl.set_url curl (!url ^ path);
     Curl.set_httppost curl [];
-    Curl.set_httpheader curl ["Content-Type: application/x-protobuf"];
+    let header = ["Content-Type: application/x-protobuf"] in
+    let header =
+      match !container_id_ with
+      | None -> header
+      | Some cid -> Printf.sprintf "Datadog-Container-ID: %s" cid :: header
+    in
+    Curl.set_httpheader curl header;
     (* write body *)
     Curl.set_post curl true;
     Curl.set_postfieldsize curl (String.length bod);
@@ -528,6 +568,7 @@ end
 
 let setup_ ~(config:Config.t) () =
   debug_ := config.debug;
+  container_id_ := read_container_id_ ();
   let module B = Backend(struct let config=config end)() in
   Opentelemetry.Collector.backend := Some (module B);
   B.cleanup

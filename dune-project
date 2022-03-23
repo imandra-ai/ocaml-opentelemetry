@@ -43,5 +43,6 @@
    (opentelemetry (= :version))
    (ocaml-protoc (>= 2.1))
    (odoc :with-doc)
-   ocurl)
+   ocurl
+   re)
   (synopsis "Collector client for opentelemetry, using http + ocurl"))
