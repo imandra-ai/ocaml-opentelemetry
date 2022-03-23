@@ -438,15 +438,30 @@ module Metrics = struct
   (** Number data point, as a float *)
   let float ?start_time_unix_nano
       ?(now=Timestamp_ns.now_unix_ns())
+      ?(attrs=[])
       (d:float) : number_data_point =
-    default_number_data_point ?start_time_unix_nano ~time_unix_nano:now
+    let attributes =
+      attrs
+      |> List.map _conv_key_value
+      |> Globals.merge_global_attributes_
+    in
+    default_number_data_point
+      ?start_time_unix_nano ~time_unix_nano:now
+      ~attributes
       ~value:(As_double d) ()
 
   (** Number data point, as an int *)
   let int ?start_time_unix_nano
       ?(now=Timestamp_ns.now_unix_ns())
+      ?(attrs=[])
       (i:int) : number_data_point =
+    let attributes =
+      attrs
+      |> List.map _conv_key_value
+      |> Globals.merge_global_attributes_
+    in
     default_number_data_point ?start_time_unix_nano ~time_unix_nano:now
+      ~attributes
       ~value:(As_int (Int64.of_int i)) ()
 
   (** Aggregation of a scalar metric, always with the current value *)
