@@ -24,9 +24,10 @@ module Trace = struct
   let with_
       ?trace_state ?service_name ?attrs
       ?kind ?(trace_id=Trace_id.create()) ?parent ?links
-      name (f:Trace_id.t * Span_id.t -> 'a Lwt.t) : 'a Lwt.t =
+      name (f:Trace.scope -> 'a Lwt.t) : 'a Lwt.t =
     let start_time = Timestamp_ns.now_unix_ns() in
     let span_id = Span_id.create() in
+    let scope = {trace_id;span_id;events=[]} in
     let finally ok =
       let status = match ok with
         | Ok () -> default_status ~code:Status_code_ok ()
@@ -42,7 +43,7 @@ module Trace = struct
     in
     Lwt.catch
       (fun () ->
-         let* x = f (trace_id,span_id) in
+         let* x = f scope in
          let+ () = finally (Ok ()) in
          x)
       (fun e ->
