@@ -61,10 +61,12 @@ let () =
   T.Globals.service_name := "t1";
   T.Globals.service_namespace := Some "ocaml-otel.test";
 
+  let debug = ref false in
   let thread = ref true in
   let batch_traces = ref 400 in
   let batch_metrics = ref 3 in
   let opts = [
+    "--debug", Arg.Bool ((:=) debug), " enable debug output";
     "--thread", Arg.Bool ((:=) thread), " use a background thread";
     "--batch-traces", Arg.Int ((:=) batch_traces), " size of traces batch";
     "--batch-metrics", Arg.Int ((:=) batch_metrics), " size of metrics batch";
@@ -76,6 +78,7 @@ let () =
 
   let some_if_nzero r = if !r > 0 then Some !r else None in
   let config = Opentelemetry_client_ocurl.Config.make
+      ~debug:!debug
       ~batch_traces:(some_if_nzero batch_traces)
       ~batch_metrics:(some_if_nzero batch_metrics)
       ~thread:!thread () in
