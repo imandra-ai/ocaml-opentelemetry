@@ -10,6 +10,9 @@ spec:
   containers:
   - name: emit
     image: %IMAGE%
+    command:
+      - /emit1.exe
+      - "--debug=true"
     env:
       - name: HOST_IP
         valueFrom:
