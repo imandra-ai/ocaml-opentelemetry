@@ -579,3 +579,74 @@ module Metrics = struct
     let rm = make_resource_metrics ?attrs l in
     Collector.send_metrics [rm] ~ret:ignore
 end
+
+
+module Trace_context = struct
+  (** Implementation of the W3C Trace Context spec
+
+      https://www.w3.org/TR/trace-context/
+   *)
+
+  module Traceparent = struct
+    (** The traceparent header
+        https://www.w3.org/TR/trace-context/#traceparent-header
+    *)
+
+    let name = "traceparent"
+
+    (** Parse the value of the traceparent header.
+
+        The values are of the form:
+
+            {version}-{trace_id}-{parent_id}-{flags}
+
+        For example:
+
+            00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+
+        {flags} are currently ignored.
+     *)
+    let of_value str : (Trace_id.t * Span_id.t, string) result =
+      let ( let* ) = Result.bind in
+      let blit ~offset ~len ~or_ =
+        let buf = Bytes.create len in
+        let* str =
+          match Bytes.blit_string str offset buf 0 len with
+          | () -> Ok (Bytes.to_string buf)
+          | exception Invalid_argument _ -> Error or_
+        in
+        Ok (str, offset + len)
+      in
+      let consume expected ~offset ~or_ =
+        let len = String.length expected in
+        let* str, offset = blit ~offset ~len ~or_ in
+        (* Printf.printf "got %S\n%!" str; *)
+        if str = expected then Ok offset else Error or_
+      in
+      let offset = 0 in
+      let* offset = consume "00" ~offset ~or_:"Expected version 00" in
+      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
+      let* trace_id, offset = blit ~offset ~len:32 ~or_:"Expected 32-digit trace-id" in
+      let* trace_id =
+        match Trace_id.of_hex trace_id with
+        | trace_id -> Ok trace_id
+        | exception Failure _ -> Error "Expected hex-encoded trace-id"
+      in
+      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
+      let* parent_id, offset = blit ~offset ~len:16 ~or_:"Expected 16-digit parent-id" in
+      let* parent_id =
+        match Span_id.of_hex parent_id with
+        | parent_id -> Ok parent_id
+        | exception Failure _ -> Error "Expected hex-encoded parent-id"
+      in
+      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
+      let* _flags, _offset = blit ~offset ~len:2 ~or_:"Expected 2-digit flags" in
+      Ok (trace_id, parent_id)
+
+    let to_value ~(trace_id : Trace_id.t) ~(parent_id : Span_id.t) () : string =
+      Printf.sprintf "00-%s-%s-00"
+        (Trace_id.to_hex trace_id)
+        (Span_id.to_hex parent_id)
+
+  end
+end

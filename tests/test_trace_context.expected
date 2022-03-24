@@ -1,0 +1,25 @@
+Trace_context.Traceparent.of_value "xx":
+  Error "Expected version 00"
+Trace_context.Traceparent.of_value "00":
+  Error "Expected delimiter"
+Trace_context.Traceparent.of_value "00-xxxx":
+  Error "Expected 32-digit trace-id"
+Trace_context.Traceparent.of_value "00-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx":
+  Error "Expected hex-encoded trace-id"
+Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef":
+  Error "Expected delimiter"
+Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-xxxx":
+  Error "Expected 16-digit parent-id"
+Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-xxxxxxxxxxxxxxxx":
+  Error "Expected hex-encoded parent-id"
+Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef":
+  Error "Expected delimiter"
+Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef-":
+  Error "Expected 2-digit flags"
+Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00":
+  Ok trace_id:"0123456789abcdef0123456789abcdef" parent_id:"0123456789abcdef"
+Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01":
+  Ok trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7"
+
+Trace_context.Traceparent.to_value trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7":
+  "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"
