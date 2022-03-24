@@ -30,9 +30,9 @@
     <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
-  <span class="xref-unresolved">Opentelemetry__Metrics_types.resource_metrics</span></span></code></div><div class="spec-doc"><p>Aggregate metrics into a <code>Proto</code>.Metrics.resource_metrics</p></div></div></details></div><div class="odoc-spec"><div class="spec value" id="val-emit" class="anchored"><a href="#val-emit" class="anchor"></a><code><span><span class="keyword">val</span> emit : 
+  <span class="xref-unresolved">Opentelemetry__Metrics_types.resource_metrics</span></span></code></div><div class="spec-doc"><p>Aggregate metrics into a <code>Proto</code>.Metrics.resource_metrics</p></div></div><div class="odoc-spec"><div class="spec value" id="val-emit" class="anchored"><a href="#val-emit" class="anchor"></a><code><span><span class="keyword">val</span> emit : 
   <span>?attrs:
     <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
-  <span>unit <span class="xref-unresolved">Lwt</span>.t</span></span></code></div><div class="spec-doc"><p>Emit some metrics to the collector.</p></div></div></div></body></html>
+  unit</span></code></div><div class="spec-doc"><p>Emit some metrics to the collector (sync). This blocks until the backend has pushed the metrics into some internal queue, or discarded them.</p></div></div></details></div></div></body></html>
