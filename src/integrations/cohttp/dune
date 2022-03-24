@@ -1,0 +1,4 @@
+(library
+ (name opentelemetry_cohttp_lwt)
+ (public_name opentelemetry-cohttp-lwt)
+ (libraries cohttp-lwt opentelemetry opentelemetry-lwt))
