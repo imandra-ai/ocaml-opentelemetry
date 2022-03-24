@@ -19,7 +19,7 @@ module Server : sig
               (Server.make () ~callback:callback_traced)
    *)
   val trace :
-    service_name:string ->
+    ?service_name:string ->
     ?attrs:Otel.Span.key_value list ->
     ('conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
     'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t
@@ -112,11 +112,11 @@ end = struct
     let headers = Header.remove (Request.headers req) header_x_ocaml_otel_traceparent in
     { req with headers }
 
-  let trace ~service_name ?(attrs=[]) callback =
+  let trace ?service_name ?(attrs=[]) callback =
     fun conn req body ->
     let scope = get_trace_context ~from:`External req in
     Otel_lwt.Trace.with_
-      ~service_name
+      ?service_name
       "request"
       ~kind:Span_kind_server
       ?trace_id:(Option.map (fun scope -> scope.Otel.Trace.trace_id) scope)
