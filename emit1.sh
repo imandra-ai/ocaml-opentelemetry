@@ -1,2 +1,2 @@
 #!/bin/sh
-exec dune exec --profile=release tests/emit1.exe -- $@
+exec dune exec --profile=release tests/bin/emit1.exe -- $@

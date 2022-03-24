@@ -152,9 +152,9 @@ module Util_ = struct
     let n_of_c = function
       | '0' .. '9' as c -> Char.code c - Char.code '0'
       | 'a' .. 'f' as c -> 10 + Char.code c - Char.code 'a'
-      | _ -> failwith "invalid hex char"
+      | _ -> raise (Invalid_argument "invalid hex char")
     in
-    assert (String.length s mod 2 = 0);
+    if (String.length s mod 2 <> 0) then raise (Invalid_argument "hex sequence must be of even length");
     let res = Bytes.make (String.length s / 2) '\x00' in
     for i=0 to String.length s/2-1 do
       let n1 = n_of_c (String.get s (2*i)) in
@@ -180,7 +180,7 @@ end = struct
   type t = bytes
   let to_bytes self = self
   let create () : t = Collector.rand_bytes_16()
-  let of_bytes b = assert(Bytes.length b=16); b
+  let of_bytes b = if Bytes.length b=16 then b else raise (Invalid_argument "trace IDs must be 16 bytes in length")
   let to_hex self = Util_.bytes_to_hex self
   let of_hex s = of_bytes (Util_.bytes_of_hex s)
 end
@@ -198,7 +198,7 @@ end = struct
   type t = bytes
   let to_bytes self = self
   let create () : t = Collector.rand_bytes_8()
-  let of_bytes b = assert(Bytes.length b=8); b
+  let of_bytes b = if Bytes.length b=8 then b else raise (Invalid_argument "span IDs must be 8 bytes in length")
   let to_hex self = Util_.bytes_to_hex self
   let of_hex s = of_bytes (Util_.bytes_of_hex s)
 end
@@ -579,4 +579,74 @@ module Metrics = struct
   let emit ?attrs (l:t list) : unit =
     let rm = make_resource_metrics ?attrs l in
     Collector.send_metrics [rm] ~ret:ignore
+end
+
+
+module Trace_context = struct
+  (** Implementation of the W3C Trace Context spec
+
+      https://www.w3.org/TR/trace-context/
+   *)
+
+  module Traceparent = struct
+    (** The traceparent header
+        https://www.w3.org/TR/trace-context/#traceparent-header
+    *)
+
+    let name = "traceparent"
+
+    (** Parse the value of the traceparent header.
+
+        The values are of the form:
+
+            {version}-{trace_id}-{parent_id}-{flags}
+
+        For example:
+
+            00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+
+        {flags} are currently ignored.
+     *)
+    let of_value str : (Trace_id.t * Span_id.t, string) result =
+      let ( let* ) = Result.bind in
+      let blit ~offset ~len ~or_ =
+        let buf = Bytes.create len in
+        let* str =
+          match Bytes.blit_string str offset buf 0 len with
+          | () -> Ok (Bytes.unsafe_to_string buf)
+          | exception Invalid_argument _ -> Error or_
+        in
+        Ok (str, offset + len)
+      in
+      let consume expected ~offset ~or_ =
+        let len = String.length expected in
+        let* str, offset = blit ~offset ~len ~or_ in
+        if str = expected then Ok offset else Error or_
+      in
+      let offset = 0 in
+      let* offset = consume "00" ~offset ~or_:"Expected version 00" in
+      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
+      let* trace_id, offset = blit ~offset ~len:32 ~or_:"Expected 32-digit trace-id" in
+      let* trace_id =
+        match Trace_id.of_hex trace_id with
+        | trace_id -> Ok trace_id
+        | exception Invalid_argument _ -> Error "Expected hex-encoded trace-id"
+      in
+      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
+      let* parent_id, offset = blit ~offset ~len:16 ~or_:"Expected 16-digit parent-id" in
+      let* parent_id =
+        match Span_id.of_hex parent_id with
+        | parent_id -> Ok parent_id
+        | exception Invalid_argument _ -> Error "Expected hex-encoded parent-id"
+      in
+      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
+      let* _flags, _offset = blit ~offset ~len:2 ~or_:"Expected 2-digit flags" in
+      Ok (trace_id, parent_id)
+
+    let to_value ~(trace_id : Trace_id.t) ~(parent_id : Span_id.t) () : string =
+      Printf.sprintf "00-%s-%s-00"
+        (Trace_id.to_hex trace_id)
+        (Span_id.to_hex parent_id)
+
+  end
 end

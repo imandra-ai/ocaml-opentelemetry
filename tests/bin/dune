@@ -1,0 +1,3 @@
+(executable
+ (name emit1)
+ (libraries unix opentelemetry opentelemetry-client-ocurl))
