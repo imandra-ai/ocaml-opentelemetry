@@ -1,3 +1,5 @@
+module Otel = Opentelemetry
+module Otel_lwt = Opentelemetry_lwt
 open Cohttp
 open Cohttp_lwt
 
@@ -29,21 +31,20 @@ let span_attrs (req : Request.t) =
            [ ("http.request.header.referer", `String r) ] )
     ]
 
+let trace_context_of_headers req =
+  let module Traceparent = Otel.Trace_context.Traceparent in
+  match Header.get (Request.headers req) Traceparent.name with
+  | None -> None, None
+  | Some v ->
+     (match Traceparent.of_value v with
+      | Ok (trace_id, parent_id) -> (Some trace_id, Some parent_id)
+      | Error _ -> None, None)
 
 let trace ~service_name (callback : ('conn, 'body) callback ) : ('conn, 'body) callback =
   fun conn req body ->
-  let trace_id =
-    Header.get (Request.headers req) "trace-id"
-    |> Option.map (fun s ->
-           s |> Bytes.of_string |> Opentelemetry.Trace_id.of_bytes )
-  in
-  let parent_id =
-    Header.get (Request.headers req) "parent-id"
-    |> Option.map (fun s ->
-           s |> Bytes.of_string |> Opentelemetry.Span_id.of_bytes )
-  in
+  let trace_id, parent_id = trace_context_of_headers req in
   let open Lwt.Syntax in
-  Opentelemetry_lwt.Trace.with_
+  Otel_lwt.Trace.with_
     ~service_name
     "request"
     ~kind:Span_kind_server
@@ -52,7 +53,7 @@ let trace ~service_name (callback : ('conn, 'body) callback ) : ('conn, 'body) c
     ?trace_id
     (fun scope ->
       let* (res, body) = callback conn req body in
-      Opentelemetry.Trace.add_attrs scope (fun () ->
+      Otel.Trace.add_attrs scope (fun () ->
           let code = Response.status res in
           let code = Code.code_of_status code in
           [ ("http.status_code", `Int code) ]) ;
