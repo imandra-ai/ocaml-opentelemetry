@@ -12,14 +12,6 @@ module Trace = struct
   open Proto.Trace
   include Trace
 
-  (** Emit asynchronously *)
-  let emit ?service_name ?attrs (spans:span list) : unit Lwt.t =
-    let fut, wake = Lwt.wait() in
-    let rs = make_resource_spans ?service_name ?attrs spans in
-    Collector.send_trace [rs]
-      ~over:(fun () -> Lwt.wakeup_later wake ())
-      ~ret:(fun () -> fut)
-
   (** Sync span guard *)
   let with_
       ?trace_state ?service_name ?(attrs=[])
@@ -44,10 +36,10 @@ module Trace = struct
     Lwt.catch
       (fun () ->
          let* x = f scope in
-         let+ () = finally (Ok ()) in
-         x)
+         let () = finally (Ok ()) in
+         Lwt.return x)
       (fun e ->
-         let* () = finally (Error (Printexc.to_string e)) in
+         let () = finally (Error (Printexc.to_string e)) in
          Lwt.fail e)
 end
 
