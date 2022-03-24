@@ -162,17 +162,11 @@ let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client)  
         let attrs = attrs_for ~uri ~meth () in
         (trace_id, parent, attrs)
 
-      let add_traceparent headers =
-          match scope with
-          | None -> headers
-          | Some scope ->
-             let module Traceparent = Otel.Trace_context.Traceparent in
-             let headers = match headers with | None -> Header.init () | Some headers -> headers in
-             let headers =
-               Header.add headers Traceparent.name
-                 (Traceparent.to_value ~trace_id:scope.trace_id ~parent_id:scope.span_id ())
-             in
-             Some headers
+      let add_traceparent (scope : Otel.Trace.scope) headers =
+        let module Traceparent = Otel.Trace_context.Traceparent in
+        let headers = match headers with | None -> Header.init () | Some headers -> headers in
+        Header.add headers Traceparent.name
+          (Traceparent.to_value ~trace_id:scope.trace_id ~parent_id:scope.span_id ())
 
       let call ?ctx ?headers ?body ?chunked meth (uri : Uri.t) : (Response.t * Cohttp_lwt.Body.t) Lwt.t =
         let (trace_id, parent, attrs) = context_for ~uri ~meth in
@@ -182,8 +176,8 @@ let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client)  
           ?parent
           ~attrs
           (fun scope ->
-            let headers = add_traceparent headers in
-            let* (res, body) = C.call ?ctx ?headers ?body ?chunked meth uri in
+            let headers = add_traceparent scope headers in
+            let* (res, body) = C.call ?ctx ~headers ?body ?chunked meth uri in
             Otel.Trace.add_attrs scope (fun () ->
                 let code = Response.status res in
                 let code = Code.code_of_status code in
