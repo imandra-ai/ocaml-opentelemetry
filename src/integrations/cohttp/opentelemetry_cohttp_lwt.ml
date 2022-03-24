@@ -16,6 +16,7 @@ module Server : sig
    *)
   val trace :
     service_name:string ->
+    ?attrs:Otel.Span.key_value list ->
     ('conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
     'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t
 end = struct
@@ -50,7 +51,7 @@ end = struct
         | Ok (trace_id, parent_id) -> (Some trace_id, Some parent_id)
         | Error _ -> None, None)
 
-  let trace ~service_name callback =
+  let trace ~service_name ?(attrs=[]) callback =
     fun conn req body ->
     let trace_id, parent_id = trace_context_of_headers req in
     let open Lwt.Syntax in
@@ -58,7 +59,7 @@ end = struct
       ~service_name
       "request"
       ~kind:Span_kind_server
-      ~attrs:(span_attrs req)
+      ~attrs:(attrs @ span_attrs req)
       ?parent:parent_id
       ?trace_id
       (fun scope ->
