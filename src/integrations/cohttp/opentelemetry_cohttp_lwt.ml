@@ -9,15 +9,19 @@ module Server : sig
       Use it like this:
 
           let my_server callback =
-            let callback =
-              Opentelemetry_cohttp_lwt.Server.trace ~service_name:"my-service" callback in
-            Cohttp_lwt_unix.Server.create ~mode:(`TCP (`Port 8080))
-              (Server.make () ~callback)
+            let callback_traced =
+              Opentelemetry_cohttp_lwt.Server.trace
+                ~service_name:"my-service"
+                (fun _scope -> callback)
+            in
+            Cohttp_lwt_unix.Server.create
+              ~mode:(`TCP (`Port 8080))
+              (Server.make () ~callback:callback_traced)
    *)
   val trace :
     service_name:string ->
     ?attrs:Otel.Span.key_value list ->
-    ('conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
+    (Otel.Trace.scope -> 'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
     'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t
 end = struct
   let span_attrs (req : Request.t) =
@@ -42,7 +46,7 @@ end = struct
              [ ("http.request.header.referer", `String r) ] )
       ]
 
-  let trace_context_of_headers req =
+  let trace_context_of_req req =
     let module Traceparent = Otel.Trace_context.Traceparent in
     match Header.get (Request.headers req) Traceparent.name with
     | None -> None, None
@@ -53,7 +57,7 @@ end = struct
 
   let trace ~service_name ?(attrs=[]) callback =
     fun conn req body ->
-    let trace_id, parent_id = trace_context_of_headers req in
+    let trace_id, parent_id = trace_context_of_req req in
     let open Lwt.Syntax in
     Otel_lwt.Trace.with_
       ~service_name
@@ -63,7 +67,7 @@ end = struct
       ?parent:parent_id
       ?trace_id
       (fun scope ->
-        let* (res, body) = callback conn req body in
+        let* (res, body) = callback scope conn req body in
         Otel.Trace.add_attrs scope (fun () ->
             let code = Response.status res in
             let code = Code.code_of_status code in
