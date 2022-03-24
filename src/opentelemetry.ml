@@ -599,13 +599,15 @@ module Trace_context = struct
 
         The values are of the form:
 
+        {[
         {version}-{trace_id}-{parent_id}-{flags}
+        ]}
 
         For example:
 
-        00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+        {[ 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 ]}
 
-        {flags} are currently ignored.
+        [{flags}] are currently ignored.
     *)
     let of_value str : (Trace_id.t * Span_id.t, string) result =
       let ( let* ) = Result.bind in
