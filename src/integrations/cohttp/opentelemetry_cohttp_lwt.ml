@@ -174,8 +174,8 @@ let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client)  
              in
              Some headers
 
-      let get ?ctx ?headers (uri : Uri.t) : (Response.t * Cohttp_lwt.Body.t) Lwt.t =
-        let (trace_id, parent, attrs) = context_for ~uri ~meth:`GET in
+      let call ?ctx ?headers ?body ?chunked meth (uri : Uri.t) : (Response.t * Cohttp_lwt.Body.t) Lwt.t =
+        let (trace_id, parent, attrs) = context_for ~uri ~meth in
         Otel_lwt.Trace.with_ "request"
           ~kind:Span_kind_client
           ?trace_id
@@ -183,12 +183,29 @@ let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client)  
           ~attrs
           (fun scope ->
             let headers = add_traceparent headers in
-            let* (res, body) = C.get ?ctx ?headers uri in
+            let* (res, body) = C.call ?ctx ?headers ?body ?chunked meth uri in
             Otel.Trace.add_attrs scope (fun () ->
                 let code = Response.status res in
                 let code = Code.code_of_status code in
                 [ ("http.status_code", `Int code) ]) ;
             Lwt.return (res, body))
-    end
+
+      let head ?ctx ?headers uri =
+        let open Lwt.Infix in
+        call ?ctx ?headers `HEAD uri >|= fst
+
+      let get ?ctx ?headers uri = call ?ctx ?headers `GET uri
+
+      let delete ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `DELETE uri
+
+      let post ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `POST uri
+
+      let put ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `PUT uri
+
+      let patch ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `PATCH uri    end
   in
   (module Traced : Cohttp_lwt.S.Client)
