@@ -612,7 +612,7 @@ module Trace_context = struct
         let buf = Bytes.create len in
         let* str =
           match Bytes.blit_string str offset buf 0 len with
-          | () -> Ok (Bytes.to_string buf)
+          | () -> Ok (Bytes.unsafe_to_string buf)
           | exception Invalid_argument _ -> Error or_
         in
         Ok (str, offset + len)
