@@ -470,8 +470,9 @@ module Trace = struct
     let span_id = Span_id.create() in
     let scope = {trace_id;span_id;events=[]; attrs} in
 
-    let finally ok =
-      let status = match ok with
+    (* called once we're done, to emit a span *)
+    let finally res =
+      let status = match res with
         | Ok () -> default_status ~code:Status_code_ok ()
         | Error e -> default_status ~code:Status_code_error ~message:e () in
       let span, _ =
