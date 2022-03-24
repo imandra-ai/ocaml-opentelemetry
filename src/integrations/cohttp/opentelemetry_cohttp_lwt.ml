@@ -145,3 +145,50 @@ end = struct
         let req = set_trace_context scope req in
         f req)
 end
+
+let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client)  =
+  let module Traced : Cohttp_lwt.S.Client = struct
+      include C
+      open Lwt.Syntax
+
+      let attrs_for ~uri ~meth () =
+        [ ("http.method", `String (Code.string_of_method `GET))
+        ; ("http.url", `String (Uri.to_string uri))
+        ]
+
+      let context_for ~uri ~meth =
+        let trace_id = match scope with | Some scope -> Some scope.trace_id | None -> None in
+        let parent = match scope with | Some scope -> Some scope.span_id | None -> None in
+        let attrs = attrs_for ~uri ~meth () in
+        (trace_id, parent, attrs)
+
+      let add_traceparent headers =
+          match scope with
+          | None -> headers
+          | Some scope ->
+             let module Traceparent = Otel.Trace_context.Traceparent in
+             let headers = match headers with | None -> Header.init () | Some headers -> headers in
+             let headers =
+               Header.add headers Traceparent.name
+                 (Traceparent.to_value ~trace_id:scope.trace_id ~parent_id:scope.span_id ())
+             in
+             Some headers
+
+      let get ?ctx ?headers (uri : Uri.t) : (Response.t * Cohttp_lwt.Body.t) Lwt.t =
+        let (trace_id, parent, attrs) = context_for ~uri ~meth:`GET in
+        Otel_lwt.Trace.with_ "request"
+          ~kind:Span_kind_client
+          ?trace_id
+          ?parent
+          ~attrs
+          (fun scope ->
+            let headers = add_traceparent headers in
+            let* (res, body) = C.get ?ctx ?headers uri in
+            Otel.Trace.add_attrs scope (fun () ->
+                let code = Response.status res in
+                let code = Code.code_of_status code in
+                [ ("http.status_code", `Int code) ]) ;
+            Lwt.return (res, body))
+    end
+  in
+  (module Traced : Cohttp_lwt.S.Client)
