@@ -426,6 +426,7 @@ module Trace = struct
     trace_id: Trace_id.t;
     span_id: Span_id.t;
     mutable events: Event.t list;
+    mutable attrs: Span.key_value list
   }
 
   (** Add an event to the scope. It will be aggregated into the span.
@@ -437,15 +438,24 @@ module Trace = struct
       scope.events <- ev() :: scope.events
     )
 
+  (** Add an attr to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces attributes, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_attrs (scope:scope) (attrs:unit -> Span.key_value list) : unit =
+    if Collector.has_backend() then (
+      scope.attrs <- List.rev_append (attrs ()) scope.attrs
+    )
+
   (** Sync span guard *)
   let with_
-      ?trace_state ?service_name ?attrs
+      ?trace_state ?service_name ?(attrs = [])
       ?kind ?(trace_id=Trace_id.create()) ?parent ?links
       name (f: scope -> 'a) : 'a =
 
     let start_time = Timestamp_ns.now_unix_ns() in
     let span_id = Span_id.create() in
-    let scope = {trace_id;span_id;events=[]} in
+    let scope = {trace_id;span_id;events=[]; attrs} in
 
     let finally ok =
       let status = match ok with
@@ -456,7 +466,7 @@ module Trace = struct
            (question also applies to Opentelemetry_lwt.Trace.with) *)
         Span.create
           ?kind ~trace_id ?parent ?links ~id:span_id
-          ?trace_state ?attrs ~events:scope.events
+          ?trace_state ~attrs:scope.attrs ~events:scope.events
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
           ~status
           name in

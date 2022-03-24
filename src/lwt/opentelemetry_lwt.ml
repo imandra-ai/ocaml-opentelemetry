@@ -22,12 +22,12 @@ module Trace = struct
 
   (** Sync span guard *)
   let with_
-      ?trace_state ?service_name ?attrs
+      ?trace_state ?service_name ?(attrs=[])
       ?kind ?(trace_id=Trace_id.create()) ?parent ?links
       name (f:Trace.scope -> 'a Lwt.t) : 'a Lwt.t =
     let start_time = Timestamp_ns.now_unix_ns() in
     let span_id = Span_id.create() in
-    let scope = {trace_id;span_id;events=[]} in
+    let scope = {trace_id;span_id;events=[];attrs} in
     let finally ok =
       let status = match ok with
         | Ok () -> default_status ~code:Status_code_ok ()
@@ -35,7 +35,7 @@ module Trace = struct
       let span, _ =
         Span.create
           ?kind ~trace_id ?parent ?links ~id:span_id
-          ?trace_state ?attrs ~events:scope.events
+          ?trace_state ~attrs:scope.attrs ~events:scope.events
           ~start_time ~end_time:(Timestamp_ns.now_unix_ns())
           ~status
           name in
