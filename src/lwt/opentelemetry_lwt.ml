@@ -46,12 +46,4 @@ end
 module Metrics = struct
   open Proto.Metrics
   include Metrics
-
-  (** Emit some metrics to the collector. *)
-  let emit ?attrs (l:t list) : unit Lwt.t =
-    let fut, wake = Lwt.wait() in
-    let rm = make_resource_metrics ?attrs l in
-    Collector.send_metrics [rm]
-      ~over:(fun () -> Lwt.wakeup_later wake ())
-      ~ret:(fun () -> fut)
 end

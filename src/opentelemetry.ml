@@ -72,9 +72,18 @@ module Collector = struct
 
   (** Sender interface for a message of type [msg].
       Inspired from Logs' reporter
-      (see {{:https://erratique.ch/software/logs/doc/Logs/index.html#sync} its doc}) *)
+      (see {{:https://erratique.ch/software/logs/doc/Logs/index.html#sync} its doc})
+      but without [over] as it doesn't make much sense in presence
+      of batching.
+
+      The [ret] callback is used to return the desired type (unit, or
+      a Lwt promise, or anything else) once the event has been transferred
+      to the backend.
+      It doesn't mean the event has been collected yet, it
+      could sit in a batch queue for a little while.
+  *)
   type 'msg sender = {
-    send: 'a. 'msg -> over:(unit -> unit) -> ret:(unit -> 'a) -> 'a;
+    send: 'a. 'msg -> ret:(unit -> 'a) -> 'a;
   }
 
   (** Collector client interface. *)
@@ -89,6 +98,10 @@ module Collector = struct
     val rand_bytes_8 : unit -> bytes
     (** Generate 16 bytes of random data *)
 
+    val tick : unit -> unit
+    (** Should be called regularly for background processing,
+        timeout checks, etc. *)
+
     val cleanup : unit -> unit
   end
 
@@ -99,15 +112,15 @@ module Collector = struct
   (** Is there a configured backend? *)
   let[@inline] has_backend () : bool = !backend != None
 
-  let send_trace (l:Trace.resource_spans list) ~over ~ret =
+  let send_trace (l:Trace.resource_spans list) ~ret =
     match !backend with
-    | None -> over(); ret()
-    | Some (module B) -> B.send_trace.send l ~over ~ret
+    | None -> ret()
+    | Some (module B) -> B.send_trace.send l ~ret
 
-  let send_metrics (l:Metrics.resource_metrics list) ~over ~ret =
+  let send_metrics (l:Metrics.resource_metrics list) ~ret =
     match !backend with
-    | None -> over(); ret()
-    | Some (module B) -> B.send_metrics.send l ~over ~ret
+    | None -> ret()
+    | Some (module B) -> B.send_metrics.send l ~ret
 
   let rand_bytes_16 () =
     match !backend with
@@ -419,7 +432,7 @@ module Trace = struct
   (** Sync emitter *)
   let emit ?service_name ?attrs (spans:span list) : unit =
     let rs = make_resource_spans ?service_name ?attrs spans in
-    Collector.send_trace [rs] ~over:(fun () -> ()) ~ret:(fun () -> ())
+    Collector.send_trace [rs] ~ret:(fun () -> ())
 
   (** Scope to be used with {!with_}. *)
   type scope = {
@@ -559,8 +572,10 @@ module Metrics = struct
     default_resource_metrics
       ~instrumentation_library_metrics:[lm] ~resource:(Some resource) ()
 
-  (** Emit some metrics to the collector (sync). *)
+  (** Emit some metrics to the collector (sync). This blocks until
+      the backend has pushed the metrics into some internal queue, or
+      discarded them. *)
   let emit ?attrs (l:t list) : unit =
     let rm = make_resource_metrics ?attrs l in
-    Collector.send_metrics [rm] ~over:ignore ~ret:ignore
+    Collector.send_metrics [rm] ~ret:ignore
 end

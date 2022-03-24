@@ -229,17 +229,15 @@ module Gen_ids() = struct
     b
 end
 
-(** Callback for when an event is properly sent to the collector *)
-type over_cb = unit -> unit
-
 (** An emitter. This is used by {!Backend} below to forward traces/metrics/…
     from the program to whatever collector client we have. *)
 module type EMITTER = sig
   open Opentelemetry.Proto
 
-  val push_trace : Trace.resource_spans list -> over:over_cb -> unit
-  val push_metrics : Metrics.resource_metrics list -> over:over_cb -> unit
+  val push_trace : Trace.resource_spans list -> unit
+  val push_metrics : Metrics.resource_metrics list -> unit
 
+  val tick : unit -> unit
   val cleanup : unit -> unit
 end
 
@@ -294,19 +292,19 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
 
   let continue = ref true in
 
-  let ((module E_trace) : (Trace.resource_spans list * over_cb) push), on_trace_full =
+  let ((module E_trace) : Trace.resource_spans list push), on_trace_full =
     mk_push ?batch:config.batch_traces () in
-  let ((module E_metrics) : (Metrics.resource_metrics list * over_cb) push), on_metrics_full =
+  let ((module E_metrics) : Metrics.resource_metrics list push), on_metrics_full =
     mk_push ?batch:config.batch_metrics () in
 
   let encoder = Pbrt.Encoder.create() in
 
   let ((module C) as curl) = (module Curl() : CURL) in
 
-  let emit_metrics (l:(Metrics.resource_metrics list*over_cb) list) =
+  let emit_metrics (l:Metrics.resource_metrics list list) =
     Pbrt.Encoder.reset encoder;
     let resource_metrics =
-      List.fold_left (fun acc (l,_) -> List.rev_append l acc) [] l in
+      List.fold_left (fun acc l -> List.rev_append l acc) [] l in
     Metrics_service.encode_export_metrics_service_request
       (Metrics_service.default_export_metrics_service_request
          ~resource_metrics ())
@@ -321,14 +319,12 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
         Atomic.incr n_errors;
         report_err_ err
     end;
-    (* signal completion *)
-    List.iter (fun (_,over) -> over()) l;
   in
 
-  let emit_traces (l:(Trace.resource_spans list * over_cb) list) =
+  let emit_traces (l:Trace.resource_spans list list) =
     Pbrt.Encoder.reset encoder;
     let resource_spans =
-      List.fold_left (fun acc (l,_) -> List.rev_append l acc) [] l in
+      List.fold_left (fun acc l -> List.rev_append l acc) [] l in
     Trace_service.encode_export_trace_service_request
       (Trace_service.default_export_trace_service_request ~resource_spans ())
       encoder;
@@ -342,8 +338,6 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
         Atomic.incr n_errors;
         report_err_ err
     end;
-    (* signal completion *)
-    List.iter (fun (_,over) -> over()) l;
   in
 
   let last_wakeup = Atomic.make (Mtime_clock.now()) in
@@ -431,13 +425,18 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     on_metrics_full wakeup;
     on_trace_full wakeup;
 
+    let tick() =
+      if batch_timeout() then wakeup()
+    in
+
     let module M = struct
-      let push_trace e ~over =
-        E_trace.push (e,over);
+      let push_trace e =
+        E_trace.push e;
         if batch_timeout() then wakeup()
-      let push_metrics e ~over =
-        E_metrics.push (e,over);
+      let push_metrics e =
+        E_metrics.push e;
         if batch_timeout() then wakeup()
+      let tick=tick
       let cleanup () =
         continue := false;
         with_mutex_ m (fun () -> Condition.broadcast cond)
@@ -456,14 +455,17 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     in
 
     let module M = struct
-      let push_trace e ~over =
+      let push_trace e =
         let@() = guard in
-        E_trace.push (e,over);
+        E_trace.push e;
         if batch_timeout() then emit_all_force()
 
-      let push_metrics e ~over =
+      let push_metrics e =
         let@() = guard in
-        E_metrics.push (e,over);
+        E_metrics.push e;
+        if batch_timeout() then emit_all_force()
+
+      let tick () =
         if batch_timeout() then emit_all_force()
 
       let cleanup = cleanup
@@ -482,10 +484,10 @@ module Backend(Arg : sig val config : Config.t end)()
   open Opentelemetry.Collector
 
   let send_trace : Trace.resource_spans list sender = {
-    send=fun l ~over ~ret ->
+    send=fun l ~ret ->
       let@() = with_lock_ in
       if !debug_ then Format.eprintf "send spans %a@." (Format.pp_print_list Trace.pp_resource_spans) l;
-      push_trace l ~over;
+      push_trace l;
       ret()
   }
 
@@ -517,12 +519,12 @@ module Backend(Arg : sig val config : Config.t end)()
       ) else []
 
   let send_metrics : Metrics.resource_metrics list sender = {
-    send=fun m ~over ~ret ->
+    send=fun m ~ret ->
       let@() = with_lock_ in
       if !debug_ then Format.eprintf "send metrics %a@." (Format.pp_print_list Metrics.pp_resource_metrics) m;
 
       let m = List.rev_append (additional_metrics()) m in
-      push_metrics m ~over;
+      push_metrics m;
       ret()
   }
 end
