@@ -46,6 +46,12 @@ module Config : sig
 
     thread: bool;
     (** Is there a background thread? Default [true] *)
+
+    ticker_thread: bool;
+    (** Is there a ticker thread? Default [true].
+        This thread will regularly call [tick()] on the backend, to make
+        sure it makes progress, and regularly send events to the collector.
+        This option is ignored if [thread=false]. *)
   }
 
   val make :
@@ -54,6 +60,7 @@ module Config : sig
     ?batch_metrics:int option ->
     ?batch_timeout_ms:int ->
     ?thread:bool ->
+    ?ticker_thread:bool ->
     unit -> t
   (** Make a configuration *)
 
