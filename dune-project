@@ -45,3 +45,14 @@
    (odoc :with-doc)
    ocurl)
   (synopsis "Collector client for opentelemetry, using http + ocurl"))
+
+(package
+ (name opentelemetry-cohttp-lwt)
+ (depends
+  (ocaml (>= "4.08"))
+  (dune (>= "2.3"))
+  (opentelemetry (= :version))
+  (opentelemetry-lwt (= :version))
+  (odoc :with-doc)
+  cohttp-lwt)
+ (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
