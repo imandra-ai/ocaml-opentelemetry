@@ -15,8 +15,20 @@ module Trace = struct
   (** Sync span guard *)
   let with_
       ?trace_state ?service_name ?(attrs=[])
-      ?kind ?(trace_id=Trace_id.create()) ?parent ?links
+      ?kind ?trace_id ?parent ?scope ?links
       name (f:Trace.scope -> 'a Lwt.t) : 'a Lwt.t =
+    let trace_id =
+      match trace_id, scope with
+      | Some trace_id, _ -> trace_id
+      | None, Some scope -> scope.trace_id
+      | None, None -> Trace_id.create ()
+    in
+    let parent =
+      match parent, scope with
+      | Some span_id, _ -> Some span_id
+      | None, Some scope -> Some scope.span_id
+      | None, None -> None
+    in
     let start_time = Timestamp_ns.now_unix_ns() in
     let span_id = Span_id.create() in
     let scope = {trace_id;span_id;events=[];attrs} in
