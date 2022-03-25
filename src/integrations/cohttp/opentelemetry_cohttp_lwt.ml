@@ -24,7 +24,7 @@ module Server : sig
     (Otel.Trace.scope -> 'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
     'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t
 end = struct
-  let span_attrs (req : Request.t) =
+  let attrs_of_request (req : Request.t) =
     let meth = req |> Request.meth |> Code.string_of_method in
     let referer = Header.get (Request.headers req) "referer" in
     let host = Header.get (Request.headers req) "host" in
@@ -46,6 +46,11 @@ end = struct
              [ ("http.request.header.referer", `String r) ] )
       ]
 
+  let attrs_of_response (res : Response.t) =
+    let code = Response.status res in
+    let code = Code.code_of_status code in
+    [ ("http.status_code", `Int code) ]
+
   let trace_context_of_req req =
     let module Traceparent = Otel.Trace_context.Traceparent in
     match Header.get (Request.headers req) Traceparent.name with
@@ -63,14 +68,11 @@ end = struct
       ~service_name
       "request"
       ~kind:Span_kind_server
-      ~attrs:(attrs @ span_attrs req)
+      ~attrs:(attrs @ attrs_of_request req)
       ?parent:parent_id
       ?trace_id
       (fun scope ->
         let* (res, body) = callback scope conn req body in
-        Otel.Trace.add_attrs scope (fun () ->
-            let code = Response.status res in
-            let code = Code.code_of_status code in
-            [ ("http.status_code", `Int code) ]) ;
+        Otel.Trace.add_attrs scope (fun () -> attrs_of_response res) ;
         Lwt.return (res, body) )
 end
