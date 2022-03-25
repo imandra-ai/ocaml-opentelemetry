@@ -19,7 +19,7 @@ module Server : sig
               (Server.make () ~callback:callback_traced)
    *)
   val trace :
-    service_name:string ->
+    ?service_name:string ->
     ?attrs:Otel.Span.key_value list ->
     ('conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
     'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t
@@ -112,11 +112,11 @@ end = struct
     let headers = Header.remove (Request.headers req) header_x_ocaml_otel_traceparent in
     { req with headers }
 
-  let trace ~service_name ?(attrs=[]) callback =
+  let trace ?service_name ?(attrs=[]) callback =
     fun conn req body ->
     let scope = get_trace_context ~from:`External req in
     Otel_lwt.Trace.with_
-      ~service_name
+      ?service_name
       "request"
       ~kind:Span_kind_server
       ?trace_id:(Option.map (fun scope -> scope.Otel.Trace.trace_id) scope)
@@ -145,3 +145,83 @@ end = struct
         let req = set_trace_context scope req in
         f req)
 end
+
+let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client)  =
+  let module Traced = struct
+      open Lwt.Syntax
+
+      let attrs_for ~uri ~meth () =
+        [ ("http.method", `String (Code.string_of_method `GET))
+        ; ("http.url", `String (Uri.to_string uri))
+        ]
+
+      let context_for ~uri ~meth =
+        let trace_id = match scope with | Some scope -> Some scope.trace_id | None -> None in
+        let parent = match scope with | Some scope -> Some scope.span_id | None -> None in
+        let attrs = attrs_for ~uri ~meth () in
+        (trace_id, parent, attrs)
+
+      let add_traceparent (scope : Otel.Trace.scope) headers =
+        let module Traceparent = Otel.Trace_context.Traceparent in
+        let headers = match headers with | None -> Header.init () | Some headers -> headers in
+        Header.add headers Traceparent.name
+          (Traceparent.to_value ~trace_id:scope.trace_id ~parent_id:scope.span_id ())
+
+      type ctx = C.ctx
+
+      let call ?ctx ?headers ?body ?chunked meth (uri : Uri.t) : (Response.t * Cohttp_lwt.Body.t) Lwt.t =
+        let (trace_id, parent, attrs) = context_for ~uri ~meth in
+        Otel_lwt.Trace.with_ "request"
+          ~kind:Span_kind_client
+          ?trace_id
+          ?parent
+          ~attrs
+          (fun scope ->
+            let headers = add_traceparent scope headers in
+            let* (res, body) = C.call ?ctx ~headers ?body ?chunked meth uri in
+            Otel.Trace.add_attrs scope (fun () ->
+                let code = Response.status res in
+                let code = Code.code_of_status code in
+                [ ("http.status_code", `Int code) ]) ;
+            Lwt.return (res, body))
+
+      let head ?ctx ?headers uri =
+        let open Lwt.Infix in
+        call ?ctx ?headers `HEAD uri >|= fst
+
+      let get ?ctx ?headers uri = call ?ctx ?headers `GET uri
+
+      let delete ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `DELETE uri
+
+      let post ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `POST uri
+
+      let put ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `PUT uri
+
+      let patch ?ctx ?body ?chunked ?headers uri =
+        call ?ctx ?headers ?body ?chunked `PATCH uri
+
+      let post_form ?ctx ?headers ~params uri =
+        let (trace_id, parent, attrs) = context_for ~uri ~meth:`POST in
+        Otel_lwt.Trace.with_ "request"
+          ~kind:Span_kind_client
+          ?trace_id
+          ?parent
+          ~attrs
+          (fun scope ->
+            let headers = add_traceparent scope headers in
+            let* (res, body) =
+              C.post_form ?ctx ~headers ~params uri
+            in
+            Otel.Trace.add_attrs scope (fun () ->
+                let code = Response.status res in
+                let code = Code.code_of_status code in
+                [ ("http.status_code", `Int code) ]) ;
+            Lwt.return (res, body))
+
+      let callv = C.callv (* TODO *)
+    end
+  in
+  (module Traced : Cohttp_lwt.S.Client)
