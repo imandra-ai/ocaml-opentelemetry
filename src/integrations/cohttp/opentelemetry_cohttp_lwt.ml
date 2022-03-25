@@ -21,8 +21,40 @@ module Server : sig
   val trace :
     service_name:string ->
     ?attrs:Otel.Span.key_value list ->
-    (Otel.Trace.scope -> 'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
+    ('conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t) ->
     'conn -> Request.t -> 'body -> (Response.t * 'body) Lwt.t
+
+  (** Trace a new internal span.
+
+      Identical to [Opentelemetry_lwt.Trace.with_], but fetches/stores the trace
+      scope in the [x-ocaml-otel-traceparent] header in the request for
+      convenience.
+   *)
+  val with_:
+    ?trace_state:string ->
+    ?service_name:string ->
+    ?attrs:Otel.Span.key_value list ->
+    ?kind:Otel.Span.kind ->
+    ?links:(Otel.Trace_id.t * Otel.Span_id.t * string) list ->
+    string ->
+    Request.t ->
+    (Request.t -> 'a Lwt.t) ->
+    'a Lwt.t
+
+  (** Get the tracing scope from the custom [x-ocaml-otel-traceparent] header
+      added by [trace] and [with_].
+   *)
+  val get_trace_context : ?from:[`Internal | `External] -> Request.t -> Otel.Trace.scope option
+
+  (** Set the tracing scope in the custom [x-ocaml-otel-traceparent] header used
+      by [trace] and [with_].
+   *)
+  val set_trace_context : Otel.Trace.scope -> Request.t -> Request.t
+
+  (** Strip the custom [x-ocaml-otel-traceparent] header added by [trace] and
+      [with_].
+   *)
+  val remove_trace_context : Request.t -> Request.t
 end = struct
   let attrs_of_request (req : Request.t) =
     let meth = req |> Request.meth |> Code.string_of_method in
@@ -51,28 +83,65 @@ end = struct
     let code = Code.code_of_status code in
     [ ("http.status_code", `Int code) ]
 
-  let trace_context_of_req req =
+  let header_x_ocaml_otel_traceparent = "x-ocaml-otel-traceparent"
+
+  let set_trace_context (scope : Otel.Trace.scope) req =
     let module Traceparent = Otel.Trace_context.Traceparent in
-    match Header.get (Request.headers req) Traceparent.name with
-    | None -> None, None
+    let headers =
+      Header.add (Request.headers req) header_x_ocaml_otel_traceparent
+        (Traceparent.to_value ~trace_id:scope.trace_id ~parent_id:scope.span_id ())
+    in
+    { req with headers }
+
+  let get_trace_context ?(from=`Internal) req =
+    let module Traceparent = Otel.Trace_context.Traceparent in
+    let name =
+      match from with
+      | `Internal -> header_x_ocaml_otel_traceparent
+      | `External -> Traceparent.name
+    in
+    match Header.get (Request.headers req) name with
+    | None -> None
     | Some v ->
        (match Traceparent.of_value v with
-        | Ok (trace_id, parent_id) -> (Some trace_id, Some parent_id)
-        | Error _ -> None, None)
+        | Ok (trace_id, parent_id) ->
+           (Some Otel.Trace.{ trace_id; span_id = parent_id; events = []; attrs = []})
+        | Error _ -> None)
+
+  let remove_trace_context req =
+    let headers = Header.remove (Request.headers req) header_x_ocaml_otel_traceparent in
+    { req with headers }
 
   let trace ~service_name ?(attrs=[]) callback =
     fun conn req body ->
-    let trace_id, parent_id = trace_context_of_req req in
-    let open Lwt.Syntax in
+    let scope = get_trace_context ~from:`External req in
     Otel_lwt.Trace.with_
       ~service_name
       "request"
       ~kind:Span_kind_server
+      ?trace_id:(Option.map (fun scope -> scope.Otel.Trace.trace_id) scope)
+      ?parent:(Option.map (fun scope -> scope.Otel.Trace.span_id) scope)
       ~attrs:(attrs @ attrs_of_request req)
-      ?parent:parent_id
-      ?trace_id
       (fun scope ->
-        let* (res, body) = callback scope conn req body in
+        let open Lwt.Syntax in
+        let req = set_trace_context scope req in
+        let* (res, body) = callback conn req body in
         Otel.Trace.add_attrs scope (fun () -> attrs_of_response res) ;
         Lwt.return (res, body) )
+
+  let with_ ?trace_state ?service_name ?attrs ?(kind=Otel.Span.Span_kind_internal) ?links name req (f : Request.t -> 'a Lwt.t) =
+    let scope = get_trace_context ~from:`Internal req in
+    Otel_lwt.Trace.with_
+      ?trace_state
+      ?service_name
+      ?attrs
+      ~kind
+      ?trace_id:(Option.map (fun scope -> scope.Otel.Trace.trace_id) scope)
+      ?parent:(Option.map (fun scope -> scope.Otel.Trace.span_id) scope)
+      ?links
+      name
+      (fun scope ->
+        let open Lwt.Syntax in
+        let req = set_trace_context scope req in
+        f req)
 end
