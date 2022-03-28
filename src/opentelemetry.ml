@@ -227,27 +227,23 @@ module Globals = struct
       |> List.map parse_pair
     with _ -> []
 
+  let get_global_attr_ key =
+    global_attributes
+    |> List.find_map (fun kv ->
+           if kv.key = key then
+             match kv.value with Some (String_value v) -> Some v | _ -> None
+           else None)
+
+
   (** Main service name metadata *)
   let service_name =
-    let n =
-      global_attributes
-      |> List.find_map (fun kv ->
-             if kv.key = Conventions.Attributes.Service.name then
-               match kv.value with Some (String_value v) -> Some v | _ -> None
-             else None)
-    in
+    let n = get_global_attr_ Conventions.Attributes.Service.name in
     let n = match n with Some v -> v | None -> "unknown_service" in
     ref n
 
   (** Namespace for the service *)
   let service_namespace =
-    let n =
-      global_attributes
-      |> List.find_map (fun kv ->
-             if kv.key = Conventions.Attributes.Service.namespace then
-               match kv.value with Some (String_value v) -> Some v | _ -> None
-             else None)
-    in
+    let n = get_global_attr_ Conventions.Attributes.Service.namespace in
     ref n
 
   let instrumentation_library =
