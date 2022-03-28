@@ -228,12 +228,12 @@ module Globals = struct
     with _ -> []
 
   let get_global_attr_ key =
-    global_attributes
-    |> List.find_map (fun kv ->
-           if kv.key = key then
-             match kv.value with Some (String_value v) -> Some v | _ -> None
-           else None)
-
+    let attr =
+      global_attributes |> List.find_opt (fun kv -> kv.key = key)
+    in
+    match attr with
+    | Some kv -> (match kv.value with Some (String_value v) -> Some v | _ -> None)
+    | _ ->  None
 
   (** Main service name metadata *)
   let service_name =
