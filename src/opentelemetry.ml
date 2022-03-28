@@ -234,7 +234,8 @@ module Globals = struct
     List.rev_append (List.filter not_redundant global_attributes) into
 end
 
-type key_value = string * [`Int of int | `String of string | `Bool of bool | `None]
+type value = [`Int of int | `String of string | `Bool of bool | `None]
+type key_value = string * value
 
 (**/**)
 let _conv_value =
@@ -462,7 +463,7 @@ module Trace = struct
 
   (** Sync span guard *)
   let with_
-      ?trace_state ?service_name ?(attrs = [])
+      ?trace_state ?service_name ?(attrs: (string*[<value]) list = [])
       ?kind ?trace_id ?parent ?scope ?links
       name (f: scope -> 'a) : 'a =
     let trace_id =
