@@ -7,6 +7,8 @@ module Event = Event
 module Span = Span
 module Globals = Globals
 module Timestamp_ns = Timestamp_ns
+module GC_metrics = GC_metrics
+module Trace_context = Trace_context
 
 module Trace = struct
   open Proto.Trace

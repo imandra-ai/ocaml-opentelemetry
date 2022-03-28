@@ -592,6 +592,7 @@ module Metrics = struct
     Collector.send_metrics [rm] ~ret:ignore
 end
 
+(** {2 Utils} *)
 
 (** Implementation of the W3C Trace Context spec
 
@@ -662,4 +663,44 @@ module Trace_context = struct
         (Span_id.to_hex parent_id)
 
   end
+end
+
+(** Export GC metrics.
+
+    These metrics are emitted after each GC collection. *)
+module GC_metrics  = struct
+  (** Basic setup: a few stats *)
+  let basic_setup () : unit =
+    let last = ref (Timestamp_ns.now_unix_ns()) in
+    let emit() =
+      let gc = Gc.quick_stat () in
+      let start_time_unix_nano = !last in
+      last := Timestamp_ns.now_unix_ns();
+      Metrics.(
+        emit
+          [
+            gauge ~name:"ocaml.gc.major_heap_words" ~unit_:"words"
+              [ int gc.Gc.heap_words ];
+            sum ~name:"ocaml.gc_minor_allocated"
+              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+              ~is_monotonic:true
+              ~unit_:"words"
+              [ float ~start_time_unix_nano gc.Gc.minor_words ];
+            sum ~name:"ocaml.gc.minor-collections"
+              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+              ~is_monotonic:true
+              [ int ~start_time_unix_nano gc.Gc.minor_collections ];
+            sum ~name:"ocaml.gc.major-collections"
+              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+              ~is_monotonic:true
+              [ int ~start_time_unix_nano gc.Gc.major_collections ];
+            sum ~name:"ocaml.gc.compactions"
+              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+              ~is_monotonic:true
+              [ int ~start_time_unix_nano gc.Gc.compactions ];
+          ])
+    in
+    ignore (Gc.create_alarm emit : Gc.alarm);
+    ()
+
 end
