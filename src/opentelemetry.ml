@@ -203,19 +203,18 @@ end = struct
   let of_hex s = of_bytes (Util_.bytes_of_hex s)
 end
 
+module Conventions = struct
+  module Attributes = struct
+    module Service = struct
+      let name = "service.name"
+      let namespace = "service.namespace"
+    end
+  end
+end
+
 (** Process-wide metadata, environment variables, etc. *)
 module Globals = struct
   open Proto.Common
-
-  let service_name = ref "unknown_service"
-  (** Main service name metadata *)
-
-  let service_namespace = ref None
-  (** Namespace for the service *)
-
-  let instrumentation_library =
-    default_instrumentation_library
-      ~name:"ocaml-opentelemetry" () (* TODO: version, perhaps with dune subst? *)
 
   (** Global attributes, set via OTEL_RESOURCE_ATTRIBUTES *)
   let global_attributes : key_value list =
@@ -227,6 +226,33 @@ module Globals = struct
       Sys.getenv "OTEL_RESOURCE_ATTRIBUTES" |> String.split_on_char ','
       |> List.map parse_pair
     with _ -> []
+
+  (** Main service name metadata *)
+  let service_name =
+    let n =
+      global_attributes
+      |> List.find_map (fun kv ->
+             if kv.key = Conventions.Attributes.Service.name then
+               match kv.value with Some (String_value v) -> Some v | _ -> None
+             else None)
+    in
+    let n = match n with Some v -> v | None -> "unknown_service" in
+    ref n
+
+  (** Namespace for the service *)
+  let service_namespace =
+    let n =
+      global_attributes
+      |> List.find_map (fun kv ->
+             if kv.key = Conventions.Attributes.Service.namespace then
+               match kv.value with Some (String_value v) -> Some v | _ -> None
+             else None)
+    in
+    ref n
+
+  let instrumentation_library =
+    default_instrumentation_library
+      ~name:"ocaml-opentelemetry" () (* TODO: version, perhaps with dune subst? *)
 
   (* add global attributes to this list *)
   let merge_global_attributes_ into : _ list =
@@ -414,13 +440,13 @@ module Trace = struct
       let open Proto.Common in
       let l = List.map _conv_key_value attrs in
       let l =
-        default_key_value ~key:"service.name"
+        default_key_value ~key:Conventions.Attributes.Service.name
           ~value:(Some (String_value service_name)) () :: l
       in
       let l = match !Globals.service_namespace with
         | None -> l
         | Some v ->
-           default_key_value ~key:"service.namespace"
+           default_key_value ~key:Conventions.Attributes.Service.namespace
              ~value:(Some (String_value v)) () :: l
       in
       l |> Globals.merge_global_attributes_
