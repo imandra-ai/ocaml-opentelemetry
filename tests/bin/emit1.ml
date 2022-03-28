@@ -29,8 +29,7 @@ let run () =
 
     for j=0 to 4 do
 
-      let@ scope = T.Trace.with_ ~kind:T.Span.Span_kind_internal
-          ~trace_id:scope.trace_id ~parent:scope.span_id
+      let@ scope = T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope
           ~attrs:["j", `Int j]
           "loop.inner" in
       Unix.sleepf !sleep_outer;
@@ -39,8 +38,7 @@ let run () =
 
       (try
         let@ _ =
-          T.Trace.with_ ~kind:T.Span.Span_kind_internal
-            ~trace_id:scope.trace_id ~parent:scope.span_id
+          T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope
             "alloc" in
         (* allocate some stuff *)
         let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
