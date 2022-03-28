@@ -208,6 +208,38 @@ end = struct
   let of_hex s = of_bytes (Util_.bytes_of_hex s)
 end
 
+module Conventions = struct
+  module Attributes = struct
+    module Process = struct
+      module Runtime = struct
+        let name = "process.runtime.name"
+        let version = "process.runtime.version"
+        let description = "process.runtime.description"
+      end
+    end
+    module Service = struct
+      let name = "service.name"
+      let namespace = "service.namespace"
+    end
+  end
+
+  module Metrics = struct
+    module Process = struct
+      module Runtime = struct
+        module Ocaml = struct
+          module GC = struct
+            let compactions = "process.runtime.ocaml.gc.compactions"
+            let major_collections = "process.runtime.ocaml.gc.major_collections"
+            let major_heap = "process.runtime.ocaml.gc.major_heap"
+            let minor_allocated = "process.runtime.ocaml.gc.minor_allocated"
+            let minor_collections = "process.runtime.ocaml.gc.minor_collections"
+          end
+        end
+      end
+    end
+  end
+end
+
 (** Process-wide metadata, environment variables, etc. *)
 module Globals = struct
   open Proto.Common
@@ -418,15 +450,16 @@ module Trace = struct
         ~spans () in
     let attributes =
       let open Proto.Common in
+      let open Conventions.Attributes in
       let l = List.map _conv_key_value attrs in
       let l =
-        default_key_value ~key:"service.name"
+        default_key_value ~key:Service.name
           ~value:(Some (String_value service_name)) () :: l
       in
       let l = match !Globals.service_namespace with
         | None -> l
         | Some v ->
-           default_key_value ~key:"service.namespace"
+           default_key_value ~key:Service.namespace
              ~value:(Some (String_value v)) () :: l
       in
       l |> Globals.merge_global_attributes_
@@ -681,6 +714,14 @@ module GC_metrics : sig
   val get_metrics : unit -> Metrics.t list
   (** Get a few metrics from the current state of the GC *)
 end = struct
+  (** See https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/process.md#process-runtimes *)
+  let runtime_attributes : Proto.Common.key_value list =
+    Conventions.Attributes.[
+        (Process.Runtime.name, "ocaml");
+        (Process.Runtime.version, Sys.ocaml_version);
+    ]
+    |> List.map (fun (key, value) ->
+           Proto.Common.default_key_value ~key ~value:(Some (String_value value)) ())
 
   let basic_setup () =
     let trigger() =
@@ -701,26 +742,27 @@ end = struct
     let gc = Gc.quick_stat () in
     let start_time_unix_nano = !last in
     last := Timestamp_ns.now_unix_ns();
-    Metrics.(
-      [
-        gauge ~name:"ocaml.gc.major_heap" ~unit_:"B"
-          [ int (word_to_bytes gc.Gc.heap_words) ];
-        sum ~name:"ocaml.gc_minor_allocated"
-          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-          ~is_monotonic:true
-          ~unit_:"B"
-          [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
-        sum ~name:"ocaml.gc.minor_collections"
-          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-          ~is_monotonic:true
-          [ int ~start_time_unix_nano gc.Gc.minor_collections ];
-        sum ~name:"ocaml.gc.major_collections"
-          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-          ~is_monotonic:true
-          [ int ~start_time_unix_nano gc.Gc.major_collections ];
-        sum ~name:"ocaml.gc.compactions"
-          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-          ~is_monotonic:true
-          [ int ~start_time_unix_nano gc.Gc.compactions ];
-      ])
+    let open Metrics in
+    let open Conventions.Metrics in
+    [
+      gauge ~name:Process.Runtime.Ocaml.GC.major_heap ~unit_:"B"
+        [ int (word_to_bytes gc.Gc.heap_words) ];
+      sum ~name:Process.Runtime.Ocaml.GC.minor_allocated
+        ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+        ~is_monotonic:true
+        ~unit_:"B"
+        [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
+      sum ~name:Process.Runtime.Ocaml.GC.minor_collections
+        ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+        ~is_monotonic:true
+        [ int ~start_time_unix_nano gc.Gc.minor_collections ];
+      sum ~name:Process.Runtime.Ocaml.GC.major_collections
+        ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+        ~is_monotonic:true
+        [ int ~start_time_unix_nano gc.Gc.major_collections ];
+      sum ~name:Process.Runtime.Ocaml.GC.compactions
+        ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+        ~is_monotonic:true
+        [ int ~start_time_unix_nano gc.Gc.compactions ];
+    ]
 end
