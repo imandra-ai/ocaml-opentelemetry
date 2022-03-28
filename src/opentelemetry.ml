@@ -669,9 +669,15 @@ end
 
     These metrics are emitted after each GC collection. *)
 module GC_metrics  = struct
+  let bytes_per_word = Sys.word_size / 8
+
   (** Basic setup: a few stats *)
   let basic_setup () : unit =
     let last = ref (Timestamp_ns.now_unix_ns()) in
+
+    let word_to_bytes n = n * bytes_per_word in
+    let word_to_bytes_f n = n *. float bytes_per_word in
+
     let emit() =
       let gc = Gc.quick_stat () in
       let start_time_unix_nano = !last in
@@ -679,13 +685,13 @@ module GC_metrics  = struct
       Metrics.(
         emit
           [
-            gauge ~name:"ocaml.gc.major_heap_words" ~unit_:"words"
-              [ int gc.Gc.heap_words ];
+            gauge ~name:"ocaml.gc.major_heap_words" ~unit_:"B"
+              [ int (word_to_bytes gc.Gc.heap_words) ];
             sum ~name:"ocaml.gc_minor_allocated"
               ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
               ~is_monotonic:true
-              ~unit_:"words"
-              [ float ~start_time_unix_nano gc.Gc.minor_words ];
+              ~unit_:"B"
+              [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
             sum ~name:"ocaml.gc.minor-collections"
               ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
               ~is_monotonic:true
