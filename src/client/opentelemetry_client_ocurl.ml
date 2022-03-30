@@ -285,6 +285,14 @@ let mk_push (type a) ?batch () : (module PUSH with type elt = a) * (on_full_cb -
   in
   push, ((:=) on_full)
 
+(* start a thread in the background, running [f()] *)
+let start_bg_thread (f: unit -> unit) : unit =
+  let run() =
+    (* block some signals: USR1 USR2 TERM PIPE ALARM STOP, see [$ kill -L] *)
+    ignore (Thread.sigmask Unix.SIG_BLOCK [10; 12; 13; 14; 15; 19] : _ list);
+    f()
+  in
+  ignore (Thread.create run () : Thread.t)
 
 (* make an emitter.
 
@@ -417,7 +425,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
         C.cleanup();
       end
     in
-    let _th_process_batches: Thread.t = Thread.create bg_thread () in
+    start_bg_thread bg_thread;
 
     let wakeup () =
       with_mutex_ m (fun () -> Condition.signal cond);
@@ -441,8 +449,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
         done
       in
 
-      let _th_ticker : Thread.t = Thread.create tick_thread () in
-      ()
+      start_bg_thread tick_thread;
     );
 
     let module M = struct
