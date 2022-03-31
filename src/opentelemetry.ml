@@ -686,18 +686,18 @@ module GC_metrics  = struct
       Metrics.(
         emit
           [
-            gauge ~name:"ocaml.gc.major_heap_words" ~unit_:"B"
+            gauge ~name:"ocaml.gc.major_heap" ~unit_:"B"
               [ int (word_to_bytes gc.Gc.heap_words) ];
             sum ~name:"ocaml.gc_minor_allocated"
               ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
               ~is_monotonic:true
               ~unit_:"B"
               [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
-            sum ~name:"ocaml.gc.minor-collections"
+            sum ~name:"ocaml.gc.minor_collections"
               ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
               ~is_monotonic:true
               [ int ~start_time_unix_nano gc.Gc.minor_collections ];
-            sum ~name:"ocaml.gc.major-collections"
+            sum ~name:"ocaml.gc.major_collections"
               ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
               ~is_monotonic:true
               [ int ~start_time_unix_nano gc.Gc.major_collections ];
