@@ -98,8 +98,10 @@ module Collector = struct
     val rand_bytes_8 : unit -> bytes
     (** Generate 16 bytes of random data *)
 
-    val enable_emit_gc_metrics : unit -> unit
-    (** Enable the emission of GC metrics. This sets up a GC alarm. *)
+    val signal_emit_gc_metrics : unit -> unit
+    (** Signal the backend that it should emit GC metrics when it has the
+        chance. This should be installed in a GC alarm or another form
+        of regular trigger. *)
 
     val tick : unit -> unit
     (** Should be called regularly for background processing,
@@ -681,9 +683,12 @@ module GC_metrics : sig
 end = struct
 
   let basic_setup () =
-    match !Collector.backend with
-    | None -> ()
-    | Some (module C) -> C.enable_emit_gc_metrics()
+    let trigger() =
+      match !Collector.backend with
+      | None -> ()
+      | Some (module C) -> C.signal_emit_gc_metrics()
+    in
+    ignore (Gc.create_alarm trigger : Gc.alarm)
 
   let bytes_per_word = Sys.word_size / 8
   let word_to_bytes n = n * bytes_per_word
@@ -705,7 +710,7 @@ end = struct
           ~is_monotonic:true
           ~unit_:"B"
           [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
-        sum ~name:"ocaml.gc.minor_collections"
+        sum ~name:"ocaml_gc_minor_collections"
           ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
           ~is_monotonic:true
           [ int ~start_time_unix_nano gc.Gc.minor_collections ];
@@ -713,7 +718,7 @@ end = struct
           ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
           ~is_monotonic:true
           [ int ~start_time_unix_nano gc.Gc.major_collections ];
-        sum ~name:"ocaml.gc.compactions"
+        sum ~name:"ocaml_gc_compactions"
           ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
           ~is_monotonic:true
           [ int ~start_time_unix_nano gc.Gc.compactions ];
