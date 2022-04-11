@@ -46,6 +46,7 @@ let gc_metrics = AList.make() (* side channel for GC, appended to {!E_metrics}'s
 
 let emit_gc_metrics () =
   let l = OT.Metrics.make_resource_metrics @@ Opentelemetry.GC_metrics.get_metrics() in
+  Atomic.set needs_gc_metrics false;
   AList.add gc_metrics l
 
 let lock_ : (unit -> unit) ref = ref ignore
