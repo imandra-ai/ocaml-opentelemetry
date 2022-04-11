@@ -98,6 +98,9 @@ module Collector = struct
     val rand_bytes_8 : unit -> bytes
     (** Generate 16 bytes of random data *)
 
+    val enable_emit_gc_metrics : unit -> unit
+    (** Enable the emission of GC metrics. This sets up a GC alarm. *)
+
     val tick : unit -> unit
     (** Should be called regularly for background processing,
         timeout checks, etc. *)
@@ -669,45 +672,50 @@ end
 (** Export GC metrics.
 
     These metrics are emitted after each GC collection. *)
-module GC_metrics  = struct
+module GC_metrics : sig
+  val basic_setup : unit -> unit
+  (** Setup a hook that will emit GC statistics regularly *)
+
+  val get_metrics : unit -> Metrics.t list
+  (** Get a few metrics from the current state of the GC *)
+end = struct
+
+  let basic_setup () =
+    match !Collector.backend with
+    | None -> ()
+    | Some (module C) -> C.enable_emit_gc_metrics()
+
   let bytes_per_word = Sys.word_size / 8
+  let word_to_bytes n = n * bytes_per_word
+  let word_to_bytes_f n = n *. float bytes_per_word
 
-  (** Basic setup: a few stats *)
-  let basic_setup () : unit =
-    let last = ref (Timestamp_ns.now_unix_ns()) in
+  (* TODO: use atomic *)
+  let last = ref (Timestamp_ns.now_unix_ns())
 
-    let word_to_bytes n = n * bytes_per_word in
-    let word_to_bytes_f n = n *. float bytes_per_word in
-
-    let emit() =
-      let gc = Gc.quick_stat () in
-      let start_time_unix_nano = !last in
-      last := Timestamp_ns.now_unix_ns();
-      Metrics.(
-        emit
-          [
-            gauge ~name:"ocaml.gc.major_heap" ~unit_:"B"
-              [ int (word_to_bytes gc.Gc.heap_words) ];
-            sum ~name:"ocaml.gc_minor_allocated"
-              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-              ~is_monotonic:true
-              ~unit_:"B"
-              [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
-            sum ~name:"ocaml.gc.minor_collections"
-              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-              ~is_monotonic:true
-              [ int ~start_time_unix_nano gc.Gc.minor_collections ];
-            sum ~name:"ocaml.gc.major_collections"
-              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-              ~is_monotonic:true
-              [ int ~start_time_unix_nano gc.Gc.major_collections ];
-            sum ~name:"ocaml.gc.compactions"
-              ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
-              ~is_monotonic:true
-              [ int ~start_time_unix_nano gc.Gc.compactions ];
-          ])
-    in
-    ignore (Gc.create_alarm emit : Gc.alarm);
-    ()
-
+  let get_metrics () : Metrics.t list =
+    let gc = Gc.quick_stat () in
+    let start_time_unix_nano = !last in
+    last := Timestamp_ns.now_unix_ns();
+    Metrics.(
+      [
+        gauge ~name:"ocaml.gc.major_heap" ~unit_:"B"
+          [ int (word_to_bytes gc.Gc.heap_words) ];
+        sum ~name:"ocaml.gc_minor_allocated"
+          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+          ~is_monotonic:true
+          ~unit_:"B"
+          [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
+        sum ~name:"ocaml.gc.minor_collections"
+          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+          ~is_monotonic:true
+          [ int ~start_time_unix_nano gc.Gc.minor_collections ];
+        sum ~name:"ocaml.gc.major_collections"
+          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+          ~is_monotonic:true
+          [ int ~start_time_unix_nano gc.Gc.major_collections ];
+        sum ~name:"ocaml.gc.compactions"
+          ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
+          ~is_monotonic:true
+          [ int ~start_time_unix_nano gc.Gc.compactions ];
+      ])
 end
