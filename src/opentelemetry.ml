@@ -710,7 +710,7 @@ end = struct
           ~is_monotonic:true
           ~unit_:"B"
           [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
-        sum ~name:"ocaml_gc_minor_collections"
+        sum ~name:"ocaml.gc.minor_collections"
           ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
           ~is_monotonic:true
           [ int ~start_time_unix_nano gc.Gc.minor_collections ];
@@ -718,7 +718,7 @@ end = struct
           ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
           ~is_monotonic:true
           [ int ~start_time_unix_nano gc.Gc.major_collections ];
-        sum ~name:"ocaml_gc_compactions"
+        sum ~name:"ocaml.gc.compactions"
           ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
           ~is_monotonic:true
           [ int ~start_time_unix_nano gc.Gc.compactions ];
