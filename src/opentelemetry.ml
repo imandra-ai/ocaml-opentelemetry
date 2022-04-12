@@ -240,38 +240,8 @@ module Conventions = struct
   end
 end
 
-(** Process-wide metadata, environment variables, etc. *)
-module Globals = struct
-  open Proto.Common
-
-  let service_name = ref "unknown_service"
-  (** Main service name metadata *)
-
-  let service_namespace = ref None
-  (** Namespace for the service *)
-
-  let instrumentation_library =
-    default_instrumentation_library
-      ~name:"ocaml-opentelemetry" () (* TODO: version, perhaps with dune subst? *)
-
-  (** Global attributes, set via OTEL_RESOURCE_ATTRIBUTES *)
-  let global_attributes : key_value list =
-    let parse_pair s = match String.split_on_char '=' s with
-      | [a;b] -> default_key_value ~key:a  ~value:(Some (String_value b)) ()
-      | _ -> failwith (Printf.sprintf "invalid attribute: %S" s)
-    in
-    try
-      Sys.getenv "OTEL_RESOURCE_ATTRIBUTES" |> String.split_on_char ','
-      |> List.map parse_pair
-    with _ -> []
-
-  (* add global attributes to this list *)
-  let merge_global_attributes_ into : _ list =
-    let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
-    List.rev_append (List.filter not_redundant global_attributes) into
-end
-
 type value = [`Int of int | `String of string | `Bool of bool | `None]
+
 type key_value = string * value
 
 (**/**)
@@ -292,6 +262,52 @@ let _conv_key_value (k,v) =
   default_key_value ~key:k ~value ()
 
 (**/**)
+
+(** Process-wide metadata, environment variables, etc. *)
+module Globals = struct
+  open Proto.Common
+
+  let service_name = ref "unknown_service"
+  (** Main service name metadata *)
+
+  let service_namespace = ref None
+  (** Namespace for the service *)
+
+  let instrumentation_library =
+    default_instrumentation_library
+      ~version:"%%VERSION%%"
+      ~name:"ocaml-opentelemetry" ()
+
+  (** Global attributes, set via OTEL_RESOURCE_ATTRIBUTES *)
+  let global_attributes : key_value list =
+    let parse_pair s = match String.split_on_char '=' s with
+      | [a;b] -> default_key_value ~key:a  ~value:(Some (String_value b)) ()
+      | _ -> failwith (Printf.sprintf "invalid attribute: %S" s)
+    in
+    try
+      Sys.getenv "OTEL_RESOURCE_ATTRIBUTES" |> String.split_on_char ','
+      |> List.map parse_pair
+    with _ -> []
+
+  (* add global attributes to this list *)
+  let merge_global_attributes_ into : _ list =
+    let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
+    List.rev_append (List.filter not_redundant global_attributes) into
+
+  let mk_attributes ?(service_name = !service_name) ?(attrs=[]) () : _ list =
+    let l = List.map _conv_key_value attrs in
+    let l =
+      default_key_value ~key:"service.name"
+        ~value:(Some (String_value service_name)) () :: l
+    in
+    let l = match !service_namespace with
+      | None -> l
+      | Some v ->
+        default_key_value ~key:"service.name"
+          ~value:(Some (String_value v)) () :: l
+    in
+    l |> merge_global_attributes_
+end
 
 (** Events.
 
@@ -443,27 +459,12 @@ module Trace = struct
 
   type span = Span.t
 
-  let make_resource_spans ?(service_name = !Globals.service_name) ?(attrs=[]) spans =
+  let make_resource_spans ?service_name ?attrs spans =
     let ils =
       default_instrumentation_library_spans
         ~instrumentation_library:(Some Globals.instrumentation_library)
         ~spans () in
-    let attributes =
-      let open Proto.Common in
-      let open Conventions.Attributes in
-      let l = List.map _conv_key_value attrs in
-      let l =
-        default_key_value ~key:Service.name
-          ~value:(Some (String_value service_name)) () :: l
-      in
-      let l = match !Globals.service_namespace with
-        | None -> l
-        | Some v ->
-           default_key_value ~key:Service.namespace
-             ~value:(Some (String_value v)) () :: l
-      in
-      l |> Globals.merge_global_attributes_
-    in
+    let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
     default_resource_spans
       ~resource:(Some resource) ~instrumentation_library_spans:[ils] ()
@@ -609,16 +610,12 @@ module Metrics = struct
   (* TODO: exemplar *)
 
   (** Aggregate metrics into a {!Proto.Metrics.resource_metrics} *)
-  let make_resource_metrics ?(attrs=[]) (l:t list) : resource_metrics =
+  let make_resource_metrics ?service_name ?attrs (l:t list) : resource_metrics =
     let lm =
       default_instrumentation_library_metrics
         ~instrumentation_library:(Some Globals.instrumentation_library)
         ~metrics:l () in
-    let attributes =
-      let open Proto.Common in
-      let l = List.map _conv_key_value attrs in
-      l |> Globals.merge_global_attributes_
-    in
+    let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
     default_resource_metrics
       ~instrumentation_library_metrics:[lm] ~resource:(Some resource) ()
