@@ -1,4 +1,4 @@
-(lang dune 2.3)
+(lang dune 2.7)
 (name opentelemetry)
 (generate_opam_files true)
 (source
@@ -16,7 +16,6 @@
  (synopsis "Instrumentation for https://opentelemetry.io")
  (depends
    (ocaml (>= "4.08"))
-   (dune (>= "2.3"))
    ptime
    (odoc :with-doc)
    (ocaml-protoc (>= 2.1)))
@@ -28,7 +27,6 @@
  (synopsis "Lwt-compatible instrumentation for https://opentelemetry.io")
  (depends
    (ocaml (>= "4.08"))
-   (dune (>= "2.3"))
    (opentelemetry (= :version))
    (odoc :with-doc)
    lwt)
@@ -39,7 +37,6 @@
   (name opentelemetry-client-ocurl)
   (depends
    (ocaml (>= "4.08"))
-   (dune (>= "2.3"))
    (mtime (>= "1.4")) ; for spans
    ; atomic ; vendored
    (opentelemetry (= :version))
@@ -52,7 +49,6 @@
  (name opentelemetry-cohttp-lwt)
  (depends
   (ocaml (>= "4.08"))
-  (dune (>= "2.3"))
   (opentelemetry (= :version))
   (opentelemetry-lwt (= :version))
   (odoc :with-doc)

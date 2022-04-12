@@ -9,15 +9,15 @@ homepage: "https://github.com/aestheticintegration/ocaml-opentelemetry"
 bug-reports:
   "https://github.com/aestheticintegration/ocaml-opentelemetry/issues"
 depends: [
+  "dune" {>= "2.7"}
   "ocaml" {>= "4.08"}
-  "dune" {>= "2.3"}
   "opentelemetry" {= version}
   "opentelemetry-lwt" {= version}
   "odoc" {with-doc}
   "cohttp-lwt"
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
