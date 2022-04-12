@@ -4,6 +4,8 @@
 (source
  (github aestheticintegration/ocaml-opentelemetry))
 
+(version 0.1)
+
 (authors "the Imandra team")
 (maintainers "the Imandra team")
 (license MIT)
