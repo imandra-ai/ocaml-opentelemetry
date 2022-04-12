@@ -450,9 +450,10 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       while !continue do
         let@ () = guard in
         let timeout = batch_timeout() in
-        if emit_metrics ~force:timeout () then ()
-        else if emit_traces ~force:timeout () then ()
-        else (
+
+        let do_metrics = emit_metrics ~force:timeout () in
+        let do_traces = emit_traces ~force:timeout () in
+        if not do_metrics && not do_traces then (
           (* wait *)
           let@ () = with_mutex_ m in
           Condition.wait cond m;
