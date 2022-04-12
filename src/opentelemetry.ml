@@ -711,17 +711,21 @@ module GC_metrics : sig
   val basic_setup : unit -> unit
   (** Setup a hook that will emit GC statistics regularly *)
 
+  val get_runtime_attributes : unit -> Span.key_value list
+  (** Get OCaml name and version runtime attributes *)
+
   val get_metrics : unit -> Metrics.t list
   (** Get a few metrics from the current state of the GC *)
 end = struct
   (** See https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/process.md#process-runtimes *)
-  let runtime_attributes : Proto.Common.key_value list =
-    Conventions.Attributes.[
-        (Process.Runtime.name, "ocaml");
-        (Process.Runtime.version, Sys.ocaml_version);
-    ]
-    |> List.map (fun (key, value) ->
-           Proto.Common.default_key_value ~key ~value:(Some (String_value value)) ())
+  let runtime_attributes =
+    lazy
+      Conventions.Attributes.[
+         (Process.Runtime.name, `String "ocaml");
+         (Process.Runtime.version, `String Sys.ocaml_version);
+       ]
+
+  let get_runtime_attributes () = Lazy.force runtime_attributes
 
   let basic_setup () =
     let trigger() =
