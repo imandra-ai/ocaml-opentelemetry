@@ -402,8 +402,8 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       let do_something = not (l_is_empty !batch) in
       if do_something then (
         send_metrics_http !batch;
+        Atomic.set last_wakeup (Mtime_clock.now());
       );
-      Atomic.set last_wakeup (Mtime_clock.now());
       do_something
     ) else false
   in
@@ -414,8 +414,8 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       let do_something = not (l_is_empty !batch) in
       if do_something then (
         send_traces_http !batch;
+        Atomic.set last_wakeup (Mtime_clock.now());
       );
-      Atomic.set last_wakeup (Mtime_clock.now());
       do_something
     ) else false
   in
