@@ -348,7 +348,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
 
   let ((module C) as curl) = (module Curl() : CURL) in
 
-  let emit_metrics (l:Metrics.resource_metrics list list) =
+  let send_metrics_http (l:Metrics.resource_metrics list list) =
     Pbrt.Encoder.reset encoder;
     let resource_metrics =
       List.fold_left (fun acc l -> List.rev_append l acc) [] l in
@@ -369,7 +369,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     end;
   in
 
-  let emit_traces (l:Trace.resource_spans list list) =
+  let send_traces_http (l:Trace.resource_spans list list) =
     Pbrt.Encoder.reset encoder;
     let resource_spans =
       List.fold_left (fun acc l -> List.rev_append l acc) [] l in
@@ -400,7 +400,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       let batch = ref [AList.pop_all gc_metrics] in
       E_metrics.pop_iter_all (fun l -> batch := l :: !batch);
       if not (batch_is_empty !batch) then (
-        emit_metrics !batch;
+        send_metrics_http !batch;
       );
       Atomic.set last_wakeup (Mtime_clock.now());
       true
@@ -411,7 +411,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       let batch = ref [] in
       E_trace.pop_iter_all (fun l -> batch := l :: !batch);
       if not (l_is_empty !batch) then (
-        emit_traces !batch;
+        send_traces_http !batch;
       );
       Atomic.set last_wakeup (Mtime_clock.now());
       true
