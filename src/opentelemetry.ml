@@ -297,13 +297,13 @@ module Globals = struct
   let mk_attributes ?(service_name = !service_name) ?(attrs=[]) () : _ list =
     let l = List.map _conv_key_value attrs in
     let l =
-      default_key_value ~key:"service.name"
+      default_key_value ~key:Conventions.Attributes.Service.name
         ~value:(Some (String_value service_name)) () :: l
     in
     let l = match !service_namespace with
       | None -> l
       | Some v ->
-        default_key_value ~key:"service.name"
+        default_key_value ~key:Conventions.Attributes.Service.namespace
           ~value:(Some (String_value v)) () :: l
     in
     l |> merge_global_attributes_
