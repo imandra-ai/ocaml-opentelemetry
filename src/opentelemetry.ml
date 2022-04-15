@@ -1,4 +1,8 @@
 
+(** Opentelemetry types and instrumentation *)
+
+(** {2 Wire format} *)
+
 (** Protobuf types *)
 module Proto = struct
   module Common = struct
@@ -44,6 +48,8 @@ module Proto = struct
   end
 end
 
+(** {2 Timestamps} *)
+
 (** Unix timestamp.
 
     These timestamps measure time since the Unix epoch (jan 1, 1970) UTC
@@ -60,6 +66,8 @@ module Timestamp_ns = struct
     let ns = Int64.(div ps 1_000L) in
     Int64.(add d ns)
 end
+
+(** {2 Interface to data collector} *)
 
 (** Collector types
 
@@ -170,6 +178,8 @@ module Util_ = struct
     res
 end
 
+(** {2 Identifiers} *)
+
 (** Trace ID.
 
     This 16 bytes identifier is shared by all spans in one trace. *)
@@ -207,6 +217,8 @@ end = struct
   let to_hex self = Util_.bytes_to_hex self
   let of_hex s = of_bytes (Util_.bytes_of_hex s)
 end
+
+(** {2 Attributes and conventions} *)
 
 module Conventions = struct
   module Attributes = struct
@@ -263,6 +275,8 @@ let _conv_key_value (k,v) =
 
 (**/**)
 
+(** {2 Global settings} *)
+
 (** Process-wide metadata, environment variables, etc. *)
 module Globals = struct
   open Proto.Common
@@ -308,6 +322,8 @@ module Globals = struct
     in
     l |> merge_global_attributes_
 end
+
+(** {2 Traces and Spans} *)
 
 (** Events.
 
@@ -546,6 +562,8 @@ module Trace = struct
       raise e
 end
 
+(** {2 Metrics} *)
+
 (** Metrics.
 
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#metric-signal} the spec} *)
@@ -626,6 +644,10 @@ module Metrics = struct
   let emit ?attrs (l:t list) : unit =
     let rm = make_resource_metrics ?attrs l in
     Collector.send_metrics [rm] ~ret:ignore
+end
+
+module Logs = struct
+
 end
 
 (** {2 Utils} *)
