@@ -60,6 +60,17 @@
                -ml_out . -pp -binary)))
 
 (rule
+  (targets logs_types.ml logs_types.mli
+           logs_pb.ml logs_pb.mli
+           logs_pp.ml logs_pp.mli)
+  (deps
+    (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto)
+    (source_tree %{project_root}/vendor/opentelemetry-proto/))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
+
+(rule
   (targets metrics_service_types.ml metrics_service_types.mli
            metrics_service_pp.ml metrics_service_pp.mli
            metrics_service_pb.ml metrics_service_pb.mli)
