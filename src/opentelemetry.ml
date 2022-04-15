@@ -278,12 +278,15 @@ module Globals = struct
       ~version:"%%VERSION%%"
       ~name:"ocaml-opentelemetry" ()
 
-  (** Global attributes, set via OTEL_RESOURCE_ATTRIBUTES *)
-  let global_attributes : key_value list =
+  (** Global attributes, initially set
+      via OTEL_RESOURCE_ATTRIBUTES and modifiable
+      by the user code. They will be attached to each outgoing metrics/traces. *)
+  let global_attributes : key_value list ref =
     let parse_pair s = match String.split_on_char '=' s with
       | [a;b] -> default_key_value ~key:a  ~value:(Some (String_value b)) ()
       | _ -> failwith (Printf.sprintf "invalid attribute: %S" s)
     in
+    ref @@
     try
       Sys.getenv "OTEL_RESOURCE_ATTRIBUTES" |> String.split_on_char ','
       |> List.map parse_pair
@@ -292,7 +295,7 @@ module Globals = struct
   (* add global attributes to this list *)
   let merge_global_attributes_ into : _ list =
     let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
-    List.rev_append (List.filter not_redundant global_attributes) into
+    List.rev_append (List.filter not_redundant !global_attributes) into
 
   let mk_attributes ?(service_name = !service_name) ?(attrs=[]) () : _ list =
     let l = List.map _conv_key_value attrs in
