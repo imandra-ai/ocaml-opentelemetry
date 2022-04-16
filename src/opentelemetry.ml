@@ -732,6 +732,8 @@ module Logs = struct
       | None -> observed_time_unix_nano
       | Some t -> t
     in
+    let trace_id = Option.map Trace_id.to_bytes trace_id in
+    let span_id = Option.map Span_id.to_bytes span_id in
     let body = _conv_value body in
     default_log_record
       ~time_unix_nano ~observed_time_unix_nano
