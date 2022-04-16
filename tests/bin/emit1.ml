@@ -24,6 +24,12 @@ let run () =
           "loop.inner" in
       Unix.sleepf !sleep_outer;
 
+      T.Logs.(emit [
+          make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
+            ~severity:Severity_number_info
+            "inner at %d" j
+        ]);
+
       incr i;
 
       (try
@@ -35,8 +41,6 @@ let run () =
         ignore _arr;
         Unix.sleepf !sleep_inner;
         if j=4 && !i mod 13 = 0 then failwith "oh no"; (* simulate a failure *)
-
-        T.Logs.(emit [make @@ `String "log"]);
 
         T.Trace.add_event scope (fun()->T.Event.make "done with alloc");
       with Failure _ ->
