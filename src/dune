@@ -90,3 +90,15 @@
   (action (run ocaml-protoc %{file}
                -I %{project_root}/vendor/opentelemetry-proto/
                -ml_out . -pp -binary)))
+
+(rule
+  (targets logs_service_types.ml logs_service_types.mli
+           logs_service_pp.ml logs_service_pp.mli
+           logs_service_pb.ml logs_service_pb.mli)
+  (deps
+    (:file %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/logs/v1/logs_service.proto)
+    (source_tree %{project_root}/vendor/opentelemetry-proto/))
+  (action (run ocaml-protoc %{file}
+               -I %{project_root}/vendor/opentelemetry-proto/
+               -ml_out . -pp -binary)))
+

@@ -36,6 +36,8 @@ let run () =
         Unix.sleepf !sleep_inner;
         if j=4 && !i mod 13 = 0 then failwith "oh no"; (* simulate a failure *)
 
+        T.Logs.(emit [make @@ `String "log"]);
+
         T.Trace.add_event scope (fun()->T.Event.make "done with alloc");
       with Failure _ ->
         ());

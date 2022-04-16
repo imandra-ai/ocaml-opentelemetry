@@ -46,6 +46,18 @@ module Proto = struct
     include Status_pp
     include Status_pb
   end
+
+  module Logs = struct
+    include Logs_types
+    include Logs_pb
+    include Logs_pp
+  end
+
+  module Logs_service = struct
+    include Logs_service_types
+    include Logs_service_pb
+    include Logs_service_pp
+  end
 end
 
 (** {2 Timestamps} *)
@@ -100,6 +112,8 @@ module Collector = struct
 
     val send_metrics : Metrics.resource_metrics list sender
 
+    val send_logs : Logs.resource_logs list sender
+
     val rand_bytes_16 : unit -> bytes
     (** Generate 16 bytes of random data *)
 
@@ -134,6 +148,11 @@ module Collector = struct
     match !backend with
     | None -> ret()
     | Some (module B) -> B.send_metrics.send l ~ret
+
+  let send_logs (l:Logs.resource_logs list) ~ret =
+    match !backend with
+    | None -> ret()
+    | Some (module B) -> B.send_logs.send l ~ret
 
   let rand_bytes_16 () =
     match !backend with
@@ -658,8 +677,98 @@ module Metrics = struct
     Collector.send_metrics [rm] ~ret:ignore
 end
 
-module Logs = struct
+(** {2 Logs} *)
 
+(** Logs.
+
+    See {{: https://opentelemetry.io/docs/reference/specification/overview/#log-signal} the spec} *)
+module Logs = struct
+  open Logs_types
+
+  type t = log_record
+
+  (** Severity level of a log event *)
+  type severity = Logs_types.severity_number =
+    | Severity_number_unspecified
+    | Severity_number_trace
+    | Severity_number_trace2
+    | Severity_number_trace3
+    | Severity_number_trace4
+    | Severity_number_debug
+    | Severity_number_debug2
+    | Severity_number_debug3
+    | Severity_number_debug4
+    | Severity_number_info
+    | Severity_number_info2
+    | Severity_number_info3
+    | Severity_number_info4
+    | Severity_number_warn
+    | Severity_number_warn2
+    | Severity_number_warn3
+    | Severity_number_warn4
+    | Severity_number_error
+    | Severity_number_error2
+    | Severity_number_error3
+    | Severity_number_error4
+    | Severity_number_fatal
+    | Severity_number_fatal2
+    | Severity_number_fatal3
+    | Severity_number_fatal4
+
+  let pp_severity = Logs_pp.pp_severity_number
+
+  type flags = Logs_types.log_record_flags =
+    | Log_record_flag_unspecified
+    | Log_record_flag_trace_flags_mask
+
+  let pp_flags = Logs_pp.pp_log_record_flags
+
+  (** Make a single log entry *)
+  let make
+      ?time ?(observed_time_unix_nano=Timestamp_ns.now_unix_ns())
+      ?severity ?log_level ?flags ?trace_id ?span_id
+      (body:value) : t =
+    let time_unix_nano = match time with
+      | None -> observed_time_unix_nano
+      | Some t -> t
+    in
+    let body = _conv_value body in
+    default_log_record
+      ~time_unix_nano ~observed_time_unix_nano
+      ?severity_number:severity ?severity_text:log_level
+      ?flags ?trace_id ?span_id ~body ()
+
+  (** Make a log entry whose body is a string *)
+  let make_str
+      ?time ?observed_time_unix_nano
+      ?severity ?log_level ?flags ?trace_id ?span_id
+      (body:string) : t =
+    make
+      ?time ?observed_time_unix_nano
+      ?severity ?log_level ?flags ?trace_id ?span_id
+      (`String body)
+
+  (** Make a log entry with format *)
+  let make_strf
+      ?time ?observed_time_unix_nano
+      ?severity ?log_level ?flags ?trace_id ?span_id
+      fmt =
+    Format.kasprintf
+      (fun bod ->
+         make_str
+           ?time ?observed_time_unix_nano
+           ?severity ?log_level ?flags ?trace_id ?span_id bod)
+      fmt
+
+  let emit ?service_name ?attrs (l:t list) : unit =
+    let attributes = Globals.mk_attributes ?service_name ?attrs () in
+    let resource = Proto.Resource.default_resource ~attributes () in
+    let ll = default_instrumentation_library_logs
+        ~instrumentation_library:(Some Globals.instrumentation_library)
+        ~log_records:l () in
+    let rl = default_resource_logs ~resource:(Some resource)
+        ~instrumentation_library_logs:[ll] () in
+    Collector.send_logs [rl] ~ret:ignore
 end
 
 (** {2 Utils} *)

@@ -124,6 +124,7 @@ module type EMITTER = sig
 
   val push_trace : Trace.resource_spans list -> unit
   val push_metrics : Metrics.resource_metrics list -> unit
+  val push_logs : Logs.resource_logs list -> unit
 
   val tick : unit -> unit
   val cleanup : unit -> unit
@@ -195,23 +196,19 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     mk_push ?batch:config.batch_traces () in
   let ((module E_metrics) : Metrics.resource_metrics list push), on_metrics_full =
     mk_push ?batch:config.batch_metrics () in
+  let ((module E_logs) : Logs.resource_logs list push), on_logs_full =
+    mk_push ?batch:config.batch_logs () in
 
   let encoder = Pbrt.Encoder.create() in
 
   let ((module C) as curl) = (module Curl() : CURL) in
 
-  let send_metrics_http (l:Metrics.resource_metrics list list) =
+  let send_http_ ~path ~encode x : unit =
     Pbrt.Encoder.reset encoder;
-    let resource_metrics =
-      List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-    Metrics_service.encode_export_metrics_service_request
-      (Metrics_service.default_export_metrics_service_request
-         ~resource_metrics ())
-      encoder;
+    encode x encoder;
     let data = Pbrt.Encoder.to_string encoder in
     begin match
-        C.send ~path:"/v1/metrics" ~decode:(fun _ -> ())
-          data
+        C.send ~path ~decode:(fun _ -> ()) data
       with
       | Ok () -> ()
       | Error err ->
@@ -221,23 +218,31 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     end;
   in
 
+  let send_metrics_http (l:Metrics.resource_metrics list list) =
+    let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
+    let x =
+      Metrics_service.default_export_metrics_service_request
+        ~resource_metrics:l () in
+    send_http_ ~path:"/v1/metrics"
+      ~encode:Metrics_service.encode_export_metrics_service_request x
+  in
+
   let send_traces_http (l:Trace.resource_spans list list) =
-    Pbrt.Encoder.reset encoder;
-    let resource_spans =
-      List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-    Trace_service.encode_export_trace_service_request
-      (Trace_service.default_export_trace_service_request ~resource_spans ())
-      encoder;
-    begin match
-        C.send ~path:"/v1/traces" ~decode:(fun _ -> ())
-          (Pbrt.Encoder.to_string encoder)
-      with
-      | Ok () -> ()
-      | Error err ->
-        (* TODO: log error _via_ otel? *)
-        Atomic.incr n_errors;
-        report_err_ err
-    end;
+    let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
+    let x =
+      Trace_service.default_export_trace_service_request
+        ~resource_spans:l () in
+    send_http_ ~path:"/v1/traces"
+      ~encode:Trace_service.encode_export_trace_service_request x
+  in
+
+  let send_logs_http (l:Logs.resource_logs list list) =
+    let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
+    let x =
+      Logs_service.default_export_logs_service_request
+        ~resource_logs:l () in
+    send_http_ ~path:"/v1/logs"
+      ~encode:Logs_service.encode_export_logs_service_request x
   in
 
   let last_wakeup = Atomic.make (Mtime_clock.now()) in
@@ -247,29 +252,28 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
     Mtime.Span.compare elapsed timeout >= 0
   in
 
-  let emit_metrics ?(force=false) () : bool =
-    if force || (not force && E_metrics.is_big_enough ()) then (
-      let batch = ref [AList.pop_all gc_metrics] in
-      E_metrics.pop_iter_all (fun l -> batch := l :: !batch);
+  let emit_ (type a) (module P: PUSH with type elt = a list)
+      ?(init=fun() -> []) ?(force=false) ~send_http () : bool =
+    if force || (not force && P.is_big_enough ()) then (
+      let batch = ref [init()] in
+      P.pop_iter_all (fun l -> batch := l :: !batch);
       let do_something = not (l_is_empty !batch) in
       if do_something then (
-        send_metrics_http !batch;
+        send_http !batch;
         Atomic.set last_wakeup (Mtime_clock.now());
       );
       do_something
     ) else false
   in
-  let emit_traces ?(force=false) () : bool =
-    if force || (not force && E_trace.is_big_enough ()) then (
-      let batch = ref [] in
-      E_trace.pop_iter_all (fun l -> batch := l :: !batch);
-      let do_something = not (l_is_empty !batch) in
-      if do_something then (
-        send_traces_http !batch;
-        Atomic.set last_wakeup (Mtime_clock.now());
-      );
-      do_something
-    ) else false
+
+  let emit_metrics ?force () : bool =
+    emit_ (module E_metrics)
+      ~init:(fun () -> AList.pop_all gc_metrics)
+      ~send_http:send_metrics_http ()
+  and emit_traces ?force () : bool =
+    emit_ (module E_trace) ~send_http:send_traces_http ()
+  and emit_logs ?force () : bool =
+    emit_ (module E_logs) ~send_http:send_logs_http ()
   in
 
   let[@inline] guard f =
@@ -280,9 +284,9 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
   in
 
   let emit_all_force () =
-    let@ () = guard in
     ignore (emit_traces ~force:true () : bool);
     ignore (emit_metrics ~force:true () : bool);
+    ignore (emit_logs ~force:true () : bool);
   in
 
 
@@ -305,7 +309,8 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
 
         let do_metrics = emit_metrics ~force:timeout () in
         let do_traces = emit_traces ~force:timeout () in
-        if not do_metrics && not do_traces then (
+        let do_logs = emit_logs ~force:timeout () in
+        if not do_metrics && not do_traces && not do_logs then (
           (* wait *)
           let@ () = with_mutex_ m in
           Condition.wait cond m;
@@ -314,8 +319,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       (* flush remaining events *)
       begin
         let@ () = guard in
-        ignore (emit_traces ~force:true () : bool);
-        ignore (emit_metrics ~force:true () : bool);
+        emit_all_force();
         C.cleanup();
       end
     in
@@ -354,6 +358,9 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       let push_metrics e =
         E_metrics.push e;
         if batch_timeout() then wakeup()
+      let push_logs e =
+        E_logs.push e;
+        if batch_timeout() then wakeup()
       let tick=tick
       let cleanup () =
         continue := false;
@@ -367,6 +374,8 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
         ignore (emit_metrics () : bool));
     on_trace_full (fun () ->
         ignore (emit_traces () : bool));
+    on_logs_full (fun () ->
+        ignore (emit_logs () : bool));
 
     let cleanup () =
       emit_all_force();
@@ -382,6 +391,11 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       let push_metrics e =
         let@() = guard in
         E_metrics.push e;
+        if batch_timeout() then emit_all_force()
+
+      let push_logs e =
+        let@() = guard in
+        E_logs.push e;
         if batch_timeout() then emit_all_force()
 
       let tick () =
@@ -447,6 +461,14 @@ module Backend(Arg : sig val config : Config.t end)()
 
       let m = List.rev_append (additional_metrics()) m in
       push_metrics m;
+      ret()
+  }
+
+  let send_logs : Logs.resource_logs list sender = {
+    send=fun m ~ret ->
+      let@() = with_lock_ in
+      if !debug_ then Format.eprintf "send logs %a@." (Format.pp_print_list Logs.pp_resource_logs) m;
+      push_logs m;
       ret()
   }
 end
