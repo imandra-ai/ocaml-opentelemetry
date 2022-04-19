@@ -40,6 +40,21 @@ let foo x =
   (* … *)
 ``` 
 
+## Configuration
+
+The library is configurable via `Opentelemetry.Config`, via the standard
+opentelemetry env variables, or with some custom environment variables.
+
+- `OTEL_EXPORTER_OTLP_ENDPOINT` sets the http endpoint to send signals to
+- `OTEL_OCAML_DEBUG=1` to print some debug messages from the opentelemetry library ide
+- `OTEL_RESOURCE_ATTRIBUTES` sets a comma separated list of custom resource attributes
+
+## Collector opentelemetry-client-ocurl
+
+This is a synchronous collector that uses the http+protobuf format
+to send signals (metrics, traces) to some other collector (eg. `otelcol`
+or the datadog agent).
+
 ## License
 
 MIT
