@@ -2,7 +2,7 @@ module Atomic = Opentelemetry_atomic.Atomic
 
 let[@inline] (let@) f x = f x
 
-let debug_ = ref (try bool_of_string @@ Sys.getenv "DEBUG" with _ -> false)
+let debug_ = ref (match Sys.getenv_opt "OTEL_OCAML_DEBUG" with Some ("1"|"true") -> true | _ -> false)
 
 let lock_ : (unit -> unit) ref = ref ignore
 let unlock_ : (unit -> unit) ref = ref ignore
