@@ -144,6 +144,13 @@ module Collector = struct
     match !backend with
     | None -> Bytes.make 8 '?'
     | Some (module B) -> B.rand_bytes_8()
+
+  (** Do background work. Call this regularly if the collector doesn't
+      already have a ticker thread or internal timer. *)
+  let tick () =
+    match !backend with
+    | None -> ()
+    | Some (module B) -> B.tick()
 end
 
 module Util_ = struct
