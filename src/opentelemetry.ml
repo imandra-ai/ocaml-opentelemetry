@@ -582,24 +582,26 @@ module Metrics = struct
 
   type t = Metrics_types.metric
 
+  let _program_start = Timestamp_ns.now_unix_ns()
+
   (** Number data point, as a float *)
-  let float ?start_time_unix_nano
+  let float ?(start_time_unix_nano=_program_start)
       ?(now=Timestamp_ns.now_unix_ns())
       ?(attrs=[])
       (d:float) : number_data_point =
     let attributes = attrs |> List.map _conv_key_value in
     default_number_data_point
-      ?start_time_unix_nano ~time_unix_nano:now
+      ~start_time_unix_nano ~time_unix_nano:now
       ~attributes
       ~value:(As_double d) ()
 
   (** Number data point, as an int *)
-  let int ?start_time_unix_nano
+  let int ?(start_time_unix_nano=_program_start)
       ?(now=Timestamp_ns.now_unix_ns())
       ?(attrs=[])
       (i:int) : number_data_point =
     let attributes = attrs |> List.map _conv_key_value in
-    default_number_data_point ?start_time_unix_nano ~time_unix_nano:now
+    default_number_data_point ~start_time_unix_nano ~time_unix_nano:now
       ~attributes
       ~value:(As_int (Int64.of_int i)) ()
 
@@ -768,34 +770,30 @@ end = struct
   let word_to_bytes n = n * bytes_per_word
   let word_to_bytes_f n = n *. float bytes_per_word
 
-  (* TODO: use atomic *)
-  let last = ref (Timestamp_ns.now_unix_ns())
-
   let get_metrics () : Metrics.t list =
     let gc = Gc.quick_stat () in
-    let start_time_unix_nano = !last in
-    last := Timestamp_ns.now_unix_ns();
+    let now = Timestamp_ns.now_unix_ns() in
     let open Metrics in
     let open Conventions.Metrics in
     [
       gauge ~name:Process.Runtime.Ocaml.GC.major_heap ~unit_:"B"
-        [ int (word_to_bytes gc.Gc.heap_words) ];
+        [ int ~now (word_to_bytes gc.Gc.heap_words) ];
       sum ~name:Process.Runtime.Ocaml.GC.minor_allocated
         ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
         ~is_monotonic:true
         ~unit_:"B"
-        [ float ~start_time_unix_nano (word_to_bytes_f gc.Gc.minor_words) ];
+        [ float ~now (word_to_bytes_f gc.Gc.minor_words) ];
       sum ~name:Process.Runtime.Ocaml.GC.minor_collections
         ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
         ~is_monotonic:true
-        [ int ~start_time_unix_nano gc.Gc.minor_collections ];
+        [ int ~now gc.Gc.minor_collections ];
       sum ~name:Process.Runtime.Ocaml.GC.major_collections
         ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
         ~is_monotonic:true
-        [ int ~start_time_unix_nano gc.Gc.major_collections ];
+        [ int ~now gc.Gc.major_collections ];
       sum ~name:Process.Runtime.Ocaml.GC.compactions
         ~aggregation_temporality:Metrics.Aggregation_temporality_cumulative
         ~is_monotonic:true
-        [ int ~start_time_unix_nano gc.Gc.compactions ];
+        [ int ~now gc.Gc.compactions ];
     ]
 end
