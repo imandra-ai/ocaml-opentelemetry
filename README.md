@@ -5,15 +5,21 @@ This project provides an API for instrumenting server software
 using [opentelemetry](https://opentelemetry.io/docs), as well as
 connectors to talk to opentelemetry software such as [jaeger](https://www.jaegertracing.io/).
 
+- library `opentelemetry` should be used to instrument your code
+  and possibly libraries. It doesn't communicate with anything except
+  a backend (default: dummy backend)
+- library `opentelemetry-client-ocurl` is a backend that communicates
+  via http+protobuf with some collector (otelcol, datadog-agent, etc.)
+
 ## Features
 
 - [x] basic traces
 - [x] basic metrics
-- [ ] basic logs
+- [x] basic logs
 - [ ] nice API
 - [x] interface with `lwt`
 - [x] sync collector relying on ocurl
-  * [ ] batching, perf, etc.
+  * [x] batching, perf, etc.
 - [ ] async collector relying on ocurl-multi
 - [ ] interface with `logs` (carry context around)
 
@@ -22,21 +28,27 @@ connectors to talk to opentelemetry software such as [jaeger](https://www.jaeger
 For now, instrument manually:
 
 ```ocaml
-module T = Opentelemetry
+module Otel = Opentelemetry
 let (let@) f x = f x
 
-let foo x =
-  let@ (tr,sp) = T.Trace.with_ 
-      ~service_name:"myservice" "foo" ~attrs:["hello", `String "world"] in
-  (* … *)
-
-  let gc = Gc.stat() in
-  T.Metrics.(
+let foo () =
+  let@ scope = Otel.Trace.with_  "foo"
+      ~attrs:["hello", `String "world"] in
+  do_work();
+  Otel.Metrics.(
     emit [
-      gauge ~name:"foo.gc.major_heap_words" [int gc.Gc.heap_words];
-      sum ~name:"foo.gc.minor_allocated" [float gc.Gc.minor_words];
+      gauge ~name:"foo.x" [int 42];
     ]);
+  do_more_work();
+  ()
 
+let main () =
+  Otel.Globals.service_name := "my_service";
+  Otel.GC_metrics.basic_setup();
+
+  Opentelemetry_client_ocurl.with_setup () @@ fun () ->
+  (* … *)
+  foo ();
   (* … *)
 ``` 
 
