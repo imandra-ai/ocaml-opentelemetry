@@ -625,15 +625,34 @@ module Metrics = struct
              ~aggregation_temporality ()) in
     default_metric ~name ?description ?unit_ ~data ()
 
-  (* TODO
+  (** Histogram data
+      @param count number of values in population (non negative)
+      @param sum sum of values in population (0 if count is 0)
+      @param bucket_counts count value of histogram for each bucket. Sum of
+      the counts must be equal to [count].
+      length must be [1+length explicit_bounds]
+      @param explicit_bounds strictly increasing list of bounds for the buckets *)
+  let histogram_data_point
+      ?(start_time_unix_nano=_program_start)
+      ?(now=Timestamp_ns.now_unix_ns())
+      ?(attrs=[])
+      ?(exemplars=[])
+      ?(explicit_bounds=[])
+      ?sum
+      ~bucket_counts
+      ~count
+      () : histogram_data_point =
+    let attributes = attrs |> List.map _conv_key_value in
+    default_histogram_data_point ~start_time_unix_nano ~time_unix_nano:now
+      ~attributes ~exemplars ~bucket_counts ~explicit_bounds ~count ?sum ()
+
   let histogram ~name ?description ?unit_
       ?aggregation_temporality
-      (l:number_data_point list) : t =
-    let data h=
+      (l:histogram_data_point list) : t =
+    let data =
       Histogram (default_histogram ~data_points:l
              ?aggregation_temporality ()) in
     default_metric ~name ?description ?unit_ ~data ()
-     *)
 
   (* TODO: exponential history *)
   (* TODO: summary *)
