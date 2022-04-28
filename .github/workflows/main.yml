@@ -41,5 +41,5 @@ jobs:
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt
 
-      - run: opam exec -- dune build @runtest
+      - run: opam exec -- dune build @runtest --ignore-promoted-rules
         if: ${{ matrix.os == 'ubuntu-latest' }}
