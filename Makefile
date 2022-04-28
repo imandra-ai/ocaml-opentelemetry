@@ -9,6 +9,9 @@ test:
 clean:
 	@dune clean
 
+protoc-gen:
+	@dune build @lint
+
 WATCH ?= @all
 watch:
 	@dune build $(WATCH) -w $(OPTS)

@@ -2,12 +2,14 @@
  (name opentelemetry)
  (synopsis "API for opentelemetry instrumentation")
  (flags :standard -warn-error -a+8)
- (libraries ptime ptime.clock.os ocaml-protoc)
+ (libraries ptime ptime.clock.os pbrt)
  (public_name opentelemetry))
 
 ; ### protobuf rules ###
 
 (rule
+  (alias lint)
+  (mode promote)
   (targets status_types.ml status_types.mli
            status_pb.ml status_pb.mli
            status_pp.ml status_pp.mli)
@@ -16,6 +18,8 @@
   (action (run ocaml-protoc %{file} -ml_out . -pp -binary)))
 
 (rule
+  (alias lint)
+  (mode promote)
   (targets common_types.ml common_types.mli
            common_pb.ml common_pb.mli
            common_pp.ml common_pp.mli)
@@ -27,6 +31,8 @@
                -ml_out . -pp -binary)))
 
 (rule
+  (alias lint)
+  (mode promote)
   (targets resource_types.ml resource_types.mli
            resource_pb.ml resource_pb.mli
            resource_pp.ml resource_pp.mli)
@@ -38,6 +44,8 @@
                -ml_out . -pp -binary)))
 
 (rule
+  (alias lint)
+  (mode promote)
   (targets trace_types.ml trace_types.mli
            trace_pb.ml trace_pb.mli
            trace_pp.ml trace_pp.mli)
@@ -49,6 +57,8 @@
                -ml_out . -pp -binary)))
 
 (rule
+  (alias lint)
+  (mode promote)
   (targets metrics_types.ml metrics_types.mli
            metrics_pb.ml metrics_pb.mli
            metrics_pp.ml metrics_pp.mli)
@@ -60,6 +70,8 @@
                -ml_out . -pp -binary)))
 
 (rule
+  (alias lint)
+  (mode promote)
   (targets metrics_service_types.ml metrics_service_types.mli
            metrics_service_pp.ml metrics_service_pp.mli
            metrics_service_pb.ml metrics_service_pb.mli)
@@ -70,6 +82,8 @@
                -ml_out . -pp -binary)))
 
 (rule
+  (alias lint)
+  (mode promote)
   (targets trace_service_types.ml trace_service_types.mli
            trace_service_pp.ml trace_service_pp.mli
            trace_service_pb.ml trace_service_pb.mli)
