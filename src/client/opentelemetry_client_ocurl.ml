@@ -124,6 +124,7 @@ module type EMITTER = sig
 
   val push_trace : Trace.resource_spans list -> unit
   val push_metrics : Metrics.resource_metrics list -> unit
+  val set_on_tick_callbacks : (unit -> unit) list ref -> unit
 
   val tick : unit -> unit
   val cleanup : unit -> unit
@@ -199,6 +200,9 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
   let encoder = Pbrt.Encoder.create() in
 
   let ((module C) as curl) = (module Curl() : CURL) in
+
+  let on_tick_cbs_ = ref (ref []) in
+  let set_on_tick_callbacks = (:=) on_tick_cbs_ in
 
   let send_metrics_http (l:Metrics.resource_metrics list list) =
     Pbrt.Encoder.reset encoder;
@@ -332,6 +336,12 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
 
     let tick() =
       if Atomic.get needs_gc_metrics then sample_gc_metrics();
+      List.iter
+        (fun f ->
+          try f()
+          with e ->
+            Printf.eprintf "on tick callback raised: %s\n" (Printexc.to_string e))
+        !(!on_tick_cbs_);
       if batch_timeout() then wakeup()
     in
 
@@ -354,6 +364,7 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
       let push_metrics e =
         E_metrics.push e;
         if batch_timeout() then wakeup()
+      let set_on_tick_callbacks = set_on_tick_callbacks
       let tick=tick
       let cleanup () =
         continue := false;
@@ -383,6 +394,8 @@ let mk_emitter ~(config:Config.t) () : (module EMITTER) =
         let@() = guard in
         E_metrics.push e;
         if batch_timeout() then emit_all_force()
+
+      let set_on_tick_callbacks = set_on_tick_callbacks
 
       let tick () =
         if Atomic.get needs_gc_metrics then sample_gc_metrics();
@@ -454,7 +467,7 @@ end
 let setup_ ~(config:Config.t) () =
   debug_ := config.debug;
   let module B = Backend(struct let config=config end)() in
-  Opentelemetry.Collector.backend := Some (module B);
+  Opentelemetry.Collector.set_backend (module B);
   B.cleanup
 
 let setup ?(config=Config.make()) ?(enable=true) () =
