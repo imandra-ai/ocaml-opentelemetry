@@ -710,7 +710,7 @@ end
     The metrics are automatically called regularly.
 
     This allows applications to register metrics callbacks from various points
-    in the program (or even in librariese), and not worry about setting
+    in the program (or even in libraries), and not worry about setting
     alarms/intervals to emit them. *)
 module Metrics_callbacks = struct
   open struct
