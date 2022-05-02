@@ -41,7 +41,7 @@ jobs:
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt
 
-      - run: dune build @lint
+      - run: opam exec -- dune build @lint
 
       # check that nothing changed
       - run: git diff --quiet --exit-code
