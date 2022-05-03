@@ -28,6 +28,7 @@
  (depends
    (ocaml (>= "4.08"))
    (opentelemetry (= :version))
+   (cohttp-lwt-unix :with-test)
    (odoc :with-doc)
    lwt)
  (tags

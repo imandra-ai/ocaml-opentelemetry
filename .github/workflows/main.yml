@@ -27,6 +27,10 @@ jobs:
         with:
           submodules: recursive
 
+      # needed for depext to work
+      - run: sudo apt-get update
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
