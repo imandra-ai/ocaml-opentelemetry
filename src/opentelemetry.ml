@@ -215,6 +215,7 @@ end
 module Trace_id : sig
   type t
   val create : unit -> t
+  val pp : Format.formatter -> t -> unit
   val to_bytes : t -> bytes
   val of_bytes : bytes -> t
   val to_hex : t -> string
@@ -227,12 +228,14 @@ end = struct
   let of_bytes b = if Bytes.length b=16 then b else raise (Invalid_argument "trace IDs must be 16 bytes in length")
   let to_hex self = Util_.bytes_to_hex self
   let of_hex s = of_bytes (Util_.bytes_of_hex s)
+  let pp fmt t = Format.fprintf fmt "%s" (to_hex t)
 end
 
 (** Unique ID of a span. *)
 module Span_id : sig
   type t
   val create : unit -> t
+  val pp : Format.formatter -> t -> unit
   val to_bytes : t -> bytes
   val of_bytes : bytes -> t
   val to_hex : t -> string
@@ -245,6 +248,7 @@ end = struct
   let of_bytes b = if Bytes.length b=8 then b else raise (Invalid_argument "span IDs must be 8 bytes in length")
   let to_hex self = Util_.bytes_to_hex self
   let of_hex s = of_bytes (Util_.bytes_of_hex s)
+  let pp fmt t = Format.fprintf fmt "%s" (to_hex t)
 end
 
 (** {2 Attributes and conventions} *)
