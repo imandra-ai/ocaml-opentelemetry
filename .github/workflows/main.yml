@@ -41,6 +41,8 @@ jobs:
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt
 
+      - run: opam install ocaml-protoc -y
+
       - run: opam exec -- dune build @lint
 
       # check that nothing changed
