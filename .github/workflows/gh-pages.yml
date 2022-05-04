@@ -27,13 +27,13 @@ jobs:
         run: opam pin -n .
 
       - name: Depext
-        run: opam depext -yt opentelemetry opentelemetry-lwt opentelemetry-client-ocurl
+        run: opam depext -yt opentelemetry opentelemetry-lwt opentelemetry-client-ocurl opentelemetry-cohttp-lwt
 
       - name: Deps
         run: opam install -d . --deps-only
 
       - name: Build
-        run: opam exec -- dune build @doc
+        run: opam exec -- dune build @doc -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
