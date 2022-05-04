@@ -2,7 +2,7 @@
  (name opentelemetry)
  (synopsis "API for opentelemetry instrumentation")
  (flags :standard -warn-error -a+8)
- (libraries ptime ptime.clock.os pbrt)
+ (libraries ptime ptime.clock.os pbrt threads)
  (public_name opentelemetry))
 
 ; ### protobuf rules ###
