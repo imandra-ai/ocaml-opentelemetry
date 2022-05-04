@@ -20,7 +20,16 @@ let[@inline] with_mutex_ m f =
   Mutex.lock m;
   Fun.protect ~finally:(fun () -> Mutex.unlock m) f
 
+let parse_headers s =
+  let parse_header s = Scanf.sscanf s "%s@=%s" (fun key value -> key, value) in
+  String.split_on_char ',' s |> List.map parse_header
+
 let default_url = "http://localhost:4318"
+let default_headers = []
 let url = ref (try Sys.getenv "OTEL_EXPORTER_OTLP_ENDPOINT" with _ -> default_url)
+let headers = ref (try parse_headers (Sys.getenv "OTEL_EXPORTER_OTLP_HEADERS") with _ -> default_headers)
 let get_url () = !url
 let set_url s = url := s
+
+let get_headers () = !headers
+let set_headers s = headers := s

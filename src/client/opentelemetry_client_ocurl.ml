@@ -70,7 +70,9 @@ module Curl() : CURL = struct
     if !debug_ then Curl.set_verbose curl true;
     Curl.set_url curl (!url ^ path);
     Curl.set_httppost curl [];
-    Curl.set_httpheader curl ["Content-Type: application/x-protobuf"];
+    let to_http_header (k, v) = Printf.sprintf "%s: %s" k v in
+    let http_headers = List.map to_http_header !headers in
+    Curl.set_httpheader curl ("Content-Type: application/x-protobuf" :: http_headers);
     (* write body *)
     Curl.set_post curl true;
     Curl.set_postfieldsize curl (String.length bod);
