@@ -1,6 +1,5 @@
-
-
-let atomic_before_412 = {|
+let atomic_before_412 =
+  {|
   type 'a t = {mutable x: 'a}
   let[@inline] make x = {x}
   let[@inline] get {x} = x
@@ -32,7 +31,9 @@ let atomic_before_412 = {|
 let atomic_after_412 = {|include Stdlib.Atomic|}
 
 let write_file file s =
-  let oc = open_out file in output_string oc s; close_out oc
+  let oc = open_out file in
+  output_string oc s;
+  close_out oc
 
 let copy_file file1 file2 =
   let oc = open_out file2 in
@@ -41,14 +42,22 @@ let copy_file file1 file2 =
   try
     while true do
       let n = input ic buf 0 (Bytes.length buf) in
-      if n=0 then raise End_of_file;
+      if n = 0 then raise End_of_file;
       output oc buf 0 n
     done
   with End_of_file -> ()
 
 let () =
-  let version = Scanf.sscanf Sys.ocaml_version "%d.%d.%s" (fun x y _ -> x,y) in
-  write_file "atomic.ml" (if version >= (4,12) then atomic_after_412 else atomic_before_412);
-  copy_file (if version >= (4,12) then "atomic.post412.mli" else "atomic.pre412.mli") "atomic.mli" ;
+  let version = Scanf.sscanf Sys.ocaml_version "%d.%d.%s" (fun x y _ -> x, y) in
+  write_file "atomic.ml"
+    (if version >= (4, 12) then
+      atomic_after_412
+    else
+      atomic_before_412);
+  copy_file
+    (if version >= (4, 12) then
+      "atomic.post412.mli"
+    else
+      "atomic.pre412.mli")
+    "atomic.mli";
   ()
-

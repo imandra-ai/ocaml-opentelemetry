@@ -1,4 +1,3 @@
-
 (*
    TODO: more options from
    https://opentelemetry.io/docs/reference/specification/protocol/exporter/
