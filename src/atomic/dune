@@ -1,15 +1,15 @@
-
 (library
-  (name opentelemetry_atomic)
-  (synopsis "Compatibility package for the Atomic module for opentelemetry")
-  (public_name opentelemetry.atomic)
-  (modules atomic))
+ (name opentelemetry_atomic)
+ (synopsis "Compatibility package for the Atomic module for opentelemetry")
+ (public_name opentelemetry.atomic)
+ (modules atomic))
 
 (executable
-  (modules gen)
-  (name gen))
+ (modules gen)
+ (name gen))
 
 (rule
-  (targets atomic.ml atomic.mli atomic.ml)
-  (deps atomic.pre412.mli atomic.post412.mli)
-  (action (run ./gen.exe)))
+ (targets atomic.ml atomic.mli atomic.ml)
+ (deps atomic.pre412.mli atomic.post412.mli)
+ (action
+  (run ./gen.exe)))
