@@ -1,4 +1,3 @@
-
 open Common_
 
 type t = {
@@ -14,25 +13,34 @@ type t = {
 
 let pp out self =
   let ppiopt = Format.pp_print_option Format.pp_print_int in
-  let {debug; url; batch_traces; batch_metrics; batch_logs;
-       batch_timeout_ms; thread; ticker_thread} = self in
+  let {
+    debug;
+    url;
+    batch_traces;
+    batch_metrics;
+    batch_logs;
+    batch_timeout_ms;
+    thread;
+    ticker_thread;
+  } =
+    self
+  in
   Format.fprintf out
-    "{@[ debug=%B;@ url=%S;@ \
-     batch_traces=%a;@ batch_metrics=%a;@ batch_logs=%a;@ \
-     batch_timeout_ms=%d; thread=%B;@ ticker_thread=%B @]}"
+    "{@[ debug=%B;@ url=%S;@ batch_traces=%a;@ batch_metrics=%a;@ \
+     batch_logs=%a;@ batch_timeout_ms=%d; thread=%B;@ ticker_thread=%B @]}"
     debug url ppiopt batch_traces ppiopt batch_metrics ppiopt batch_logs
     batch_timeout_ms thread ticker_thread
 
-let make
-    ?(debug= !debug_)
-    ?(url= get_url())
-    ?(batch_traces=Some 400)
-    ?(batch_metrics=None)
-    ?(batch_logs=Some 400)
-    ?(batch_timeout_ms=500)
-    ?(thread=true)
-    ?(ticker_thread=true)
-    () : t =
-  { debug; url; batch_traces; batch_metrics; batch_logs;
+let make ?(debug = !debug_) ?(url = get_url ()) ?(batch_traces = Some 400)
+    ?(batch_metrics = None) ?(batch_logs = Some 400) ?(batch_timeout_ms = 500)
+    ?(thread = true) ?(ticker_thread = true) () : t =
+  {
+    debug;
+    url;
+    batch_traces;
+    batch_metrics;
+    batch_logs;
     batch_timeout_ms;
-    thread; ticker_thread; }
+    thread;
+    ticker_thread;
+  }

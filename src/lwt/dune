@@ -1,5 +1,5 @@
 (library
-  (name opentelemetry_lwt)
-  (public_name opentelemetry-lwt)
-  (synopsis "Lwt frontend for opentelemetry")
-  (libraries lwt opentelemetry))
+ (name opentelemetry_lwt)
+ (public_name opentelemetry-lwt)
+ (synopsis "Lwt frontend for opentelemetry")
+ (libraries lwt opentelemetry))
