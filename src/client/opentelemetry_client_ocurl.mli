@@ -9,6 +9,11 @@ val set_url : string -> unit
 (** Url of the endpoint. Default is "http://localhost:4318",
     or "OTEL_EXPORTER_OTLP_ENDPOINT" if set. *)
 
+val get_headers : unit -> (string * string) list
+
+val set_headers : (string * string) list -> unit
+(** Set http headers that are sent on every http query to the collector. *)
+
 val set_mutex : lock:(unit -> unit) -> unlock:(unit -> unit) -> unit
 (** Set a lock/unlock pair to protect the critical sections
     of {!Opentelemetry.Collector.BACKEND} *)

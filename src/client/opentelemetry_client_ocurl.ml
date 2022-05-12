@@ -77,7 +77,10 @@ module Curl () : CURL = struct
     if !debug_ then Curl.set_verbose curl true;
     Curl.set_url curl (!url ^ path);
     Curl.set_httppost curl [];
-    Curl.set_httpheader curl [ "Content-Type: application/x-protobuf" ];
+    let to_http_header (k, v) = Printf.sprintf "%s: %s" k v in
+    let http_headers = List.map to_http_header !headers in
+    Curl.set_httpheader curl
+      ("Content-Type: application/x-protobuf" :: http_headers);
     (* write body *)
     Curl.set_post curl true;
     Curl.set_postfieldsize curl (String.length bod);
@@ -141,6 +144,8 @@ module type EMITTER = sig
   val push_metrics : Metrics.resource_metrics list -> unit
 
   val push_logs : Logs.resource_logs list -> unit
+
+  val set_on_tick_callbacks : (unit -> unit) list ref -> unit
 
   val tick : unit -> unit
 
@@ -236,6 +241,9 @@ let mk_emitter ~(config : Config.t) () : (module EMITTER) =
 
   let ((module C) as curl) = (module Curl () : CURL) in
 
+  let on_tick_cbs_ = ref (ref []) in
+  let set_on_tick_callbacks = ( := ) on_tick_cbs_ in
+
   let send_http_ ~path ~encode x : unit =
     Pbrt.Encoder.reset encoder;
     encode x encoder;
@@ -283,30 +291,44 @@ let mk_emitter ~(config : Config.t) () : (module EMITTER) =
     Mtime.Span.compare elapsed timeout >= 0
   in
 
-  let emit_ (type a) (module P : PUSH with type elt = a list)
-      ?(init = fun () -> []) ?(force = false) ~send_http () : bool =
-    if force || ((not force) && P.is_big_enough ()) then (
-      let batch = ref [ init () ] in
-      P.pop_iter_all (fun l -> batch := l :: !batch);
+  let emit_metrics ?(force = false) () : bool =
+    if force || ((not force) && E_metrics.is_big_enough ()) then (
+      let batch = ref [ AList.pop_all gc_metrics ] in
+      E_metrics.pop_iter_all (fun l -> batch := l :: !batch);
       let do_something = not (l_is_empty !batch) in
       if do_something then (
-        send_http !batch;
+        send_metrics_http !batch;
         Atomic.set last_wakeup (Mtime_clock.now ())
       );
       do_something
     ) else
       false
   in
-
-  let emit_metrics ?force () : bool =
-    emit_
-      (module E_metrics)
-      ~init:(fun () -> AList.pop_all gc_metrics)
-      ~send_http:send_metrics_http ()
-  and emit_traces ?force () : bool =
-    emit_ (module E_trace) ~send_http:send_traces_http ()
-  and emit_logs ?force () : bool =
-    emit_ (module E_logs) ~send_http:send_logs_http ()
+  let emit_traces ?(force = false) () : bool =
+    if force || ((not force) && E_trace.is_big_enough ()) then (
+      let batch = ref [] in
+      E_trace.pop_iter_all (fun l -> batch := l :: !batch);
+      let do_something = not (l_is_empty !batch) in
+      if do_something then (
+        send_traces_http !batch;
+        Atomic.set last_wakeup (Mtime_clock.now ())
+      );
+      do_something
+    ) else
+      false
+  in
+  let emit_logs ?(force = false) () : bool =
+    if force || ((not force) && E_logs.is_big_enough ()) then (
+      let batch = ref [] in
+      E_logs.pop_iter_all (fun l -> batch := l :: !batch);
+      let do_something = not (l_is_empty !batch) in
+      if do_something then (
+        send_logs_http !batch;
+        Atomic.set last_wakeup (Mtime_clock.now ())
+      );
+      do_something
+    ) else
+      false
   in
 
   let[@inline] guard f =
@@ -318,13 +340,15 @@ let mk_emitter ~(config : Config.t) () : (module EMITTER) =
 
   let emit_all_force () =
     ignore (emit_traces ~force:true () : bool);
-    ignore (emit_metrics ~force:true () : bool);
-    ignore (emit_logs ~force:true () : bool)
+    ignore (emit_logs ~force:true () : bool);
+    ignore (emit_metrics ~force:true () : bool)
   in
 
   if config.thread then (
     (let m = Mutex.create () in
-     set_mutex ~lock:(fun () -> Mutex.lock m) ~unlock:(fun () -> Mutex.unlock m));
+     Lock.set_mutex
+       ~lock:(fun () -> Mutex.lock m)
+       ~unlock:(fun () -> Mutex.unlock m));
 
     let ((module C) as curl) = (module Curl () : CURL) in
 
@@ -347,7 +371,9 @@ let mk_emitter ~(config : Config.t) () : (module EMITTER) =
       done;
       (* flush remaining events *)
       let@ () = guard in
-      emit_all_force ();
+      ignore (emit_traces ~force:true () : bool);
+      ignore (emit_metrics ~force:true () : bool);
+      ignore (emit_logs ~force:true () : bool);
       C.cleanup ()
     in
     start_bg_thread bg_thread;
@@ -363,6 +389,13 @@ let mk_emitter ~(config : Config.t) () : (module EMITTER) =
 
     let tick () =
       if Atomic.get needs_gc_metrics then sample_gc_metrics ();
+      List.iter
+        (fun f ->
+          try f ()
+          with e ->
+            Printf.eprintf "on tick callback raised: %s\n"
+              (Printexc.to_string e))
+        !(!on_tick_cbs_);
       if batch_timeout () then wakeup ()
     in
 
@@ -390,6 +423,8 @@ let mk_emitter ~(config : Config.t) () : (module EMITTER) =
       let push_logs e =
         E_logs.push e;
         if batch_timeout () then wakeup ()
+
+      let set_on_tick_callbacks = set_on_tick_callbacks
 
       let tick = tick
 
@@ -426,6 +461,8 @@ let mk_emitter ~(config : Config.t) () : (module EMITTER) =
         E_logs.push e;
         if batch_timeout () then emit_all_force ()
 
+      let set_on_tick_callbacks = set_on_tick_callbacks
+
       let tick () =
         if Atomic.get needs_gc_metrics then sample_gc_metrics ();
         if batch_timeout () then emit_all_force ()
@@ -439,8 +476,6 @@ module Backend (Arg : sig
   val config : Config.t
 end)
 () : Opentelemetry.Collector.BACKEND = struct
-  include Gen_ids.Make ()
-
   include (val mk_emitter ~config:Arg.config ())
 
   open Opentelemetry.Proto
@@ -450,7 +485,7 @@ end)
     {
       send =
         (fun l ~ret ->
-          let@ () = with_lock_ in
+          let@ () = Lock.with_lock in
           if !debug_ then
             Format.eprintf "send spans %a@."
               (Format.pp_print_list Trace.pp_resource_spans)
@@ -502,7 +537,7 @@ end)
     {
       send =
         (fun m ~ret ->
-          let@ () = with_lock_ in
+          let@ () = Lock.with_lock in
           if !debug_ then
             Format.eprintf "send metrics %a@."
               (Format.pp_print_list Metrics.pp_resource_metrics)
@@ -517,7 +552,7 @@ end)
     {
       send =
         (fun m ~ret ->
-          let@ () = with_lock_ in
+          let@ () = Lock.with_lock in
           if !debug_ then
             Format.eprintf "send logs %a@."
               (Format.pp_print_list Logs.pp_resource_logs)
@@ -536,7 +571,7 @@ let setup_ ~(config : Config.t) () =
       end)
       ()
   in
-  Opentelemetry.Collector.backend := Some (module B);
+  Opentelemetry.Collector.set_backend (module B);
   B.cleanup
 
 let setup ?(config = Config.make ()) ?(enable = true) () =

@@ -8,9 +8,14 @@ let sleep_inner = ref 0.1
 
 let sleep_outer = ref 2.0
 
+let num_sleep = ref 0
+
 let run () =
   Printf.printf "collector is on %S\n%!" (Opentelemetry_client_ocurl.get_url ());
   T.GC_metrics.basic_setup ();
+
+  T.Metrics_callbacks.register (fun () ->
+      T.Metrics.[ sum ~name:"num-sleep" ~is_monotonic:true [ int !num_sleep ] ]);
 
   let i = ref 0 in
   while true do
@@ -25,7 +30,9 @@ let run () =
           ~attrs:[ "j", `Int j ]
           "loop.inner"
       in
+
       Unix.sleepf !sleep_outer;
+      incr num_sleep;
 
       T.Logs.(
         emit
@@ -41,7 +48,10 @@ let run () =
         (* allocate some stuff *)
         let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
         ignore _arr;
+
         Unix.sleepf !sleep_inner;
+        incr num_sleep;
+
         if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
         (* simulate a failure *)

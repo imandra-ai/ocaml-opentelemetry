@@ -3,6 +3,9 @@ type t = {
   url: string;
       (** Url of the endpoint. Default is "http://localhost:4318",
       or "OTEL_EXPORTER_OTLP_ENDPOINT" if set. *)
+  headers: (string * string) list;
+      (** API headers sent to the endpoint. Default is none or
+      "OTEL_EXPORTER_OTLP_HEADERS" if set. *)
   batch_traces: int option;
       (** Batch traces? If [Some i], then this produces batches of (at most)
       [i] items. If [None], there is no batching.
@@ -36,6 +39,7 @@ type t = {
 val make :
   ?debug:bool ->
   ?url:string ->
+  ?headers:(string * string) list ->
   ?batch_traces:int option ->
   ?batch_metrics:int option ->
   ?batch_logs:int option ->

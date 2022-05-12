@@ -14,6 +14,7 @@ depends: [
   "mtime" {>= "1.4"}
   "opentelemetry" {= version}
   "ocaml-protoc" {>= "2.2"}
+  "pbrt" {>= "2.2"}
   "odoc" {with-doc}
   "ocurl"
 ]

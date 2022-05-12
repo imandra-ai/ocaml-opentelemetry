@@ -18,7 +18,8 @@
    (ocaml (>= "4.08"))
    ptime
    (odoc :with-doc)
-   (ocaml-protoc (>= 2.2)))
+   (ocaml-protoc (>= 2.2))
+   (pbrt (>= 2.2)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
@@ -28,6 +29,7 @@
  (depends
    (ocaml (>= "4.08"))
    (opentelemetry (= :version))
+   (cohttp-lwt-unix :with-test)
    (odoc :with-doc)
    lwt)
  (tags
@@ -41,6 +43,7 @@
    ; atomic ; vendored
    (opentelemetry (= :version))
    (ocaml-protoc (>= 2.2))
+   (pbrt (>= 2.2))
    (odoc :with-doc)
    ocurl)
   (synopsis "Collector client for opentelemetry, using http + ocurl"))

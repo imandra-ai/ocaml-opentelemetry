@@ -27,6 +27,10 @@ jobs:
         with:
           submodules: recursive
 
+      # needed for depext to work
+      - run: sudo apt-get update
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
@@ -36,6 +40,13 @@ jobs:
       - run: opam install . --deps-only --with-test
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt
+
+      - run: opam install ocaml-protoc -y
+
+      - run: opam exec -- dune build @lint
+
+      # check that nothing changed
+      - run: git diff --quiet --exit-code
 
       - run: opam exec -- dune build @runtest
         if: ${{ matrix.os == 'ubuntu-latest' }}

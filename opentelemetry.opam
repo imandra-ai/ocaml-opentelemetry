@@ -15,6 +15,7 @@ depends: [
   "ptime"
   "odoc" {with-doc}
   "ocaml-protoc" {>= "2.2"}
+  "pbrt" {>= "2.2"}
 ]
 build: [
   ["dune" "subst"] {dev}
