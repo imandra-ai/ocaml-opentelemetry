@@ -20,6 +20,9 @@ type t = {
       Note that traces and metrics are batched separately.
       Default [None].
   *)
+  batch_logs: int option;
+      (** Batch logs? See {!batch_metrics} for details.
+      Default [Some 400] *)
   batch_timeout_ms: int;
       (** Number of milliseconds after which we will emit a batch, even
       incomplete.
@@ -39,6 +42,7 @@ val make :
   ?headers:(string * string) list ->
   ?batch_traces:int option ->
   ?batch_metrics:int option ->
+  ?batch_logs:int option ->
   ?batch_timeout_ms:int ->
   ?thread:bool ->
   ?ticker_thread:bool ->

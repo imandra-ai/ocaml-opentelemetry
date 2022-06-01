@@ -6,6 +6,7 @@ type t = {
   headers: (string * string) list;
   batch_traces: int option;
   batch_metrics: int option;
+  batch_logs: int option;
   batch_timeout_ms: int;
   thread: bool;
   ticker_thread: bool;
@@ -21,6 +22,7 @@ let pp out self =
     headers;
     batch_traces;
     batch_metrics;
+    batch_logs;
     batch_timeout_ms;
     thread;
     ticker_thread;
@@ -29,13 +31,13 @@ let pp out self =
   in
   Format.fprintf out
     "{@[ debug=%B;@ url=%S;@ headers=%a;@ batch_traces=%a;@ batch_metrics=%a;@ \
-     batch_timeout_ms=%d; thread=%B;@ ticker_thread=%B @]}"
-    debug url ppheaders headers ppiopt batch_traces ppiopt batch_metrics
-    batch_timeout_ms thread ticker_thread
+     batch_logs=%a;@ batch_timeout_ms=%d; thread=%B;@ ticker_thread=%B @]}"
+    debug url ppheaders headers ppiopt batch_traces ppiopt batch_metrics ppiopt
+    batch_logs batch_timeout_ms thread ticker_thread
 
 let make ?(debug = !debug_) ?(url = get_url ()) ?(headers = get_headers ())
-    ?(batch_traces = Some 400) ?(batch_metrics = None) ?(batch_timeout_ms = 500)
-    ?(thread = true) ?(ticker_thread = true) () : t =
+    ?(batch_traces = Some 400) ?(batch_metrics = None) ?(batch_logs = Some 400)
+    ?(batch_timeout_ms = 500) ?(thread = true) ?(ticker_thread = true) () : t =
   {
     debug;
     url;
@@ -43,6 +45,7 @@ let make ?(debug = !debug_) ?(url = get_url ()) ?(headers = get_headers ())
     batch_traces;
     batch_metrics;
     batch_timeout_ms;
+    batch_logs;
     thread;
     ticker_thread;
   }

@@ -34,6 +34,13 @@ let run () =
       Unix.sleepf !sleep_outer;
       incr num_sleep;
 
+      T.Logs.(
+        emit
+          [
+            make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
+              ~severity:Severity_number_info "inner at %d" j;
+          ]);
+
       incr i;
 
       try
