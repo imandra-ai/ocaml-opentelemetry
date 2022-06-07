@@ -317,6 +317,10 @@ module Conventions = struct
       let name = "service.name"
 
       let namespace = "service.namespace"
+
+      let instance_id = "service.instance.id"
+
+      let version = "service.version"
     end
   end
 
@@ -383,6 +387,9 @@ module Globals = struct
   (** Namespace for the service *)
   let service_namespace = ref None
 
+  (** Unique identifier for the service *)
+  let service_instance_id = ref None
+
   let instrumentation_library =
     default_instrumentation_library ~version:"0.1" ~name:"ocaml-opentelemetry"
       ()
@@ -403,6 +410,10 @@ module Globals = struct
       |> String.split_on_char ',' |> List.map parse_pair
     with _ -> []
 
+    (** Add a global attribute *)
+  let add_global_attribute (key:string) (v:value) : unit =
+    global_attributes := _conv_key_value (key, v) :: !global_attributes
+
   (* add global attributes to this list *)
   let merge_global_attributes_ into : _ list =
     let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
@@ -414,6 +425,13 @@ module Globals = struct
       default_key_value ~key:Conventions.Attributes.Service.name
         ~value:(Some (String_value service_name)) ()
       :: l
+    in
+    let l =
+      match !service_instance_id with
+      | None -> l
+      | Some v ->
+        default_key_value ~key:Conventions.Attributes.Service.instance_id
+          ~value:(Some (String_value v)) () :: l
     in
     let l =
       match !service_namespace with
