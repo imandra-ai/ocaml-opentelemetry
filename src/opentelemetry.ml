@@ -397,7 +397,7 @@ module Globals = struct
   let service_instance_id = ref None
 
   let instrumentation_library =
-    default_instrumentation_library ~version:"0.1" ~name:"ocaml-opentelemetry"
+    default_instrumentation_library ~version:"0.2" ~name:"ocaml-opentelemetry"
       ()
 
   (** Global attributes, initially set
