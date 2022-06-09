@@ -31,7 +31,7 @@
    (opentelemetry (= :version))
    (cohttp-lwt-unix :with-test)
    (odoc :with-doc)
-   lwt)
+   (lwt (>= "5.3")))
  (tags
   (instrumentation tracing opentelemetry datadog lwt)))
 
