@@ -6,6 +6,12 @@ module Lock = Lock
 module Rand_bytes = Rand_bytes
 (** Generation of random identifiers *)
 
+open struct
+  let result_bind x f = match x with
+    | Error e -> Error e
+    | Ok x -> f x
+end
+
 (** {2 Wire format} *)
 
 (** Protobuf types *)
@@ -913,7 +919,7 @@ module Trace_context = struct
         [{flags}] are currently ignored.
     *)
     let of_value str : (Trace_id.t * Span_id.t, string) result =
-      let ( let* ) = Result.bind in
+      let ( let* ) = result_bind in
       let blit ~offset ~len ~or_ =
         let buf = Bytes.create len in
         let* str =
