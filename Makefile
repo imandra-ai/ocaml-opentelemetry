@@ -13,7 +13,7 @@ protoc-gen:
 	@dune build @lint
 
 format:
-	@dune fmt
+	@dune build @fmt
 
 WATCH ?= @all
 watch:
