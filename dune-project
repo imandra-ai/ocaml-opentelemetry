@@ -55,5 +55,5 @@
   (opentelemetry (= :version))
   (opentelemetry-lwt (= :version))
   (odoc :with-doc)
-  cohttp-lwt)
+  (cohttp-lwt (>= "4.0.0")))
  (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
