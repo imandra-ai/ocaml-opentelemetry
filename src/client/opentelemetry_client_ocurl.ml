@@ -93,7 +93,8 @@ end = struct
     let { curl; buf_res } = self in
     Curl.reset curl;
     if !debug_ then Curl.set_verbose curl true;
-    Curl.set_url curl (!url ^ path);
+    let full_url = !url ^ path in
+    Curl.set_url curl full_url;
     Curl.set_httppost curl [];
     let to_http_header (k, v) = Printf.sprintf "%s: %s" k v in
     let http_headers = List.map to_http_header !headers in
@@ -146,11 +147,11 @@ end = struct
             Error
               (`Failure
                 (spf
-                   "decoding of status (code=%d) failed with:\n\
+                   "httpc: decoding of status (url=%S, code=%d) failed with:\n\
                     %s\n\
                     status: %S\n\
                     %s"
-                   code (Printexc.to_string e) str bt))
+                   full_url code (Printexc.to_string e) str bt))
         )
       | exception Sys.Break -> Error `Sysbreak
       | exception Curl.CurlException (_, code, msg) ->
@@ -165,10 +166,10 @@ end = struct
     | e ->
       let bt = Printexc.get_backtrace () in
       Error
-        (`Failure (spf "httpc: failed with:\n%s\n%s" (Printexc.to_string e) bt))
+        (`Failure
+          (spf "httpc: post on url=%S failed with:\n%s\n%s" full_url
+             (Printexc.to_string e) bt))
 end
-
-module type BATCH = sig end
 
 (** Batch of resources to be pushed later.
 
