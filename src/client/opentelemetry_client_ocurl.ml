@@ -136,8 +136,15 @@ end = struct
                       bt)))
         ) else (
           let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
-          let status = Status.decode_status dec in
-          Error (`Status (code, status))
+          try
+            let status = Status.decode_status dec in
+            Error (`Status (code, status))
+          with e ->
+            let bt = Printexc.get_backtrace () in
+            Error
+              (`Failure
+                (spf "decoding of status failed with:\n%s\n%s"
+                   (Printexc.to_string e) bt))
         )
       | exception Sys.Break -> Error `Sysbreak
       | exception Curl.CurlException (_, code, msg) ->
