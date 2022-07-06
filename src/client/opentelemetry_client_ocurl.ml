@@ -12,16 +12,18 @@ let needs_gc_metrics = Atomic.make false
 let gc_metrics = AList.make ()
 (* side channel for GC, appended to {!E_metrics}'s data *)
 
-(* capture current GC metrics and push them into {!gc_metrics} for later
+(* capture current GC metrics if {!needs_gc_metrics} is true,
+   and push them into {!gc_metrics} for later
    collection *)
-let sample_gc_metrics () =
-  Atomic.set needs_gc_metrics false;
-  let l =
-    OT.Metrics.make_resource_metrics
-      ~attrs:(Opentelemetry.GC_metrics.get_runtime_attributes ())
-    @@ Opentelemetry.GC_metrics.get_metrics ()
-  in
-  AList.add gc_metrics l
+let sample_gc_metrics_if_needed () =
+  if Atomic.compare_and_set needs_gc_metrics true false then (
+    let l =
+      OT.Metrics.make_resource_metrics
+        ~attrs:(Opentelemetry.GC_metrics.get_runtime_attributes ())
+      @@ Opentelemetry.GC_metrics.get_metrics ()
+    in
+    AList.add gc_metrics l
+  )
 
 module Config = Config
 
@@ -376,7 +378,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       ignore (emit_metrics_maybe ~now ~force:true httpc encoder : bool)
 
     let tick_common_ () =
-      if Atomic.get needs_gc_metrics then sample_gc_metrics ();
+      sample_gc_metrics_if_needed ();
       List.iter
         (fun f ->
           try f ()
@@ -418,14 +420,14 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let httpc = Httpc.create () in
       let encoder = Pbrt.Encoder.create () in
       while not @@ Atomic.get stop do
-        let@ () = guard_exn_ "bg thread (main loop)" in
+        let@ () = guard_exn_ (spf "bg thread[%d] (main loop)" @@ tid ()) in
 
         let now = Mtime_clock.now () in
         let do_metrics = emit_metrics_maybe ~now httpc encoder in
         let do_traces = emit_traces_maybe ~now httpc encoder in
         let do_logs = emit_logs_maybe ~now httpc encoder in
         if (not do_metrics) && (not do_traces) && not do_logs then (
-          let@ () = guard_exn_ "bg thread (waiting)" in
+          let@ () = guard_exn_ (spf "bg thread[%d] (waiting)" @@ tid ()) in
           (* wait for something to happen *)
           Mutex.lock m;
           Condition.wait cond m;
@@ -506,7 +508,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
 
       let push_metrics e =
         let@ () = guard_exn_ "push metrics" in
-        if Atomic.get needs_gc_metrics then sample_gc_metrics ();
+        sample_gc_metrics_if_needed ();
         Batch.push' batch_metrics e;
         let now = Mtime_clock.now () in
         let@ () = Lock.with_lock in
@@ -522,7 +524,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let set_on_tick_callbacks = set_on_tick_callbacks
 
       let tick () =
-        if Atomic.get needs_gc_metrics then sample_gc_metrics ();
+        sample_gc_metrics_if_needed ();
         let@ () = Lock.with_lock in
         let now = Mtime_clock.now () in
         ignore (emit_traces_maybe ~now httpc encoder : bool);
@@ -572,7 +574,10 @@ end)
   let timeout_sent_metrics = Mtime.Span.(5 * s)
   (* send metrics from time to time *)
 
-  let signal_emit_gc_metrics () = Atomic.set needs_gc_metrics true
+  let signal_emit_gc_metrics () =
+    if !debug_ then
+      Printf.eprintf "opentelemetry: emit GC metrics requested\n%!";
+    Atomic.set needs_gc_metrics true
 
   let additional_metrics () : Metrics.resource_metrics list =
     (* add exporter metrics to the lot? *)

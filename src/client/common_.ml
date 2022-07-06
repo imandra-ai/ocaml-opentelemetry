@@ -3,6 +3,10 @@ include Opentelemetry.Lock
 
 let[@inline] ( let@ ) f x = f x
 
+let spf = Printf.sprintf
+
+let tid () = Thread.id @@ Thread.self ()
+
 let debug_ =
   ref
     (match Sys.getenv_opt "OTEL_OCAML_DEBUG" with
