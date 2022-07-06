@@ -318,7 +318,9 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       | Error err ->
         (* TODO: log error _via_ otel? *)
         Atomic.incr n_errors;
-        report_err_ err
+        report_err_ err;
+        (* avoid crazy error loop *)
+        Thread.delay 3.
 
     let send_metrics_http curl encoder (l : Metrics.resource_metrics list list)
         =
