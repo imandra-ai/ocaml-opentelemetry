@@ -135,7 +135,9 @@ end = struct
                    (spf "decoding failed with:\n%s\n%s" (Printexc.to_string e)
                       bt)))
         ) else (
-          let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
+          let str = Buffer.contents buf_res in
+          let dec = Pbrt.Decoder.of_string str in
+
           try
             let status = Status.decode_status dec in
             Error (`Status (code, status))
@@ -143,8 +145,12 @@ end = struct
             let bt = Printexc.get_backtrace () in
             Error
               (`Failure
-                (spf "decoding of status failed with:\n%s\n%s"
-                   (Printexc.to_string e) bt))
+                (spf
+                   "decoding of status (code=%d) failed with:\n\
+                    %s\n\
+                    status: %S\n\
+                    %s"
+                   code (Printexc.to_string e) str bt))
         )
       | exception Sys.Break -> Error `Sysbreak
       | exception Curl.CurlException (_, code, msg) ->
