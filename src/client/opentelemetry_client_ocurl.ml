@@ -378,6 +378,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       ignore (emit_metrics_maybe ~now ~force:true httpc encoder : bool)
 
     let tick_common_ () =
+      if !debug_ then Printf.eprintf "tick (from %d)\n%!" (tid ());
       sample_gc_metrics_if_needed ();
       List.iter
         (fun f ->
