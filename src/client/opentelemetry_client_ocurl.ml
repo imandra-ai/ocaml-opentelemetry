@@ -364,8 +364,10 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
     let[@inline] guard_exn_ where f =
       try f ()
       with e ->
-        Printf.eprintf "opentelemetry-curl: uncaught exception in %s: %s\n%!"
-          where (Printexc.to_string e)
+        let bt = Printexc.get_backtrace () in
+        Printf.eprintf
+          "opentelemetry-curl: uncaught exception in %s: %s\n%s\n%!" where
+          (Printexc.to_string e) bt
 
     let emit_all_force (httpc : Httpc.t) encoder =
       let now = Mtime_clock.now () in
@@ -399,12 +401,15 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       in
       start_bg_thread tick_thread
   end in
-  (let m = Mutex.create () in
+  (* setup a global lock *)
+  (let global_lock_ = Mutex.create () in
    Lock.set_mutex
-     ~lock:(fun () -> Mutex.lock m)
-     ~unlock:(fun () -> Mutex.unlock m));
+     ~lock:(fun () -> Mutex.lock global_lock_)
+     ~unlock:(fun () -> Mutex.unlock global_lock_));
 
   if config.bg_threads > 0 then (
+    (* lock+condition used for background threads to wait, and be woken up
+       when a batch is ready *)
     let m = Mutex.create () in
     let cond = Condition.create () in
 
@@ -419,10 +424,13 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         let do_metrics = emit_metrics_maybe ~now httpc encoder in
         let do_traces = emit_traces_maybe ~now httpc encoder in
         let do_logs = emit_logs_maybe ~now httpc encoder in
-        if (not do_metrics) && (not do_traces) && not do_logs then
+        if (not do_metrics) && (not do_traces) && not do_logs then (
+          let@ () = guard_exn_ "bg thread (waiting)" in
           (* wait for something to happen *)
-          let@ () = with_mutex_ m in
-          Condition.wait cond m
+          Mutex.lock m;
+          Condition.wait cond m;
+          Mutex.unlock m
+        )
       done;
       (* flush remaining events once we exit *)
       let@ () = guard_exn_ "bg thread (cleanup)" in
@@ -578,8 +586,8 @@ end)
     (* there is a possible race condition here, as several threads might update
        metrics at the same time. But that's harmless. *)
     if add_own_metrics then (
-      let open OT.Metrics in
       Atomic.set last_sent_metrics now;
+      let open OT.Metrics in
       [
         make_resource_metrics
           [
