@@ -361,11 +361,11 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         send_logs_http httpc encoder l;
         true
 
-    let[@inline] guard_exn_ f =
+    let[@inline] guard_exn_ where f =
       try f ()
       with e ->
-        Printf.eprintf "opentelemetry-curl: uncaught exception: %s\n%!"
-          (Printexc.to_string e)
+        Printf.eprintf "opentelemetry-curl: uncaught exception in %s: %s\n%!"
+          where (Printexc.to_string e)
 
     let emit_all_force (httpc : Httpc.t) encoder =
       let now = Mtime_clock.now () in
@@ -413,7 +413,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let httpc = Httpc.create () in
       let encoder = Pbrt.Encoder.create () in
       while not @@ Atomic.get stop do
-        let@ () = guard_exn_ in
+        let@ () = guard_exn_ "bg thread (main loop)" in
 
         let now = Mtime_clock.now () in
         let do_metrics = emit_metrics_maybe ~now httpc encoder in
@@ -425,7 +425,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
           Condition.wait cond m
       done;
       (* flush remaining events once we exit *)
-      let@ () = guard_exn_ in
+      let@ () = guard_exn_ "bg thread (cleanup)" in
       emit_all_force httpc encoder;
       Httpc.cleanup httpc
     in
@@ -490,14 +490,14 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
          the emit functions. *)
 
       let push_trace e =
-        let@ () = guard_exn_ in
+        let@ () = guard_exn_ "push trace" in
         Batch.push' batch_traces e;
         let now = Mtime_clock.now () in
         let@ () = Lock.with_lock in
         ignore (emit_traces_maybe ~now httpc encoder : bool)
 
       let push_metrics e =
-        let@ () = guard_exn_ in
+        let@ () = guard_exn_ "push metrics" in
         if Atomic.get needs_gc_metrics then sample_gc_metrics ();
         Batch.push' batch_metrics e;
         let now = Mtime_clock.now () in
@@ -505,7 +505,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         ignore (emit_metrics_maybe ~now httpc encoder : bool)
 
       let push_logs e =
-        let@ () = guard_exn_ in
+        let@ () = guard_exn_ "push logs" in
         Batch.push' batch_logs e;
         let now = Mtime_clock.now () in
         let@ () = Lock.with_lock in
@@ -575,6 +575,8 @@ end)
       Mtime.Span.compare elapsed timeout_sent_metrics > 0
     in
 
+    (* there is a possible race condition here, as several threads might update
+       metrics at the same time. But that's harmless. *)
     if add_own_metrics then (
       let open OT.Metrics in
       Atomic.set last_sent_metrics now;
