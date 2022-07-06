@@ -600,7 +600,13 @@ module Trace = struct
     default_resource_spans ~resource:(Some resource)
       ~instrumentation_library_spans:[ ils ] ()
 
-  (** Sync emitter *)
+  (** Sync emitter.
+
+      This instructs the collector to forward
+      the spans to some backend at a later point.
+
+      {b NOTE} be careful not too call this inside a Gc alarm, as it can
+      cause deadlocks. *)
   let emit ?service_name ?attrs (spans : span list) : unit =
     let rs = make_resource_spans ?service_name ?attrs spans in
     Collector.send_trace [ rs ] ~ret:(fun () -> ())
@@ -629,7 +635,10 @@ module Trace = struct
     if Collector.has_backend () then
       scope.attrs <- List.rev_append (attrs ()) scope.attrs
 
-  (** Sync span guard *)
+  (** Sync span guard.
+
+      {b NOTE} be careful not too call this inside a Gc alarm, as it can
+      cause deadlocks. *)
   let with_ ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
       ?links name (f : scope -> 'a) : 'a =
@@ -771,7 +780,11 @@ module Metrics = struct
 
   (** Emit some metrics to the collector (sync). This blocks until
       the backend has pushed the metrics into some internal queue, or
-      discarded them. *)
+      discarded them.
+
+      {b NOTE} be careful not too call this inside a Gc alarm, as it can
+      cause deadlocks.
+      *)
   let emit ?attrs (l : t list) : unit =
     let rm = make_resource_metrics ?attrs l in
     Collector.send_metrics [ rm ] ~ret:ignore
@@ -851,6 +864,12 @@ module Logs = struct
           ?trace_id ?span_id bod)
       fmt
 
+  (** Emit logs.
+
+    This instructs the collector to send the logs to some backend at
+    a later date.
+    {b NOTE} be careful not too call this inside a Gc alarm, as it can
+    cause deadlocks. *)
   let emit ?service_name ?attrs (l : t list) : unit =
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
@@ -880,8 +899,10 @@ module Metrics_callbacks = struct
   end
 
   (** [register f] adds the callback [f] to the list.
-    [f] will be called at unspecified times and is expected to return
-    a list of metrics. *)
+
+      [f] will be called at unspecified times and is expected to return
+      a list of metrics. It might be called regularly by the backend,
+      in particular (but not only) when {!Collector.tick} is called. *)
   let register f : unit =
     if !cbs_ = [] then
       (* make sure we call [f] (and others) at each tick *)
