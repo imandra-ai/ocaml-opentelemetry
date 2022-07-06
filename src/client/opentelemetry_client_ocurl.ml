@@ -225,14 +225,15 @@ end = struct
 
   let push (self : _ t) x : bool =
     let@ () = with_mutex_ self.lock in
-    if self.size = 0 && Option.is_some self.timeout then
-      (* current batch starts now *)
-      self.start <- Mtime_clock.now ();
     if self.size >= self.high_watermark then (
       (* drop this to prevent queue from growing too fast *)
       Atomic.incr n_dropped;
       true
     ) else (
+      if self.size = 0 && Option.is_some self.timeout then
+        (* current batch starts now *)
+        self.start <- Mtime_clock.now ();
+
       (* add to queue *)
       self.size <- 1 + self.size;
       self.q <- x :: self.q;
