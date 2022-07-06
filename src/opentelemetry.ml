@@ -605,7 +605,7 @@ module Trace = struct
       This instructs the collector to forward
       the spans to some backend at a later point.
 
-      {b NOTE} be careful not too call this inside a Gc alarm, as it can
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can
       cause deadlocks. *)
   let emit ?service_name ?attrs (spans : span list) : unit =
     let rs = make_resource_spans ?service_name ?attrs spans in
@@ -637,7 +637,7 @@ module Trace = struct
 
   (** Sync span guard.
 
-      {b NOTE} be careful not too call this inside a Gc alarm, as it can
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can
       cause deadlocks. *)
   let with_ ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
@@ -782,7 +782,7 @@ module Metrics = struct
       the backend has pushed the metrics into some internal queue, or
       discarded them.
 
-      {b NOTE} be careful not too call this inside a Gc alarm, as it can
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can
       cause deadlocks.
       *)
   let emit ?attrs (l : t list) : unit =
@@ -868,7 +868,7 @@ module Logs = struct
 
     This instructs the collector to send the logs to some backend at
     a later date.
-    {b NOTE} be careful not too call this inside a Gc alarm, as it can
+    {b NOTE} be careful not to call this inside a Gc alarm, as it can
     cause deadlocks. *)
   let emit ?service_name ?attrs (l : t list) : unit =
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
