@@ -240,13 +240,12 @@ end = struct
 
   let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
     let@ () = with_mutex_ self.lock in
-    if
-      (force && not (is_empty_ self))
-      || is_full_ self || timeout_expired_ ~now self
+    if self.size > 0 && (force || is_full_ self || timeout_expired_ ~now self)
     then (
       let l = self.q in
       self.q <- [];
       self.size <- 0;
+      assert (l <> []);
       Some l
     ) else
       None
