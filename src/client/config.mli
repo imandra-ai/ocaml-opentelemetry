@@ -1,4 +1,4 @@
-type t = {
+type t = private {
   debug: bool;
   url: string;
       (** Url of the endpoint. Default is "http://localhost:4318",
@@ -35,6 +35,10 @@ type t = {
       sure it makes progress, and regularly send events to the collector.
       This option is ignored if [thread=false]. *)
 }
+(** Configuration.
+
+  To build one, use {!make} below. This might be extended with more
+  fields in the future. *)
 
 val make :
   ?debug:bool ->
