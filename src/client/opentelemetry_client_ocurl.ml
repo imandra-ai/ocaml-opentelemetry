@@ -68,7 +68,7 @@ module Httpc : sig
   val send :
     t ->
     path:string ->
-    decode:(Pbrt.Decoder.t -> 'a) ->
+    decode:[ `Dec of Pbrt.Decoder.t -> 'a | `Ret of 'a ] ->
     string ->
     ('a, error) result
 
@@ -122,11 +122,17 @@ end = struct
         let code = Curl.get_responsecode curl in
         if !debug_ then
           Printf.eprintf "result body: %S\n%!" (Buffer.contents buf_res);
-        let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
         if code >= 200 && code < 300 then (
-          let res = decode dec in
-          Ok res
+          match decode with
+          | `Ret x -> Ok x
+          | `Dec f ->
+            let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
+            (try Ok (f dec)
+             with e ->
+               Error
+                 (`Failure ("decoding failed with:\n" ^ Printexc.to_string e)))
         ) else (
+          let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
           let status = Status.decode_status dec in
           Error (`Status (code, status))
         )
@@ -304,7 +310,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       Pbrt.Encoder.reset encoder;
       encode x encoder;
       let data = Pbrt.Encoder.to_string encoder in
-      match Httpc.send httpc ~path ~decode:(fun _ -> ()) data with
+      match Httpc.send httpc ~path ~decode:(`Ret ()) data with
       | Ok () -> ()
       | Error `Sysbreak ->
         Printf.eprintf "ctrl-c captured, stopping\n%!";
