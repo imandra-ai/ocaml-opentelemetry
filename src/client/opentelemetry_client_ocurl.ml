@@ -161,6 +161,7 @@ end = struct
   }
 
   let make ?batch ?timeout () : _ t =
+    Option.iter (fun b -> assert (b > 0)) batch;
     {
       lock = Mutex.create ();
       size = 0;
