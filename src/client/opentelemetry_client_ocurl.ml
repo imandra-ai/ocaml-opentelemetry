@@ -129,8 +129,11 @@ end = struct
             let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
             (try Ok (f dec)
              with e ->
+               let bt = Printexc.get_backtrace () in
                Error
-                 (`Failure ("decoding failed with:\n" ^ Printexc.to_string e)))
+                 (`Failure
+                   (spf "decoding failed with:\n%s\n%s" (Printexc.to_string e)
+                      bt)))
         ) else (
           let dec = Pbrt.Decoder.of_string (Buffer.contents buf_res) in
           let status = Status.decode_status dec in
@@ -146,7 +149,10 @@ end = struct
         Error (`Status (code, status))
     with
     | Sys.Break -> Error `Sysbreak
-    | e -> Error (`Failure (Printexc.to_string e))
+    | e ->
+      let bt = Printexc.get_backtrace () in
+      Error
+        (`Failure (spf "httpc: failed with:\n%s\n%s" (Printexc.to_string e) bt))
 end
 
 module type BATCH = sig end
