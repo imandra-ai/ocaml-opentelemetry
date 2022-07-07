@@ -98,6 +98,7 @@ let () =
 
   let debug = ref false in
   let thread = ref true in
+  let n_bg_threads = ref 0 in
   let batch_traces = ref 400 in
   let batch_metrics = ref 3 in
   let opts =
@@ -114,6 +115,7 @@ let () =
       "--sleep-inner", Arg.Set_float sleep_inner, " sleep (in s) in inner loop";
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
+      "--bg-threads", Arg.Set_int n_bg_threads, " number of background threads";
     ]
     |> Arg.align
   in
@@ -130,7 +132,14 @@ let () =
     Opentelemetry_client_ocurl.Config.make ~debug:!debug
       ~batch_traces:(some_if_nzero batch_traces)
       ~batch_metrics:(some_if_nzero batch_metrics)
-      ~thread:!thread ()
+      ~thread:!thread
+      ?bg_threads:
+        (let n = !n_bg_threads in
+         if n = 0 then
+           None
+         else
+           Some n)
+      ()
   in
   Format.printf "@[<2>sleep outer: %.3fs,@ sleep inner: %.3fs,@ config: %a@]@."
     !sleep_outer !sleep_inner Opentelemetry_client_ocurl.Config.pp config;
@@ -142,4 +151,4 @@ let () =
         Printf.printf "\ndone. %d spans in %.4fs (%.4f/s)\n%!"
           (Atomic.get num_tr) elapsed n_per_sec)
   in
-  Opentelemetry_client_ocurl.with_setup ~config () run
+  Opentelemetry_client_ocurl.with_setup ~stop ~config () run

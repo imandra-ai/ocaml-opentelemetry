@@ -28,12 +28,13 @@ type t = private {
       incomplete.
       Note that the batch might take longer than that, because this is
       only checked when a new event occurs. Default 500. *)
-  thread: bool;  (** Is there a background thread? Default [true] *)
+  bg_threads: int;
+      (** Are there background threads, and how many? Default [4] *)
   ticker_thread: bool;
       (** Is there a ticker thread? Default [true].
       This thread will regularly call [tick()] on the backend, to make
       sure it makes progress, and regularly send events to the collector.
-      This option is ignored if [thread=false]. *)
+      This option is ignored if [bg_threads=0]. *)
 }
 (** Configuration.
 
@@ -49,9 +50,15 @@ val make :
   ?batch_logs:int option ->
   ?batch_timeout_ms:int ->
   ?thread:bool ->
+  ?bg_threads:int ->
   ?ticker_thread:bool ->
   unit ->
   t
-(** Make a configuration *)
+(** Make a configuration.
+
+   @param thread if true and [bg_threads] is not provided, we will pick a number
+   of bg threads. Otherwise the number of [bg_threads] superseeds this option.
+
+ *)
 
 val pp : Format.formatter -> t -> unit

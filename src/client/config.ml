@@ -8,7 +8,7 @@ type t = {
   batch_metrics: int option;
   batch_logs: int option;
   batch_timeout_ms: int;
-  thread: bool;
+  bg_threads: int;
   ticker_thread: bool;
 }
 
@@ -24,20 +24,30 @@ let pp out self =
     batch_metrics;
     batch_logs;
     batch_timeout_ms;
-    thread;
+    bg_threads;
     ticker_thread;
   } =
     self
   in
   Format.fprintf out
     "{@[ debug=%B;@ url=%S;@ headers=%a;@ batch_traces=%a;@ batch_metrics=%a;@ \
-     batch_logs=%a;@ batch_timeout_ms=%d; thread=%B;@ ticker_thread=%B @]}"
+     batch_logs=%a;@ batch_timeout_ms=%d; bg_threads=%d;@ ticker_thread=%B @]}"
     debug url ppheaders headers ppiopt batch_traces ppiopt batch_metrics ppiopt
-    batch_logs batch_timeout_ms thread ticker_thread
+    batch_logs batch_timeout_ms bg_threads ticker_thread
 
 let make ?(debug = !debug_) ?(url = get_url ()) ?(headers = get_headers ())
     ?(batch_traces = Some 400) ?(batch_metrics = None) ?(batch_logs = Some 400)
-    ?(batch_timeout_ms = 500) ?(thread = true) ?(ticker_thread = true) () : t =
+    ?(batch_timeout_ms = 500) ?(thread = true) ?bg_threads
+    ?(ticker_thread = true) () : t =
+  let bg_threads =
+    match bg_threads with
+    | Some n -> max n 0
+    | None ->
+      if thread then
+        4
+      else
+        0
+  in
   {
     debug;
     url;
@@ -46,6 +56,6 @@ let make ?(debug = !debug_) ?(url = get_url ()) ?(headers = get_headers ())
     batch_metrics;
     batch_timeout_ms;
     batch_logs;
-    thread;
+    bg_threads;
     ticker_thread;
   }
