@@ -10,27 +10,22 @@ jobs:
     name: Deploy doc
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
+      - name: Checkout code
+        uses: actions/checkout@v2
         with:
           submodules: recursive
 
       # needed for depext to work
-      - run: sudo apt-get update
+      - run: sudo apt-get update && echo 1
         if: ${{ matrix.os == 'ubuntu-latest' }}
 
-      - name: Use OCaml
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-compiler: '4.13.x'
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          opam-depext-flags: --with-test
 
-      - name: Pin
-        run: opam pin -n .
-
-      - name: Depext
-        run: opam depext -yt opentelemetry opentelemetry-lwt opentelemetry-client-ocurl opentelemetry-cohttp-lwt
-
-      - name: Deps
-        run: opam install -d . --deps-only
+      - run: opam install . --with-doc --deps-only --with-test
 
       - name: Build
         run: opam exec -- dune build @doc -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt
