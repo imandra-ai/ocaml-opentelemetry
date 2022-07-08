@@ -1,4 +1,10 @@
 
+## 0.3
+
+- improve error reporting from ocurl exporter
+- improve GC sample collection
+- feat(ocurl): simpler, cleaner backend implementation, with graceful exit
+- config: make `Config.t` private (breaking)
 
 ## 0.2
 
