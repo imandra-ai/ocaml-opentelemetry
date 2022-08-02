@@ -425,6 +425,12 @@ module Globals = struct
     let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
     List.rev_append (List.filter not_redundant !global_attributes) into
 
+  (** Default span kind in {!Span.create}.
+      This will be used in all spans that do not specify [~kind] explicitly.
+      It can be convenient to set "client" or "server" uniformly in here.
+      @since 0.4 *)
+  let default_span_kind = ref Proto.Trace.Span_kind_unspecified
+
   let mk_attributes ?(service_name = !service_name) ?(attrs = []) () : _ list =
     let l = List.map _conv_key_value attrs in
     let l =
@@ -559,7 +565,7 @@ end = struct
 
   let id self = Span_id.of_bytes self.span_id
 
-  let create ?(kind = Span_kind_unspecified) ?(id = Span_id.create ())
+  let create ?(kind = !Globals.default_span_kind) ?(id = Span_id.create ())
       ?trace_state ?(attrs = []) ?(events = []) ?status ~trace_id ?parent
       ?(links = []) ~start_time ~end_time name : t * id =
     let trace_id = Trace_id.to_bytes trace_id in
