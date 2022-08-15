@@ -480,6 +480,38 @@ end = struct
     default_span_event ~time_unix_nano ~name ~attributes:attrs ()
 end
 
+(** Span Link
+
+   A pointer from the current span to another span in the same trace or in a
+   different trace. For example, this can be used in batching operations,
+   where a single batch handler processes multiple requests from different
+   traces or when the handler receives a request from a different project.
+*)
+module Span_link : sig
+  open Proto.Trace
+  type t = span_link
+
+  val make :
+    trace_id:Trace_id.t ->
+    span_id:Span_id.t ->
+    ?trace_state:string ->
+    ?attrs:key_value list ->
+    ?dropped_attributes_count:int ->
+    unit ->
+      t
+end = struct
+  open Proto.Trace
+  type t = span_link
+
+  let make ~trace_id ~span_id ?trace_state ?(attrs=[]) ?dropped_attributes_count () : t =
+    let attributes = List.map _conv_key_value attrs in
+    let dropped_attributes_count = Option.map Int32.of_int dropped_attributes_count in
+    default_span_link
+    ~trace_id:(Trace_id.to_bytes trace_id)
+    ~span_id:(Span_id.to_bytes span_id)
+    ?trace_state ~attributes ?dropped_attributes_count ()
+end
+
 (** Spans.
 
     A Span is the workhorse of traces, it indicates an operation that
@@ -525,7 +557,7 @@ module Span : sig
     ?status:status ->
     trace_id:Trace_id.t ->
     ?parent:id ->
-    ?links:(Trace_id.t * Span_id.t * string) list ->
+    ?links:Span_link.t list ->
     start_time:Timestamp_ns.t ->
     end_time:Timestamp_ns.t ->
     string ->
@@ -571,14 +603,6 @@ end = struct
     let trace_id = Trace_id.to_bytes trace_id in
     let parent_span_id = Option.map Span_id.to_bytes parent in
     let attributes = List.map _conv_key_value attrs in
-    let links =
-      List.map
-        (fun (trace_id, span_id, trace_state) ->
-          let trace_id = Trace_id.to_bytes trace_id in
-          let span_id = Span_id.to_bytes span_id in
-          default_span_link ~trace_id ~span_id ~trace_state ())
-        links
-    in
     let span =
       default_span ~trace_id ?parent_span_id ~span_id:(Span_id.to_bytes id)
         ~attributes ~events ?trace_state ~status ~kind ~name ~links
