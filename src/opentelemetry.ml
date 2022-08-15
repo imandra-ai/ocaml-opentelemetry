@@ -400,7 +400,7 @@ module Globals = struct
   let service_instance_id = ref None
 
   let instrumentation_library =
-    default_instrumentation_library ~version:"0.2" ~name:"ocaml-opentelemetry"
+    default_instrumentation_scope ~version:"0.2" ~name:"ocaml-opentelemetry"
       ()
 
   (** Global attributes, initially set
@@ -677,14 +677,14 @@ module Trace = struct
 
   let make_resource_spans ?service_name ?attrs spans =
     let ils =
-      default_instrumentation_library_spans
-        ~instrumentation_library:(Some Globals.instrumentation_library) ~spans
+      default_scope_spans
+        ~scope:(Some Globals.instrumentation_library) ~spans
         ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
     default_resource_spans ~resource:(Some resource)
-      ~instrumentation_library_spans:[ ils ] ()
+      ~scope_spans:[ ils ] ()
 
   (** Sync emitter.
 
@@ -857,13 +857,13 @@ module Metrics = struct
   let make_resource_metrics ?service_name ?attrs (l : t list) : resource_metrics
       =
     let lm =
-      default_instrumentation_library_metrics
-        ~instrumentation_library:(Some Globals.instrumentation_library)
+      default_scope_metrics
+        ~scope:(Some Globals.instrumentation_library)
         ~metrics:l ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
-    default_resource_metrics ~instrumentation_library_metrics:[ lm ]
+    default_resource_metrics ~scope_metrics:[ lm ]
       ~resource:(Some resource) ()
 
   (** Emit some metrics to the collector (sync). This blocks until
@@ -962,13 +962,13 @@ module Logs = struct
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
     let ll =
-      default_instrumentation_library_logs
-        ~instrumentation_library:(Some Globals.instrumentation_library)
+      default_scope_logs
+        ~scope:(Some Globals.instrumentation_library)
         ~log_records:l ()
     in
     let rl =
       default_resource_logs ~resource:(Some resource)
-        ~instrumentation_library_logs:[ ll ] ()
+        ~scope_logs:[ ll ] ()
     in
     Collector.send_logs [ rl ] ~ret:ignore
 end
