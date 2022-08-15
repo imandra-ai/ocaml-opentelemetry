@@ -7,7 +7,7 @@ module Rand_bytes = Rand_bytes
 (** Generation of random identifiers *)
 
 open struct
-  let result_bind x f =
+  let[@inline] result_bind x f =
     match x with
     | Error e -> Error e
     | Ok x -> f x
