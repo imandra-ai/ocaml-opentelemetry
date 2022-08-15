@@ -32,7 +32,7 @@ module Server : sig
     ?service_name:string ->
     ?attrs:Otel.Span.key_value list ->
     ?kind:Otel.Span.kind ->
-    ?links:(Otel.Trace_id.t * Otel.Span_id.t * string) list ->
+    ?links:Otel.Span_link.t list ->
     string ->
     Request.t ->
     (Request.t -> 'a Lwt.t) ->

@@ -7,7 +7,8 @@ module Rand_bytes = Rand_bytes
 (** Generation of random identifiers *)
 
 open struct
-  let result_bind x f = match x with
+  let[@inline] result_bind x f =
+    match x with
     | Error e -> Error e
     | Ok x -> f x
 end
@@ -416,8 +417,8 @@ module Globals = struct
       |> String.split_on_char ',' |> List.map parse_pair
     with _ -> []
 
-    (** Add a global attribute *)
-  let add_global_attribute (key:string) (v:value) : unit =
+  (** Add a global attribute *)
+  let add_global_attribute (key : string) (v : value) : unit =
     global_attributes := _conv_key_value (key, v) :: !global_attributes
 
   (* add global attributes to this list *)
@@ -443,7 +444,8 @@ module Globals = struct
       | None -> l
       | Some v ->
         default_key_value ~key:Conventions.Attributes.Service.instance_id
-          ~value:(Some (String_value v)) () :: l
+          ~value:(Some (String_value v)) ()
+        :: l
     in
     let l =
       match !service_namespace with
@@ -478,6 +480,43 @@ end = struct
       (name : string) : t =
     let attrs = List.map _conv_key_value attrs in
     default_span_event ~time_unix_nano ~name ~attributes:attrs ()
+end
+
+(** Span Link
+
+   A pointer from the current span to another span in the same trace or in a
+   different trace. For example, this can be used in batching operations,
+   where a single batch handler processes multiple requests from different
+   traces or when the handler receives a request from a different project.
+*)
+module Span_link : sig
+  open Proto.Trace
+
+  type t = span_link
+
+  val make :
+    trace_id:Trace_id.t ->
+    span_id:Span_id.t ->
+    ?trace_state:string ->
+    ?attrs:key_value list ->
+    ?dropped_attributes_count:int ->
+    unit ->
+    t
+end = struct
+  open Proto.Trace
+
+  type t = span_link
+
+  let make ~trace_id ~span_id ?trace_state ?(attrs = [])
+      ?dropped_attributes_count () : t =
+    let attributes = List.map _conv_key_value attrs in
+    let dropped_attributes_count =
+      Option.map Int32.of_int dropped_attributes_count
+    in
+    default_span_link
+      ~trace_id:(Trace_id.to_bytes trace_id)
+      ~span_id:(Span_id.to_bytes span_id) ?trace_state ~attributes
+      ?dropped_attributes_count ()
 end
 
 (** Spans.
@@ -525,7 +564,7 @@ module Span : sig
     ?status:status ->
     trace_id:Trace_id.t ->
     ?parent:id ->
-    ?links:(Trace_id.t * Span_id.t * string) list ->
+    ?links:Span_link.t list ->
     start_time:Timestamp_ns.t ->
     end_time:Timestamp_ns.t ->
     string ->
@@ -571,14 +610,6 @@ end = struct
     let trace_id = Trace_id.to_bytes trace_id in
     let parent_span_id = Option.map Span_id.to_bytes parent in
     let attributes = List.map _conv_key_value attrs in
-    let links =
-      List.map
-        (fun (trace_id, span_id, trace_state) ->
-          let trace_id = Trace_id.to_bytes trace_id in
-          let span_id = Span_id.to_bytes span_id in
-          default_span_link ~trace_id ~span_id ~trace_state ())
-        links
-    in
     let span =
       default_span ~trace_id ?parent_span_id ~span_id:(Span_id.to_bytes id)
         ~attributes ~events ?trace_state ~status ~kind ~name ~links
@@ -672,7 +703,8 @@ module Trace = struct
         | Error e -> default_status ~code:Status_code_error ~message:e ()
       in
       let span, _ =
-        (* TODO: should the attrs passed to with_ go on the Span (in Span.create) or on the ResourceSpan (in emit)?
+        (* TODO: should the attrs passed to with_ go on the Span
+           (in Span.create) or on the ResourceSpan (in emit)?
            (question also applies to Opentelemetry_lwt.Trace.with) *)
         Span.create ?kind ~trace_id ?parent ?links ~id:span_id ?trace_state
           ~attrs:scope.attrs ~events:scope.events ~start_time
@@ -889,8 +921,8 @@ module Logs = struct
         ~instrumentation_library_logs:[ ll ] ()
     in
     Collector.send_logs [ rl ] ~ret:ignore
-
 end
+
 (** A set of callbacks that produce metrics when called.
     The metrics are automatically called regularly.
 
