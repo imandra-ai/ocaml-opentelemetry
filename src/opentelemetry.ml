@@ -7,7 +7,8 @@ module Rand_bytes = Rand_bytes
 (** Generation of random identifiers *)
 
 open struct
-  let result_bind x f = match x with
+  let result_bind x f =
+    match x with
     | Error e -> Error e
     | Ok x -> f x
 end
@@ -416,8 +417,8 @@ module Globals = struct
       |> String.split_on_char ',' |> List.map parse_pair
     with _ -> []
 
-    (** Add a global attribute *)
-  let add_global_attribute (key:string) (v:value) : unit =
+  (** Add a global attribute *)
+  let add_global_attribute (key : string) (v : value) : unit =
     global_attributes := _conv_key_value (key, v) :: !global_attributes
 
   (* add global attributes to this list *)
@@ -443,7 +444,8 @@ module Globals = struct
       | None -> l
       | Some v ->
         default_key_value ~key:Conventions.Attributes.Service.instance_id
-          ~value:(Some (String_value v)) () :: l
+          ~value:(Some (String_value v)) ()
+        :: l
     in
     let l =
       match !service_namespace with
@@ -489,6 +491,7 @@ end
 *)
 module Span_link : sig
   open Proto.Trace
+
   type t = span_link
 
   val make :
@@ -498,18 +501,22 @@ module Span_link : sig
     ?attrs:key_value list ->
     ?dropped_attributes_count:int ->
     unit ->
-      t
+    t
 end = struct
   open Proto.Trace
+
   type t = span_link
 
-  let make ~trace_id ~span_id ?trace_state ?(attrs=[]) ?dropped_attributes_count () : t =
+  let make ~trace_id ~span_id ?trace_state ?(attrs = [])
+      ?dropped_attributes_count () : t =
     let attributes = List.map _conv_key_value attrs in
-    let dropped_attributes_count = Option.map Int32.of_int dropped_attributes_count in
+    let dropped_attributes_count =
+      Option.map Int32.of_int dropped_attributes_count
+    in
     default_span_link
-    ~trace_id:(Trace_id.to_bytes trace_id)
-    ~span_id:(Span_id.to_bytes span_id)
-    ?trace_state ~attributes ?dropped_attributes_count ()
+      ~trace_id:(Trace_id.to_bytes trace_id)
+      ~span_id:(Span_id.to_bytes span_id) ?trace_state ~attributes
+      ?dropped_attributes_count ()
 end
 
 (** Spans.
@@ -696,7 +703,8 @@ module Trace = struct
         | Error e -> default_status ~code:Status_code_error ~message:e ()
       in
       let span, _ =
-        (* TODO: should the attrs passed to with_ go on the Span (in Span.create) or on the ResourceSpan (in emit)?
+        (* TODO: should the attrs passed to with_ go on the Span
+           (in Span.create) or on the ResourceSpan (in emit)?
            (question also applies to Opentelemetry_lwt.Trace.with) *)
         Span.create ?kind ~trace_id ?parent ?links ~id:span_id ?trace_state
           ~attrs:scope.attrs ~events:scope.events ~start_time
@@ -913,8 +921,8 @@ module Logs = struct
         ~instrumentation_library_logs:[ ll ] ()
     in
     Collector.send_logs [ rl ] ~ret:ignore
-
 end
+
 (** A set of callbacks that produce metrics when called.
     The metrics are automatically called regularly.
 
