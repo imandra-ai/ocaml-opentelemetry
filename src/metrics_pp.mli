@@ -54,8 +54,8 @@ val pp_metric_data : Format.formatter -> Metrics_types.metric_data -> unit
 val pp_metric : Format.formatter -> Metrics_types.metric -> unit 
 (** [pp_metric v] formats v *)
 
-val pp_instrumentation_library_metrics : Format.formatter -> Metrics_types.instrumentation_library_metrics -> unit 
-(** [pp_instrumentation_library_metrics v] formats v *)
+val pp_scope_metrics : Format.formatter -> Metrics_types.scope_metrics -> unit 
+(** [pp_scope_metrics v] formats v *)
 
 val pp_resource_metrics : Format.formatter -> Metrics_types.resource_metrics -> unit 
 (** [pp_resource_metrics v] formats v *)

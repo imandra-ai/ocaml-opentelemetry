@@ -36,7 +36,6 @@ type log_record = {
   observed_time_unix_nano : int64;
   severity_number : severity_number;
   severity_text : string;
-  name : string;
   body : Common_types.any_value option;
   attributes : Common_types.key_value list;
   dropped_attributes_count : int32;
@@ -45,15 +44,15 @@ type log_record = {
   span_id : bytes;
 }
 
-type instrumentation_library_logs = {
-  instrumentation_library : Common_types.instrumentation_library option;
+type scope_logs = {
+  scope : Common_types.instrumentation_scope option;
   log_records : log_record list;
   schema_url : string;
 }
 
 type resource_logs = {
   resource : Resource_types.resource option;
-  instrumentation_library_logs : instrumentation_library_logs list;
+  scope_logs : scope_logs list;
   schema_url : string;
 }
 
@@ -76,7 +75,6 @@ val default_log_record :
   ?observed_time_unix_nano:int64 ->
   ?severity_number:severity_number ->
   ?severity_text:string ->
-  ?name:string ->
   ?body:Common_types.any_value option ->
   ?attributes:Common_types.key_value list ->
   ?dropped_attributes_count:int32 ->
@@ -87,17 +85,17 @@ val default_log_record :
   log_record
 (** [default_log_record ()] is the default value for type [log_record] *)
 
-val default_instrumentation_library_logs : 
-  ?instrumentation_library:Common_types.instrumentation_library option ->
+val default_scope_logs : 
+  ?scope:Common_types.instrumentation_scope option ->
   ?log_records:log_record list ->
   ?schema_url:string ->
   unit ->
-  instrumentation_library_logs
-(** [default_instrumentation_library_logs ()] is the default value for type [instrumentation_library_logs] *)
+  scope_logs
+(** [default_scope_logs ()] is the default value for type [scope_logs] *)
 
 val default_resource_logs : 
   ?resource:Resource_types.resource option ->
-  ?instrumentation_library_logs:instrumentation_library_logs list ->
+  ?scope_logs:scope_logs list ->
   ?schema_url:string ->
   unit ->
   resource_logs

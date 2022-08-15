@@ -46,11 +46,13 @@ type histogram_data_point = {
   start_time_unix_nano : int64;
   time_unix_nano : int64;
   count : int64;
-  sum : float;
+  sum : float option;
   bucket_counts : int64 list;
   explicit_bounds : float list;
   exemplars : exemplar list;
   flags : int32;
+  min : float option;
+  max : float option;
 }
 
 type histogram = {
@@ -68,13 +70,15 @@ type exponential_histogram_data_point = {
   start_time_unix_nano : int64;
   time_unix_nano : int64;
   count : int64;
-  sum : float;
+  sum : float option;
   scale : int32;
   zero_count : int64;
   positive : exponential_histogram_data_point_buckets option;
   negative : exponential_histogram_data_point_buckets option;
   flags : int32;
   exemplars : exemplar list;
+  min : float option;
+  max : float option;
 }
 
 type exponential_histogram = {
@@ -115,15 +119,15 @@ and metric = {
   data : metric_data;
 }
 
-type instrumentation_library_metrics = {
-  instrumentation_library : Common_types.instrumentation_library option;
+type scope_metrics = {
+  scope : Common_types.instrumentation_scope option;
   metrics : metric list;
   schema_url : string;
 }
 
 type resource_metrics = {
   resource : Resource_types.resource option;
-  instrumentation_library_metrics : instrumentation_library_metrics list;
+  scope_metrics : scope_metrics list;
   schema_url : string;
 }
 
@@ -192,11 +196,13 @@ let rec default_histogram_data_point
   ?start_time_unix_nano:((start_time_unix_nano:int64) = 0L)
   ?time_unix_nano:((time_unix_nano:int64) = 0L)
   ?count:((count:int64) = 0L)
-  ?sum:((sum:float) = 0.)
+  ?sum:((sum:float option) = None)
   ?bucket_counts:((bucket_counts:int64 list) = [])
   ?explicit_bounds:((explicit_bounds:float list) = [])
   ?exemplars:((exemplars:exemplar list) = [])
   ?flags:((flags:int32) = 0l)
+  ?min:((min:float option) = None)
+  ?max:((max:float option) = None)
   () : histogram_data_point  = {
   attributes;
   start_time_unix_nano;
@@ -207,6 +213,8 @@ let rec default_histogram_data_point
   explicit_bounds;
   exemplars;
   flags;
+  min;
+  max;
 }
 
 let rec default_histogram 
@@ -230,13 +238,15 @@ let rec default_exponential_histogram_data_point
   ?start_time_unix_nano:((start_time_unix_nano:int64) = 0L)
   ?time_unix_nano:((time_unix_nano:int64) = 0L)
   ?count:((count:int64) = 0L)
-  ?sum:((sum:float) = 0.)
+  ?sum:((sum:float option) = None)
   ?scale:((scale:int32) = 0l)
   ?zero_count:((zero_count:int64) = 0L)
   ?positive:((positive:exponential_histogram_data_point_buckets option) = None)
   ?negative:((negative:exponential_histogram_data_point_buckets option) = None)
   ?flags:((flags:int32) = 0l)
   ?exemplars:((exemplars:exemplar list) = [])
+  ?min:((min:float option) = None)
+  ?max:((max:float option) = None)
   () : exponential_histogram_data_point  = {
   attributes;
   start_time_unix_nano;
@@ -249,6 +259,8 @@ let rec default_exponential_histogram_data_point
   negative;
   flags;
   exemplars;
+  min;
+  max;
 }
 
 let rec default_exponential_histogram 
@@ -305,23 +317,23 @@ and default_metric
   data;
 }
 
-let rec default_instrumentation_library_metrics 
-  ?instrumentation_library:((instrumentation_library:Common_types.instrumentation_library option) = None)
+let rec default_scope_metrics 
+  ?scope:((scope:Common_types.instrumentation_scope option) = None)
   ?metrics:((metrics:metric list) = [])
   ?schema_url:((schema_url:string) = "")
-  () : instrumentation_library_metrics  = {
-  instrumentation_library;
+  () : scope_metrics  = {
+  scope;
   metrics;
   schema_url;
 }
 
 let rec default_resource_metrics 
   ?resource:((resource:Resource_types.resource option) = None)
-  ?instrumentation_library_metrics:((instrumentation_library_metrics:instrumentation_library_metrics list) = [])
+  ?scope_metrics:((scope_metrics:scope_metrics list) = [])
   ?schema_url:((schema_url:string) = "")
   () : resource_metrics  = {
   resource;
-  instrumentation_library_metrics;
+  scope_metrics;
   schema_url;
 }
 

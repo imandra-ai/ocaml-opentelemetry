@@ -76,27 +76,27 @@ let default_span_mutable () : span_mutable = {
   status = None;
 }
 
-type instrumentation_library_spans_mutable = {
-  mutable instrumentation_library : Common_types.instrumentation_library option;
+type scope_spans_mutable = {
+  mutable scope : Common_types.instrumentation_scope option;
   mutable spans : Trace_types.span list;
   mutable schema_url : string;
 }
 
-let default_instrumentation_library_spans_mutable () : instrumentation_library_spans_mutable = {
-  instrumentation_library = None;
+let default_scope_spans_mutable () : scope_spans_mutable = {
+  scope = None;
   spans = [];
   schema_url = "";
 }
 
 type resource_spans_mutable = {
   mutable resource : Resource_types.resource option;
-  mutable instrumentation_library_spans : Trace_types.instrumentation_library_spans list;
+  mutable scope_spans : Trace_types.scope_spans list;
   mutable schema_url : string;
 }
 
 let default_resource_spans_mutable () : resource_spans_mutable = {
   resource = None;
-  instrumentation_library_spans = [];
+  scope_spans = [];
   schema_url = "";
 }
 
@@ -335,8 +335,8 @@ let rec decode_span d =
     Trace_types.status = v.status;
   } : Trace_types.span)
 
-let rec decode_instrumentation_library_spans d =
-  let v = default_instrumentation_library_spans_mutable () in
+let rec decode_scope_spans d =
+  let v = default_scope_spans_mutable () in
   let continue__= ref true in
   while !continue__ do
     match Pbrt.Decoder.key d with
@@ -344,27 +344,27 @@ let rec decode_instrumentation_library_spans d =
       v.spans <- List.rev v.spans;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      v.instrumentation_library <- Some (Common_pb.decode_instrumentation_library (Pbrt.Decoder.nested d));
+      v.scope <- Some (Common_pb.decode_instrumentation_scope (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_spans), field(1)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_spans), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
       v.spans <- (decode_span (Pbrt.Decoder.nested d)) :: v.spans;
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_spans), field(2)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_spans), field(2)" pk
     | Some (3, Pbrt.Bytes) -> begin
       v.schema_url <- Pbrt.Decoder.string d;
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_spans), field(3)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_spans), field(3)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   ({
-    Trace_types.instrumentation_library = v.instrumentation_library;
+    Trace_types.scope = v.scope;
     Trace_types.spans = v.spans;
     Trace_types.schema_url = v.schema_url;
-  } : Trace_types.instrumentation_library_spans)
+  } : Trace_types.scope_spans)
 
 let rec decode_resource_spans d =
   let v = default_resource_spans_mutable () in
@@ -372,7 +372,7 @@ let rec decode_resource_spans d =
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
-      v.instrumentation_library_spans <- List.rev v.instrumentation_library_spans;
+      v.scope_spans <- List.rev v.scope_spans;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
       v.resource <- Some (Resource_pb.decode_resource (Pbrt.Decoder.nested d));
@@ -380,7 +380,7 @@ let rec decode_resource_spans d =
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_spans), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      v.instrumentation_library_spans <- (decode_instrumentation_library_spans (Pbrt.Decoder.nested d)) :: v.instrumentation_library_spans;
+      v.scope_spans <- (decode_scope_spans (Pbrt.Decoder.nested d)) :: v.scope_spans;
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_spans), field(2)" pk
@@ -393,7 +393,7 @@ let rec decode_resource_spans d =
   done;
   ({
     Trace_types.resource = v.resource;
-    Trace_types.instrumentation_library_spans = v.instrumentation_library_spans;
+    Trace_types.scope_spans = v.scope_spans;
     Trace_types.schema_url = v.schema_url;
   } : Trace_types.resource_spans)
 
@@ -509,11 +509,11 @@ let rec encode_span (v:Trace_types.span) encoder =
   end;
   ()
 
-let rec encode_instrumentation_library_spans (v:Trace_types.instrumentation_library_spans) encoder = 
-  begin match v.Trace_types.instrumentation_library with
+let rec encode_scope_spans (v:Trace_types.scope_spans) encoder = 
+  begin match v.Trace_types.scope with
   | Some x -> 
     Pbrt.Encoder.key (1, Pbrt.Bytes) encoder; 
-    Pbrt.Encoder.nested (Common_pb.encode_instrumentation_library x) encoder;
+    Pbrt.Encoder.nested (Common_pb.encode_instrumentation_scope x) encoder;
   | None -> ();
   end;
   List.iter (fun x -> 
@@ -533,8 +533,8 @@ let rec encode_resource_spans (v:Trace_types.resource_spans) encoder =
   end;
   List.iter (fun x -> 
     Pbrt.Encoder.key (2, Pbrt.Bytes) encoder; 
-    Pbrt.Encoder.nested (encode_instrumentation_library_spans x) encoder;
-  ) v.Trace_types.instrumentation_library_spans;
+    Pbrt.Encoder.nested (encode_scope_spans x) encoder;
+  ) v.Trace_types.scope_spans;
   Pbrt.Encoder.key (3, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.string v.Trace_types.schema_url encoder;
   ()

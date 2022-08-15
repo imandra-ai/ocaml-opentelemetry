@@ -15,8 +15,8 @@ val encode_key_value_list : Common_types.key_value_list -> Pbrt.Encoder.t -> uni
 val encode_key_value : Common_types.key_value -> Pbrt.Encoder.t -> unit
 (** [encode_key_value v encoder] encodes [v] with the given [encoder] *)
 
-val encode_instrumentation_library : Common_types.instrumentation_library -> Pbrt.Encoder.t -> unit
-(** [encode_instrumentation_library v encoder] encodes [v] with the given [encoder] *)
+val encode_instrumentation_scope : Common_types.instrumentation_scope -> Pbrt.Encoder.t -> unit
+(** [encode_instrumentation_scope v encoder] encodes [v] with the given [encoder] *)
 
 
 (** {2 Protobuf Decoding} *)
@@ -33,5 +33,5 @@ val decode_key_value_list : Pbrt.Decoder.t -> Common_types.key_value_list
 val decode_key_value : Pbrt.Decoder.t -> Common_types.key_value
 (** [decode_key_value decoder] decodes a [key_value] value from [decoder] *)
 
-val decode_instrumentation_library : Pbrt.Decoder.t -> Common_types.instrumentation_library
-(** [decode_instrumentation_library decoder] decodes a [instrumentation_library] value from [decoder] *)
+val decode_instrumentation_scope : Pbrt.Decoder.t -> Common_types.instrumentation_scope
+(** [decode_instrumentation_scope decoder] decodes a [instrumentation_scope] value from [decoder] *)

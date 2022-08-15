@@ -57,11 +57,13 @@ let rec pp_histogram_data_point fmt (v:Metrics_types.histogram_data_point) =
     Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.Metrics_types.start_time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.Metrics_types.time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "count" Pbrt.Pp.pp_int64 fmt v.Metrics_types.count;
-    Pbrt.Pp.pp_record_field ~first:false "sum" Pbrt.Pp.pp_float fmt v.Metrics_types.sum;
+    Pbrt.Pp.pp_record_field ~first:false "sum" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.sum;
     Pbrt.Pp.pp_record_field ~first:false "bucket_counts" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int64) fmt v.Metrics_types.bucket_counts;
     Pbrt.Pp.pp_record_field ~first:false "explicit_bounds" (Pbrt.Pp.pp_list Pbrt.Pp.pp_float) fmt v.Metrics_types.explicit_bounds;
     Pbrt.Pp.pp_record_field ~first:false "exemplars" (Pbrt.Pp.pp_list pp_exemplar) fmt v.Metrics_types.exemplars;
     Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.Metrics_types.flags;
+    Pbrt.Pp.pp_record_field ~first:false "min" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.min;
+    Pbrt.Pp.pp_record_field ~first:false "max" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.max;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -85,13 +87,15 @@ let rec pp_exponential_histogram_data_point fmt (v:Metrics_types.exponential_his
     Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.Metrics_types.start_time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.Metrics_types.time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "count" Pbrt.Pp.pp_int64 fmt v.Metrics_types.count;
-    Pbrt.Pp.pp_record_field ~first:false "sum" Pbrt.Pp.pp_float fmt v.Metrics_types.sum;
+    Pbrt.Pp.pp_record_field ~first:false "sum" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.sum;
     Pbrt.Pp.pp_record_field ~first:false "scale" Pbrt.Pp.pp_int32 fmt v.Metrics_types.scale;
     Pbrt.Pp.pp_record_field ~first:false "zero_count" Pbrt.Pp.pp_int64 fmt v.Metrics_types.zero_count;
     Pbrt.Pp.pp_record_field ~first:false "positive" (Pbrt.Pp.pp_option pp_exponential_histogram_data_point_buckets) fmt v.Metrics_types.positive;
     Pbrt.Pp.pp_record_field ~first:false "negative" (Pbrt.Pp.pp_option pp_exponential_histogram_data_point_buckets) fmt v.Metrics_types.negative;
     Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.Metrics_types.flags;
     Pbrt.Pp.pp_record_field ~first:false "exemplars" (Pbrt.Pp.pp_list pp_exemplar) fmt v.Metrics_types.exemplars;
+    Pbrt.Pp.pp_record_field ~first:false "min" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.min;
+    Pbrt.Pp.pp_record_field ~first:false "max" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.max;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -144,9 +148,9 @@ and pp_metric fmt (v:Metrics_types.metric) =
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
-let rec pp_instrumentation_library_metrics fmt (v:Metrics_types.instrumentation_library_metrics) = 
+let rec pp_scope_metrics fmt (v:Metrics_types.scope_metrics) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "instrumentation_library" (Pbrt.Pp.pp_option Common_pp.pp_instrumentation_library) fmt v.Metrics_types.instrumentation_library;
+    Pbrt.Pp.pp_record_field ~first:true "scope" (Pbrt.Pp.pp_option Common_pp.pp_instrumentation_scope) fmt v.Metrics_types.scope;
     Pbrt.Pp.pp_record_field ~first:false "metrics" (Pbrt.Pp.pp_list pp_metric) fmt v.Metrics_types.metrics;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.Metrics_types.schema_url;
   in
@@ -155,7 +159,7 @@ let rec pp_instrumentation_library_metrics fmt (v:Metrics_types.instrumentation_
 let rec pp_resource_metrics fmt (v:Metrics_types.resource_metrics) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "resource" (Pbrt.Pp.pp_option Resource_pp.pp_resource) fmt v.Metrics_types.resource;
-    Pbrt.Pp.pp_record_field ~first:false "instrumentation_library_metrics" (Pbrt.Pp.pp_list pp_instrumentation_library_metrics) fmt v.Metrics_types.instrumentation_library_metrics;
+    Pbrt.Pp.pp_record_field ~first:false "scope_metrics" (Pbrt.Pp.pp_list pp_scope_metrics) fmt v.Metrics_types.scope_metrics;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.Metrics_types.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()

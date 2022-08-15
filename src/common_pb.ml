@@ -26,14 +26,18 @@ let default_key_value_mutable () : key_value_mutable = {
   value = None;
 }
 
-type instrumentation_library_mutable = {
+type instrumentation_scope_mutable = {
   mutable name : string;
   mutable version : string;
+  mutable attributes : Common_types.key_value list;
+  mutable dropped_attributes_count : int32;
 }
 
-let default_instrumentation_library_mutable () : instrumentation_library_mutable = {
+let default_instrumentation_scope_mutable () : instrumentation_scope_mutable = {
   name = "";
   version = "";
+  attributes = [];
+  dropped_attributes_count = 0l;
 }
 
 
@@ -119,29 +123,42 @@ and decode_key_value d =
     Common_types.value = v.value;
   } : Common_types.key_value)
 
-let rec decode_instrumentation_library d =
-  let v = default_instrumentation_library_mutable () in
+let rec decode_instrumentation_scope d =
+  let v = default_instrumentation_scope_mutable () in
   let continue__= ref true in
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
+      v.attributes <- List.rev v.attributes;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
       v.name <- Pbrt.Decoder.string d;
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library), field(1)" pk
+      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
       v.version <- Pbrt.Decoder.string d;
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library), field(2)" pk
+      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(2)" pk
+    | Some (3, Pbrt.Bytes) -> begin
+      v.attributes <- (decode_key_value (Pbrt.Decoder.nested d)) :: v.attributes;
+    end
+    | Some (3, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(3)" pk
+    | Some (4, Pbrt.Varint) -> begin
+      v.dropped_attributes_count <- Pbrt.Decoder.int32_as_varint d;
+    end
+    | Some (4, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(4)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   ({
     Common_types.name = v.name;
     Common_types.version = v.version;
-  } : Common_types.instrumentation_library)
+    Common_types.attributes = v.attributes;
+    Common_types.dropped_attributes_count = v.dropped_attributes_count;
+  } : Common_types.instrumentation_scope)
 
 let rec encode_any_value (v:Common_types.any_value) encoder = 
   begin match v with
@@ -193,9 +210,15 @@ and encode_key_value (v:Common_types.key_value) encoder =
   end;
   ()
 
-let rec encode_instrumentation_library (v:Common_types.instrumentation_library) encoder = 
+let rec encode_instrumentation_scope (v:Common_types.instrumentation_scope) encoder = 
   Pbrt.Encoder.key (1, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.string v.Common_types.name encoder;
   Pbrt.Encoder.key (2, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.string v.Common_types.version encoder;
+  List.iter (fun x -> 
+    Pbrt.Encoder.key (3, Pbrt.Bytes) encoder; 
+    Pbrt.Encoder.nested (encode_key_value x) encoder;
+  ) v.Common_types.attributes;
+  Pbrt.Encoder.key (4, Pbrt.Varint) encoder; 
+  Pbrt.Encoder.int32_as_varint v.Common_types.dropped_attributes_count encoder;
   ()

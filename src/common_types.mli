@@ -26,9 +26,11 @@ and key_value = {
   value : any_value option;
 }
 
-type instrumentation_library = {
+type instrumentation_scope = {
   name : string;
   version : string;
+  attributes : key_value list;
+  dropped_attributes_count : int32;
 }
 
 
@@ -56,9 +58,11 @@ val default_key_value :
   key_value
 (** [default_key_value ()] is the default value for type [key_value] *)
 
-val default_instrumentation_library : 
+val default_instrumentation_scope : 
   ?name:string ->
   ?version:string ->
+  ?attributes:key_value list ->
+  ?dropped_attributes_count:int32 ->
   unit ->
-  instrumentation_library
-(** [default_instrumentation_library ()] is the default value for type [instrumentation_library] *)
+  instrumentation_scope
+(** [default_instrumentation_scope ()] is the default value for type [instrumentation_scope] *)

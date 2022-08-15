@@ -15,5 +15,5 @@ val pp_key_value_list : Format.formatter -> Common_types.key_value_list -> unit
 val pp_key_value : Format.formatter -> Common_types.key_value -> unit 
 (** [pp_key_value v] formats v *)
 
-val pp_instrumentation_library : Format.formatter -> Common_types.instrumentation_library -> unit 
-(** [pp_instrumentation_library v] formats v *)
+val pp_instrumentation_scope : Format.formatter -> Common_types.instrumentation_scope -> unit 
+(** [pp_instrumentation_scope v] formats v *)
