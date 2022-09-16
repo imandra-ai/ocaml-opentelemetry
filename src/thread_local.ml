@@ -1,4 +1,4 @@
-module A = Atomic
+module A = Opentelemetry_atomic.Atomic
 
 type key = int
 
