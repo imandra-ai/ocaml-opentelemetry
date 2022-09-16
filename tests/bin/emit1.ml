@@ -23,16 +23,17 @@ let run_job () =
   let@ () = Fun.protect ~finally:(fun () -> Atomic.set stop true) in
   let i = ref 0 in
   while not @@ Atomic.get stop do
-    let@ scope =
+    let@ _scope =
       Atomic.incr num_tr;
       T.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
         ~attrs:[ "i", `Int !i ]
     in
 
     for j = 0 to 4 do
+      (* parent scope is found via thread local storage *)
       let@ scope =
         Atomic.incr num_tr;
-        T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope
+        T.Trace.with_ ~kind:T.Span.Span_kind_internal
           ~attrs:[ "j", `Int j ]
           "loop.inner"
       in
