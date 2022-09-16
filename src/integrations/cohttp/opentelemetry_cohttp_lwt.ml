@@ -45,12 +45,12 @@ module Server : sig
    *)
 
   val get_trace_context :
-    ?from:[ `Internal | `External ] -> Request.t -> Otel.Trace.scope option
+    ?from:[ `Internal | `External ] -> Request.t -> Otel.Scope.t option
   (** Get the tracing scope from the custom [x-ocaml-otel-traceparent] header
       added by [trace] and [with_].
    *)
 
-  val set_trace_context : Otel.Trace.scope -> Request.t -> Request.t
+  val set_trace_context : Otel.Scope.t -> Request.t -> Request.t
   (** Set the tracing scope in the custom [x-ocaml-otel-traceparent] header used
       by [trace] and [with_].
    *)
@@ -88,7 +88,7 @@ end = struct
 
   let header_x_ocaml_otel_traceparent = "x-ocaml-otel-traceparent"
 
-  let set_trace_context (scope : Otel.Trace.scope) req =
+  let set_trace_context (scope : Otel.Scope.t) req =
     let module Traceparent = Otel.Trace_context.Traceparent in
     let headers =
       Header.add (Request.headers req) header_x_ocaml_otel_traceparent
@@ -146,7 +146,7 @@ end = struct
         f req)
 end
 
-let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client) =
+let client ?(scope : Otel.Scope.t option) (module C : Cohttp_lwt.S.Client) =
   let module Traced = struct
     open Lwt.Syntax
 
@@ -170,7 +170,7 @@ let client ?(scope : Otel.Trace.scope option) (module C : Cohttp_lwt.S.Client) =
       let attrs = attrs_for ~uri ~meth () in
       trace_id, parent, attrs
 
-    let add_traceparent (scope : Otel.Trace.scope) headers =
+    let add_traceparent (scope : Otel.Scope.t) headers =
       let module Traceparent = Otel.Trace_context.Traceparent in
       let headers =
         match headers with

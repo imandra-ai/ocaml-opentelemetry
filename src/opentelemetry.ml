@@ -1,5 +1,7 @@
 (** Opentelemetry types and instrumentation *)
 
+module Thread_local = Thread_local
+
 module Lock = Lock
 (** Global lock *)
 
@@ -482,6 +484,48 @@ end = struct
     default_span_event ~time_unix_nano ~name ~attributes:attrs ()
 end
 
+(** {2 Scopes} *)
+
+(** Scopes.
+
+    A scope is a trace ID and the span ID of the currently active span.
+*)
+module Scope = struct
+  type t = {
+    trace_id: Trace_id.t;
+    span_id: Span_id.t;
+    mutable events: Event.t list;
+    mutable attrs: key_value list;
+  }
+
+  (** Add an event to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces an event, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_event (scope : t) (ev : unit -> Event.t) : unit =
+    if Collector.has_backend () then scope.events <- ev () :: scope.events
+
+  (** Add an attr to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces attributes, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_attrs (scope : t) (attrs : unit -> key_value list) : unit =
+    if Collector.has_backend () then
+      scope.attrs <- List.rev_append (attrs ()) scope.attrs
+end
+
+(* now. We use thread local storage to store the currently active scope,
+   if any. *)
+open struct
+  let global_scope : Scope.t Thread_local.t = Thread_local.create ()
+
+  (* access global scope if [scope=None] *)
+  let get_scope ?scope () =
+    match scope with
+    | Some _ -> scope
+    | None -> Thread_local.get global_scope
+end
+
 (** Span Link
 
    A pointer from the current span to another span in the same trace or in a
@@ -648,29 +692,17 @@ module Trace = struct
     let rs = make_resource_spans ?service_name ?attrs spans in
     Collector.send_trace [ rs ] ~ret:(fun () -> ())
 
-  type scope = {
+  type scope = Scope.t = {
     trace_id: Trace_id.t;
     span_id: Span_id.t;
     mutable events: Event.t list;
     mutable attrs: Span.key_value list;
   }
-  (** Scope to be used with {!with_}. *)
+  [@@deprecated "use Scope.t"]
 
-  (** Add an event to the scope. It will be aggregated into the span.
+  let add_event = Scope.add_event [@@deprecated "use Scope.add_event"]
 
-      Note that this takes a function that produces an event, and will only
-      call it if there is an instrumentation backend. *)
-  let[@inline] add_event (scope : scope) (ev : unit -> Event.t) : unit =
-    if Collector.has_backend () then scope.events <- ev () :: scope.events
-
-  (** Add an attr to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces attributes, and will only
-      call it if there is an instrumentation backend. *)
-  let[@inline] add_attrs (scope : scope) (attrs : unit -> Span.key_value list) :
-      unit =
-    if Collector.has_backend () then
-      scope.attrs <- List.rev_append (attrs ()) scope.attrs
+  let add_attrs = Scope.add_attrs [@@deprecated "use Scope.add_attrs"]
 
   (** Sync span guard.
 
@@ -678,7 +710,8 @@ module Trace = struct
       cause deadlocks. *)
   let with_ ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
-      ?links name (f : scope -> 'a) : 'a =
+      ?links name (f : Scope.t -> 'a) : 'a =
+    let scope = get_scope ?scope () in
     let trace_id =
       match trace_id, scope with
       | Some trace_id, _ -> trace_id
@@ -694,7 +727,8 @@ module Trace = struct
     let start_time = Timestamp_ns.now_unix_ns () in
     let span_id = Span_id.create () in
     let scope = { trace_id; span_id; events = []; attrs } in
-
+    (* set global scope in this thread *)
+    Thread_local.with_ global_scope scope @@ fun _sc ->
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
