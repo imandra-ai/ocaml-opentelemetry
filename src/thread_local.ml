@@ -67,5 +67,5 @@ let with_ self v f =
     restore_ ();
     res
   with e ->
-    (restore_ [@inlined]) ();
+    restore_ ();
     raise e
