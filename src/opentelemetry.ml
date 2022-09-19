@@ -512,18 +512,23 @@ module Scope = struct
   let[@inline] add_attrs (scope : t) (attrs : unit -> key_value list) : unit =
     if Collector.has_backend () then
       scope.attrs <- List.rev_append (attrs ()) scope.attrs
-end
 
-(* now. We use thread local storage to store the currently active scope,
-   if any. *)
-open struct
-  let global_scope : Scope.t Thread_local.t = Thread_local.create ()
+  (**/**)
 
-  (* access global scope if [scope=None] *)
-  let get_scope ?scope () =
+  (* define this locally *)
+  let _global_scope : t Thread_local.t = Thread_local.create ()
+
+  (**/**)
+
+  (** Obtain current scope from thread-local storage, if available *)
+  let get_surrounding ?scope () : t option =
     match scope with
     | Some _ -> scope
-    | None -> Thread_local.get global_scope
+    | None -> Thread_local.get _global_scope
+end
+
+open struct
+  let get_surrounding_scope = Scope.get_surrounding
 end
 
 (** Span Link
@@ -719,7 +724,7 @@ module Trace = struct
       if force_new_trace_id then
         None
       else
-        get_scope ?scope ()
+        get_surrounding_scope ?scope ()
     in
     let trace_id =
       match trace_id, scope with
@@ -739,7 +744,7 @@ module Trace = struct
     let span_id = Span_id.create () in
     let scope = { trace_id; span_id; events = []; attrs } in
     (* set global scope in this thread *)
-    Thread_local.with_ global_scope scope @@ fun _sc ->
+    Thread_local.with_ Scope._global_scope scope @@ fun _sc ->
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
