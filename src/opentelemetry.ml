@@ -706,20 +706,31 @@ module Trace = struct
 
   (** Sync span guard.
 
+      @param force_new_trace_id if true (default false), the span will not use a
+      surrounding context, or [scope], or [trace_id], but will always
+      create a fresh new trace ID.
+
       {b NOTE} be careful not to call this inside a Gc alarm, as it can
       cause deadlocks. *)
-  let with_ ?trace_state ?service_name
+  let with_ ?(force_new_trace_id = false) ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
       ?links name (f : Scope.t -> 'a) : 'a =
-    let scope = get_scope ?scope () in
+    let scope =
+      if force_new_trace_id then
+        None
+      else
+        get_scope ?scope ()
+    in
     let trace_id =
       match trace_id, scope with
+      | _ when force_new_trace_id -> Trace_id.create ()
       | Some trace_id, _ -> trace_id
       | None, Some scope -> scope.trace_id
       | None, None -> Trace_id.create ()
     in
     let parent =
       match parent, scope with
+      | _ when force_new_trace_id -> None
       | Some span_id, _ -> Some span_id
       | None, Some scope -> Some scope.span_id
       | None, None -> None
