@@ -15,7 +15,7 @@ module Trace = struct
 
   (** Sync span guard *)
   let with_ ?trace_state ?service_name ?(attrs = []) ?kind ?trace_id ?parent
-      ?scope ?links name (f : Trace.scope -> 'a Lwt.t) : 'a Lwt.t =
+      ?scope ?links name (f : Scope.t -> 'a Lwt.t) : 'a Lwt.t =
     let trace_id =
       match trace_id, scope with
       | Some trace_id, _ -> trace_id
