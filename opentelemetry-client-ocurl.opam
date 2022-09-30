@@ -13,7 +13,7 @@ depends: [
   "ocaml" {>= "4.08"}
   "mtime" {>= "1.4"}
   "opentelemetry" {= version}
-  "pbrt" {>= "2.2"}
+  "pbrt" {>= "2.3"}
   "odoc" {with-doc}
   "ocurl"
 ]
