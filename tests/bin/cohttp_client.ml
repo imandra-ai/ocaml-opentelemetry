@@ -13,7 +13,8 @@ let mk_client ~scope =
   Opentelemetry_cohttp_lwt.client ~scope (module Cohttp_lwt_unix.Client)
 
 let run () =
-  Printf.printf "collector is on %S\n%!" (Opentelemetry_client_ocurl.get_url ());
+  Printf.printf "collector is on %S\n%!"
+    (Opentelemetry_client_cohttp_lwt.get_url ());
   let open Lwt.Syntax in
   let rec go () =
     let@ scope =
@@ -35,13 +36,11 @@ let () =
   T.Globals.service_namespace := Some "ocaml-otel.test";
 
   let debug = ref false in
-  let thread = ref true in
   let batch_traces = ref 400 in
   let batch_metrics = ref 3 in
   let opts =
     [
       "--debug", Arg.Bool (( := ) debug), " enable debug output";
-      "--thread", Arg.Bool (( := ) thread), " use a background thread";
       "--batch-traces", Arg.Int (( := ) batch_traces), " size of traces batch";
       ( "--batch-metrics",
         Arg.Int (( := ) batch_metrics),
@@ -61,17 +60,17 @@ let () =
       None
   in
   let config =
-    Opentelemetry_client_ocurl.Config.make ~debug:!debug
+    Opentelemetry_client_cohttp_lwt.Config.make ~debug:!debug
       ~batch_traces:(some_if_nzero batch_traces)
       ~batch_metrics:(some_if_nzero batch_metrics)
-      ~thread:!thread ()
+      ()
   in
   Format.printf "@[<2>sleep outer: %.3fs,@ sleep inner: %.3fs,@ config: %a@]@."
-    !sleep_outer !sleep_inner Opentelemetry_client_ocurl.Config.pp config;
+    !sleep_outer !sleep_inner Opentelemetry_client_cohttp_lwt.Config.pp config;
 
   Format.printf
     "Check HTTP requests at \
      https://requestbin.com/r/enec1hql02hz/26qShWryt5vJc1JfrOwalhr5vQt@.";
 
-  Opentelemetry_client_ocurl.with_setup ~config () (fun () ->
+  Opentelemetry_client_cohttp_lwt.with_setup ~config () (fun () ->
       Lwt_main.run (run ()))
