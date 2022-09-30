@@ -552,6 +552,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let set_on_tick_callbacks = set_on_tick_callbacks
 
       let tick () =
+        tick_common_ ();
         sample_gc_metrics_if_needed ();
         let@ () = Lock.with_lock in
         let now = Mtime_clock.now () in
