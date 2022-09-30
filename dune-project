@@ -55,3 +55,15 @@
   (odoc :with-doc)
   (cohttp-lwt (>= "4.0.0")))
  (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
+
+(package
+  (name opentelemetry-client-cohttp-lwt)
+  (depends
+   (ocaml (>= "4.08"))
+   (mtime (>= "1.4")) ; for spans
+   (opentelemetry (= :version))
+   (pbrt (>= 2.2))
+   (odoc :with-doc)
+   cohttp-lwt
+   cohttp-lwt-unix)
+  (synopsis "Collector client for opentelemetry, using cohttp + lwt"))
