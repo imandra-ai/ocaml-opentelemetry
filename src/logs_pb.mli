@@ -9,8 +9,8 @@ val encode_severity_number : Logs_types.severity_number -> Pbrt.Encoder.t -> uni
 val encode_log_record : Logs_types.log_record -> Pbrt.Encoder.t -> unit
 (** [encode_log_record v encoder] encodes [v] with the given [encoder] *)
 
-val encode_instrumentation_library_logs : Logs_types.instrumentation_library_logs -> Pbrt.Encoder.t -> unit
-(** [encode_instrumentation_library_logs v encoder] encodes [v] with the given [encoder] *)
+val encode_scope_logs : Logs_types.scope_logs -> Pbrt.Encoder.t -> unit
+(** [encode_scope_logs v encoder] encodes [v] with the given [encoder] *)
 
 val encode_resource_logs : Logs_types.resource_logs -> Pbrt.Encoder.t -> unit
 (** [encode_resource_logs v encoder] encodes [v] with the given [encoder] *)
@@ -30,8 +30,8 @@ val decode_severity_number : Pbrt.Decoder.t -> Logs_types.severity_number
 val decode_log_record : Pbrt.Decoder.t -> Logs_types.log_record
 (** [decode_log_record decoder] decodes a [log_record] value from [decoder] *)
 
-val decode_instrumentation_library_logs : Pbrt.Decoder.t -> Logs_types.instrumentation_library_logs
-(** [decode_instrumentation_library_logs decoder] decodes a [instrumentation_library_logs] value from [decoder] *)
+val decode_scope_logs : Pbrt.Decoder.t -> Logs_types.scope_logs
+(** [decode_scope_logs decoder] decodes a [scope_logs] value from [decoder] *)
 
 val decode_resource_logs : Pbrt.Decoder.t -> Logs_types.resource_logs
 (** [decode_resource_logs decoder] decodes a [resource_logs] value from [decoder] *)

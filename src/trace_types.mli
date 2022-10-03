@@ -55,15 +55,15 @@ type span = {
   status : status option;
 }
 
-type instrumentation_library_spans = {
-  instrumentation_library : Common_types.instrumentation_library option;
+type scope_spans = {
+  scope : Common_types.instrumentation_scope option;
   spans : span list;
   schema_url : string;
 }
 
 type resource_spans = {
   resource : Resource_types.resource option;
-  instrumentation_library_spans : instrumentation_library_spans list;
+  scope_spans : scope_spans list;
   schema_url : string;
 }
 
@@ -126,17 +126,17 @@ val default_span :
   span
 (** [default_span ()] is the default value for type [span] *)
 
-val default_instrumentation_library_spans : 
-  ?instrumentation_library:Common_types.instrumentation_library option ->
+val default_scope_spans : 
+  ?scope:Common_types.instrumentation_scope option ->
   ?spans:span list ->
   ?schema_url:string ->
   unit ->
-  instrumentation_library_spans
-(** [default_instrumentation_library_spans ()] is the default value for type [instrumentation_library_spans] *)
+  scope_spans
+(** [default_scope_spans ()] is the default value for type [scope_spans] *)
 
 val default_resource_spans : 
   ?resource:Resource_types.resource option ->
-  ?instrumentation_library_spans:instrumentation_library_spans list ->
+  ?scope_spans:scope_spans list ->
   ?schema_url:string ->
   unit ->
   resource_spans

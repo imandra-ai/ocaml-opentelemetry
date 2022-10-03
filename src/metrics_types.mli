@@ -49,11 +49,13 @@ type histogram_data_point = {
   start_time_unix_nano : int64;
   time_unix_nano : int64;
   count : int64;
-  sum : float;
+  sum : float option;
   bucket_counts : int64 list;
   explicit_bounds : float list;
   exemplars : exemplar list;
   flags : int32;
+  min : float option;
+  max : float option;
 }
 
 type histogram = {
@@ -71,13 +73,15 @@ type exponential_histogram_data_point = {
   start_time_unix_nano : int64;
   time_unix_nano : int64;
   count : int64;
-  sum : float;
+  sum : float option;
   scale : int32;
   zero_count : int64;
   positive : exponential_histogram_data_point_buckets option;
   negative : exponential_histogram_data_point_buckets option;
   flags : int32;
   exemplars : exemplar list;
+  min : float option;
+  max : float option;
 }
 
 type exponential_histogram = {
@@ -118,15 +122,15 @@ and metric = {
   data : metric_data;
 }
 
-type instrumentation_library_metrics = {
-  instrumentation_library : Common_types.instrumentation_library option;
+type scope_metrics = {
+  scope : Common_types.instrumentation_scope option;
   metrics : metric list;
   schema_url : string;
 }
 
 type resource_metrics = {
   resource : Resource_types.resource option;
-  instrumentation_library_metrics : instrumentation_library_metrics list;
+  scope_metrics : scope_metrics list;
   schema_url : string;
 }
 
@@ -190,11 +194,13 @@ val default_histogram_data_point :
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
   ?count:int64 ->
-  ?sum:float ->
+  ?sum:float option ->
   ?bucket_counts:int64 list ->
   ?explicit_bounds:float list ->
   ?exemplars:exemplar list ->
   ?flags:int32 ->
+  ?min:float option ->
+  ?max:float option ->
   unit ->
   histogram_data_point
 (** [default_histogram_data_point ()] is the default value for type [histogram_data_point] *)
@@ -218,13 +224,15 @@ val default_exponential_histogram_data_point :
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
   ?count:int64 ->
-  ?sum:float ->
+  ?sum:float option ->
   ?scale:int32 ->
   ?zero_count:int64 ->
   ?positive:exponential_histogram_data_point_buckets option ->
   ?negative:exponential_histogram_data_point_buckets option ->
   ?flags:int32 ->
   ?exemplars:exemplar list ->
+  ?min:float option ->
+  ?max:float option ->
   unit ->
   exponential_histogram_data_point
 (** [default_exponential_histogram_data_point ()] is the default value for type [exponential_histogram_data_point] *)
@@ -273,17 +281,17 @@ val default_metric :
   metric
 (** [default_metric ()] is the default value for type [metric] *)
 
-val default_instrumentation_library_metrics : 
-  ?instrumentation_library:Common_types.instrumentation_library option ->
+val default_scope_metrics : 
+  ?scope:Common_types.instrumentation_scope option ->
   ?metrics:metric list ->
   ?schema_url:string ->
   unit ->
-  instrumentation_library_metrics
-(** [default_instrumentation_library_metrics ()] is the default value for type [instrumentation_library_metrics] *)
+  scope_metrics
+(** [default_scope_metrics ()] is the default value for type [scope_metrics] *)
 
 val default_resource_metrics : 
   ?resource:Resource_types.resource option ->
-  ?instrumentation_library_metrics:instrumentation_library_metrics list ->
+  ?scope_metrics:scope_metrics list ->
   ?schema_url:string ->
   unit ->
   resource_metrics

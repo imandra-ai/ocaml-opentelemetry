@@ -21,8 +21,8 @@ val pp_status : Format.formatter -> Trace_types.status -> unit
 val pp_span : Format.formatter -> Trace_types.span -> unit 
 (** [pp_span v] formats v *)
 
-val pp_instrumentation_library_spans : Format.formatter -> Trace_types.instrumentation_library_spans -> unit 
-(** [pp_instrumentation_library_spans v] formats v *)
+val pp_scope_spans : Format.formatter -> Trace_types.scope_spans -> unit 
+(** [pp_scope_spans v] formats v *)
 
 val pp_resource_spans : Format.formatter -> Trace_types.resource_spans -> unit 
 (** [pp_resource_spans v] formats v *)

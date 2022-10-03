@@ -33,7 +33,6 @@ type log_record = {
   observed_time_unix_nano : int64;
   severity_number : severity_number;
   severity_text : string;
-  name : string;
   body : Common_types.any_value option;
   attributes : Common_types.key_value list;
   dropped_attributes_count : int32;
@@ -42,15 +41,15 @@ type log_record = {
   span_id : bytes;
 }
 
-type instrumentation_library_logs = {
-  instrumentation_library : Common_types.instrumentation_library option;
+type scope_logs = {
+  scope : Common_types.instrumentation_scope option;
   log_records : log_record list;
   schema_url : string;
 }
 
 type resource_logs = {
   resource : Resource_types.resource option;
-  instrumentation_library_logs : instrumentation_library_logs list;
+  scope_logs : scope_logs list;
   schema_url : string;
 }
 
@@ -69,7 +68,6 @@ let rec default_log_record
   ?observed_time_unix_nano:((observed_time_unix_nano:int64) = 0L)
   ?severity_number:((severity_number:severity_number) = default_severity_number ())
   ?severity_text:((severity_text:string) = "")
-  ?name:((name:string) = "")
   ?body:((body:Common_types.any_value option) = None)
   ?attributes:((attributes:Common_types.key_value list) = [])
   ?dropped_attributes_count:((dropped_attributes_count:int32) = 0l)
@@ -81,7 +79,6 @@ let rec default_log_record
   observed_time_unix_nano;
   severity_number;
   severity_text;
-  name;
   body;
   attributes;
   dropped_attributes_count;
@@ -90,23 +87,23 @@ let rec default_log_record
   span_id;
 }
 
-let rec default_instrumentation_library_logs 
-  ?instrumentation_library:((instrumentation_library:Common_types.instrumentation_library option) = None)
+let rec default_scope_logs 
+  ?scope:((scope:Common_types.instrumentation_scope option) = None)
   ?log_records:((log_records:log_record list) = [])
   ?schema_url:((schema_url:string) = "")
-  () : instrumentation_library_logs  = {
-  instrumentation_library;
+  () : scope_logs  = {
+  scope;
   log_records;
   schema_url;
 }
 
 let rec default_resource_logs 
   ?resource:((resource:Resource_types.resource option) = None)
-  ?instrumentation_library_logs:((instrumentation_library_logs:instrumentation_library_logs list) = [])
+  ?scope_logs:((scope_logs:scope_logs list) = [])
   ?schema_url:((schema_url:string) = "")
   () : resource_logs  = {
   resource;
-  instrumentation_library_logs;
+  scope_logs;
   schema_url;
 }
 

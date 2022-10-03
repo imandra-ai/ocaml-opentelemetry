@@ -3,10 +3,10 @@
 module Thread_local = Thread_local
 
 module Lock = Lock
-(** Global lock *)
+(** Global lock. *)
 
 module Rand_bytes = Rand_bytes
-(** Generation of random identifiers *)
+(** Generation of random identifiers. *)
 
 open struct
   let[@inline] result_bind x f =
@@ -17,7 +17,9 @@ end
 
 (** {2 Wire format} *)
 
-(** Protobuf types *)
+(** Protobuf types.
+
+   This is mostly useful internally. Users should not need to touch it. *)
 module Proto = struct
   module Common = struct
     include Common_types
@@ -256,7 +258,12 @@ end = struct
 
   let to_bytes self = self
 
-  let create () : t = Collector.rand_bytes_16 ()
+  let create () : t =
+    let b = Collector.rand_bytes_16 () in
+    assert (Bytes.length b = 16);
+    (* make sure the identifier is not all 0, which is a dummy identifier. *)
+    Bytes.set b 0 (Char.unsafe_chr (Char.code (Bytes.get b 0) lor 1));
+    b
 
   let of_bytes b =
     if Bytes.length b = 16 then
@@ -293,7 +300,12 @@ end = struct
 
   let to_bytes self = self
 
-  let create () : t = Collector.rand_bytes_8 ()
+  let create () : t =
+    let b = Collector.rand_bytes_8 () in
+    assert (Bytes.length b = 8);
+    (* make sure the identifier is not all 0, which is a dummy identifier. *)
+    Bytes.set b 0 (Char.unsafe_chr (Char.code (Bytes.get b 0) lor 1));
+    b
 
   let of_bytes b =
     if Bytes.length b = 8 then
@@ -400,8 +412,7 @@ module Globals = struct
   let service_instance_id = ref None
 
   let instrumentation_library =
-    default_instrumentation_library ~version:"0.2" ~name:"ocaml-opentelemetry"
-      ()
+    default_instrumentation_scope ~version:"0.2" ~name:"ocaml-opentelemetry" ()
 
   (** Global attributes, initially set
       via OTEL_RESOURCE_ATTRIBUTES and modifiable
@@ -677,14 +688,12 @@ module Trace = struct
 
   let make_resource_spans ?service_name ?attrs spans =
     let ils =
-      default_instrumentation_library_spans
-        ~instrumentation_library:(Some Globals.instrumentation_library) ~spans
+      default_scope_spans ~scope:(Some Globals.instrumentation_library) ~spans
         ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
-    default_resource_spans ~resource:(Some resource)
-      ~instrumentation_library_spans:[ ils ] ()
+    default_resource_spans ~resource:(Some resource) ~scope_spans:[ ils ] ()
 
   (** Sync emitter.
 
@@ -857,14 +866,12 @@ module Metrics = struct
   let make_resource_metrics ?service_name ?attrs (l : t list) : resource_metrics
       =
     let lm =
-      default_instrumentation_library_metrics
-        ~instrumentation_library:(Some Globals.instrumentation_library)
+      default_scope_metrics ~scope:(Some Globals.instrumentation_library)
         ~metrics:l ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
-    default_resource_metrics ~instrumentation_library_metrics:[ lm ]
-      ~resource:(Some resource) ()
+    default_resource_metrics ~scope_metrics:[ lm ] ~resource:(Some resource) ()
 
   (** Emit some metrics to the collector (sync). This blocks until
       the backend has pushed the metrics into some internal queue, or
@@ -962,13 +969,11 @@ module Logs = struct
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
     let ll =
-      default_instrumentation_library_logs
-        ~instrumentation_library:(Some Globals.instrumentation_library)
+      default_scope_logs ~scope:(Some Globals.instrumentation_library)
         ~log_records:l ()
     in
     let rl =
-      default_resource_logs ~resource:(Some resource)
-        ~instrumentation_library_logs:[ ll ] ()
+      default_resource_logs ~resource:(Some resource) ~scope_logs:[ ll ] ()
     in
     Collector.send_logs [ rl ] ~ret:ignore
 end

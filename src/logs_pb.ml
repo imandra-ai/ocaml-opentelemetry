@@ -5,7 +5,6 @@ type log_record_mutable = {
   mutable observed_time_unix_nano : int64;
   mutable severity_number : Logs_types.severity_number;
   mutable severity_text : string;
-  mutable name : string;
   mutable body : Common_types.any_value option;
   mutable attributes : Common_types.key_value list;
   mutable dropped_attributes_count : int32;
@@ -19,7 +18,6 @@ let default_log_record_mutable () : log_record_mutable = {
   observed_time_unix_nano = 0L;
   severity_number = Logs_types.default_severity_number ();
   severity_text = "";
-  name = "";
   body = None;
   attributes = [];
   dropped_attributes_count = 0l;
@@ -28,27 +26,27 @@ let default_log_record_mutable () : log_record_mutable = {
   span_id = Bytes.create 0;
 }
 
-type instrumentation_library_logs_mutable = {
-  mutable instrumentation_library : Common_types.instrumentation_library option;
+type scope_logs_mutable = {
+  mutable scope : Common_types.instrumentation_scope option;
   mutable log_records : Logs_types.log_record list;
   mutable schema_url : string;
 }
 
-let default_instrumentation_library_logs_mutable () : instrumentation_library_logs_mutable = {
-  instrumentation_library = None;
+let default_scope_logs_mutable () : scope_logs_mutable = {
+  scope = None;
   log_records = [];
   schema_url = "";
 }
 
 type resource_logs_mutable = {
   mutable resource : Resource_types.resource option;
-  mutable instrumentation_library_logs : Logs_types.instrumentation_library_logs list;
+  mutable scope_logs : Logs_types.scope_logs list;
   mutable schema_url : string;
 }
 
 let default_resource_logs_mutable () : resource_logs_mutable = {
   resource = None;
-  instrumentation_library_logs = [];
+  scope_logs = [];
   schema_url = "";
 }
 
@@ -118,11 +116,6 @@ let rec decode_log_record d =
     end
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(3)" pk
-    | Some (4, Pbrt.Bytes) -> begin
-      v.name <- Pbrt.Decoder.string d;
-    end
-    | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(4)" pk
     | Some (5, Pbrt.Bytes) -> begin
       v.body <- Some (Common_pb.decode_any_value (Pbrt.Decoder.nested d));
     end
@@ -160,7 +153,6 @@ let rec decode_log_record d =
     Logs_types.observed_time_unix_nano = v.observed_time_unix_nano;
     Logs_types.severity_number = v.severity_number;
     Logs_types.severity_text = v.severity_text;
-    Logs_types.name = v.name;
     Logs_types.body = v.body;
     Logs_types.attributes = v.attributes;
     Logs_types.dropped_attributes_count = v.dropped_attributes_count;
@@ -169,8 +161,8 @@ let rec decode_log_record d =
     Logs_types.span_id = v.span_id;
   } : Logs_types.log_record)
 
-let rec decode_instrumentation_library_logs d =
-  let v = default_instrumentation_library_logs_mutable () in
+let rec decode_scope_logs d =
+  let v = default_scope_logs_mutable () in
   let continue__= ref true in
   while !continue__ do
     match Pbrt.Decoder.key d with
@@ -178,27 +170,27 @@ let rec decode_instrumentation_library_logs d =
       v.log_records <- List.rev v.log_records;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      v.instrumentation_library <- Some (Common_pb.decode_instrumentation_library (Pbrt.Decoder.nested d));
+      v.scope <- Some (Common_pb.decode_instrumentation_scope (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_logs), field(1)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
       v.log_records <- (decode_log_record (Pbrt.Decoder.nested d)) :: v.log_records;
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_logs), field(2)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(2)" pk
     | Some (3, Pbrt.Bytes) -> begin
       v.schema_url <- Pbrt.Decoder.string d;
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_logs), field(3)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(3)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   ({
-    Logs_types.instrumentation_library = v.instrumentation_library;
+    Logs_types.scope = v.scope;
     Logs_types.log_records = v.log_records;
     Logs_types.schema_url = v.schema_url;
-  } : Logs_types.instrumentation_library_logs)
+  } : Logs_types.scope_logs)
 
 let rec decode_resource_logs d =
   let v = default_resource_logs_mutable () in
@@ -206,7 +198,7 @@ let rec decode_resource_logs d =
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
-      v.instrumentation_library_logs <- List.rev v.instrumentation_library_logs;
+      v.scope_logs <- List.rev v.scope_logs;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
       v.resource <- Some (Resource_pb.decode_resource (Pbrt.Decoder.nested d));
@@ -214,7 +206,7 @@ let rec decode_resource_logs d =
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      v.instrumentation_library_logs <- (decode_instrumentation_library_logs (Pbrt.Decoder.nested d)) :: v.instrumentation_library_logs;
+      v.scope_logs <- (decode_scope_logs (Pbrt.Decoder.nested d)) :: v.scope_logs;
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(2)" pk
@@ -227,7 +219,7 @@ let rec decode_resource_logs d =
   done;
   ({
     Logs_types.resource = v.resource;
-    Logs_types.instrumentation_library_logs = v.instrumentation_library_logs;
+    Logs_types.scope_logs = v.scope_logs;
     Logs_types.schema_url = v.schema_url;
   } : Logs_types.resource_logs)
 
@@ -293,8 +285,6 @@ let rec encode_log_record (v:Logs_types.log_record) encoder =
   encode_severity_number v.Logs_types.severity_number encoder;
   Pbrt.Encoder.key (3, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.string v.Logs_types.severity_text encoder;
-  Pbrt.Encoder.key (4, Pbrt.Bytes) encoder; 
-  Pbrt.Encoder.string v.Logs_types.name encoder;
   begin match v.Logs_types.body with
   | Some x -> 
     Pbrt.Encoder.key (5, Pbrt.Bytes) encoder; 
@@ -315,11 +305,11 @@ let rec encode_log_record (v:Logs_types.log_record) encoder =
   Pbrt.Encoder.bytes v.Logs_types.span_id encoder;
   ()
 
-let rec encode_instrumentation_library_logs (v:Logs_types.instrumentation_library_logs) encoder = 
-  begin match v.Logs_types.instrumentation_library with
+let rec encode_scope_logs (v:Logs_types.scope_logs) encoder = 
+  begin match v.Logs_types.scope with
   | Some x -> 
     Pbrt.Encoder.key (1, Pbrt.Bytes) encoder; 
-    Pbrt.Encoder.nested (Common_pb.encode_instrumentation_library x) encoder;
+    Pbrt.Encoder.nested (Common_pb.encode_instrumentation_scope x) encoder;
   | None -> ();
   end;
   List.iter (fun x -> 
@@ -339,8 +329,8 @@ let rec encode_resource_logs (v:Logs_types.resource_logs) encoder =
   end;
   List.iter (fun x -> 
     Pbrt.Encoder.key (2, Pbrt.Bytes) encoder; 
-    Pbrt.Encoder.nested (encode_instrumentation_library_logs x) encoder;
-  ) v.Logs_types.instrumentation_library_logs;
+    Pbrt.Encoder.nested (encode_scope_logs x) encoder;
+  ) v.Logs_types.scope_logs;
   Pbrt.Encoder.key (3, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.string v.Logs_types.schema_url encoder;
   ()

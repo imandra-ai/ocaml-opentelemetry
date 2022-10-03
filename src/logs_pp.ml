@@ -34,7 +34,6 @@ let rec pp_log_record fmt (v:Logs_types.log_record) =
     Pbrt.Pp.pp_record_field ~first:false "observed_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.Logs_types.observed_time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "severity_number" pp_severity_number fmt v.Logs_types.severity_number;
     Pbrt.Pp.pp_record_field ~first:false "severity_text" Pbrt.Pp.pp_string fmt v.Logs_types.severity_text;
-    Pbrt.Pp.pp_record_field ~first:false "name" Pbrt.Pp.pp_string fmt v.Logs_types.name;
     Pbrt.Pp.pp_record_field ~first:false "body" (Pbrt.Pp.pp_option Common_pp.pp_any_value) fmt v.Logs_types.body;
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common_pp.pp_key_value) fmt v.Logs_types.attributes;
     Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.Logs_types.dropped_attributes_count;
@@ -44,9 +43,9 @@ let rec pp_log_record fmt (v:Logs_types.log_record) =
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
-let rec pp_instrumentation_library_logs fmt (v:Logs_types.instrumentation_library_logs) = 
+let rec pp_scope_logs fmt (v:Logs_types.scope_logs) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "instrumentation_library" (Pbrt.Pp.pp_option Common_pp.pp_instrumentation_library) fmt v.Logs_types.instrumentation_library;
+    Pbrt.Pp.pp_record_field ~first:true "scope" (Pbrt.Pp.pp_option Common_pp.pp_instrumentation_scope) fmt v.Logs_types.scope;
     Pbrt.Pp.pp_record_field ~first:false "log_records" (Pbrt.Pp.pp_list pp_log_record) fmt v.Logs_types.log_records;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.Logs_types.schema_url;
   in
@@ -55,7 +54,7 @@ let rec pp_instrumentation_library_logs fmt (v:Logs_types.instrumentation_librar
 let rec pp_resource_logs fmt (v:Logs_types.resource_logs) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "resource" (Pbrt.Pp.pp_option Resource_pp.pp_resource) fmt v.Logs_types.resource;
-    Pbrt.Pp.pp_record_field ~first:false "instrumentation_library_logs" (Pbrt.Pp.pp_list pp_instrumentation_library_logs) fmt v.Logs_types.instrumentation_library_logs;
+    Pbrt.Pp.pp_record_field ~first:false "scope_logs" (Pbrt.Pp.pp_list pp_scope_logs) fmt v.Logs_types.scope_logs;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.Logs_types.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()

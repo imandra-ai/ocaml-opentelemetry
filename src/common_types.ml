@@ -23,9 +23,11 @@ and key_value = {
   value : any_value option;
 }
 
-type instrumentation_library = {
+type instrumentation_scope = {
   name : string;
   version : string;
+  attributes : key_value list;
+  dropped_attributes_count : int32;
 }
 
 let rec default_any_value () : any_value = String_value ("")
@@ -50,10 +52,14 @@ and default_key_value
   value;
 }
 
-let rec default_instrumentation_library 
+let rec default_instrumentation_scope 
   ?name:((name:string) = "")
   ?version:((version:string) = "")
-  () : instrumentation_library  = {
+  ?attributes:((attributes:key_value list) = [])
+  ?dropped_attributes_count:((dropped_attributes_count:int32) = 0l)
+  () : instrumentation_scope  = {
   name;
   version;
+  attributes;
+  dropped_attributes_count;
 }

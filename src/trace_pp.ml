@@ -61,9 +61,9 @@ let rec pp_span fmt (v:Trace_types.span) =
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
-let rec pp_instrumentation_library_spans fmt (v:Trace_types.instrumentation_library_spans) = 
+let rec pp_scope_spans fmt (v:Trace_types.scope_spans) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "instrumentation_library" (Pbrt.Pp.pp_option Common_pp.pp_instrumentation_library) fmt v.Trace_types.instrumentation_library;
+    Pbrt.Pp.pp_record_field ~first:true "scope" (Pbrt.Pp.pp_option Common_pp.pp_instrumentation_scope) fmt v.Trace_types.scope;
     Pbrt.Pp.pp_record_field ~first:false "spans" (Pbrt.Pp.pp_list pp_span) fmt v.Trace_types.spans;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.Trace_types.schema_url;
   in
@@ -72,7 +72,7 @@ let rec pp_instrumentation_library_spans fmt (v:Trace_types.instrumentation_libr
 let rec pp_resource_spans fmt (v:Trace_types.resource_spans) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "resource" (Pbrt.Pp.pp_option Resource_pp.pp_resource) fmt v.Trace_types.resource;
-    Pbrt.Pp.pp_record_field ~first:false "instrumentation_library_spans" (Pbrt.Pp.pp_list pp_instrumentation_library_spans) fmt v.Trace_types.instrumentation_library_spans;
+    Pbrt.Pp.pp_record_field ~first:false "scope_spans" (Pbrt.Pp.pp_list pp_scope_spans) fmt v.Trace_types.scope_spans;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.Trace_types.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()

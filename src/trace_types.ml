@@ -52,15 +52,15 @@ type span = {
   status : status option;
 }
 
-type instrumentation_library_spans = {
-  instrumentation_library : Common_types.instrumentation_library option;
+type scope_spans = {
+  scope : Common_types.instrumentation_scope option;
   spans : span list;
   schema_url : string;
 }
 
 type resource_spans = {
   resource : Resource_types.resource option;
-  instrumentation_library_spans : instrumentation_library_spans list;
+  scope_spans : scope_spans list;
   schema_url : string;
 }
 
@@ -140,23 +140,23 @@ let rec default_span
   status;
 }
 
-let rec default_instrumentation_library_spans 
-  ?instrumentation_library:((instrumentation_library:Common_types.instrumentation_library option) = None)
+let rec default_scope_spans 
+  ?scope:((scope:Common_types.instrumentation_scope option) = None)
   ?spans:((spans:span list) = [])
   ?schema_url:((schema_url:string) = "")
-  () : instrumentation_library_spans  = {
-  instrumentation_library;
+  () : scope_spans  = {
+  scope;
   spans;
   schema_url;
 }
 
 let rec default_resource_spans 
   ?resource:((resource:Resource_types.resource option) = None)
-  ?instrumentation_library_spans:((instrumentation_library_spans:instrumentation_library_spans list) = [])
+  ?scope_spans:((scope_spans:scope_spans list) = [])
   ?schema_url:((schema_url:string) = "")
   () : resource_spans  = {
   resource;
-  instrumentation_library_spans;
+  scope_spans;
   schema_url;
 }
 

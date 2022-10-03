@@ -59,11 +59,13 @@ type histogram_data_point_mutable = {
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
   mutable count : int64;
-  mutable sum : float;
+  mutable sum : float option;
   mutable bucket_counts : int64 list;
   mutable explicit_bounds : float list;
   mutable exemplars : Metrics_types.exemplar list;
   mutable flags : int32;
+  mutable min : float option;
+  mutable max : float option;
 }
 
 let default_histogram_data_point_mutable () : histogram_data_point_mutable = {
@@ -71,11 +73,13 @@ let default_histogram_data_point_mutable () : histogram_data_point_mutable = {
   start_time_unix_nano = 0L;
   time_unix_nano = 0L;
   count = 0L;
-  sum = 0.;
+  sum = None;
   bucket_counts = [];
   explicit_bounds = [];
   exemplars = [];
   flags = 0l;
+  min = None;
+  max = None;
 }
 
 type histogram_mutable = {
@@ -103,13 +107,15 @@ type exponential_histogram_data_point_mutable = {
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
   mutable count : int64;
-  mutable sum : float;
+  mutable sum : float option;
   mutable scale : int32;
   mutable zero_count : int64;
   mutable positive : Metrics_types.exponential_histogram_data_point_buckets option;
   mutable negative : Metrics_types.exponential_histogram_data_point_buckets option;
   mutable flags : int32;
   mutable exemplars : Metrics_types.exemplar list;
+  mutable min : float option;
+  mutable max : float option;
 }
 
 let default_exponential_histogram_data_point_mutable () : exponential_histogram_data_point_mutable = {
@@ -117,13 +123,15 @@ let default_exponential_histogram_data_point_mutable () : exponential_histogram_
   start_time_unix_nano = 0L;
   time_unix_nano = 0L;
   count = 0L;
-  sum = 0.;
+  sum = None;
   scale = 0l;
   zero_count = 0L;
   positive = None;
   negative = None;
   flags = 0l;
   exemplars = [];
+  min = None;
+  max = None;
 }
 
 type exponential_histogram_mutable = {
@@ -188,27 +196,27 @@ let default_metric_mutable () : metric_mutable = {
   data = Metrics_types.Gauge (Metrics_types.default_gauge ());
 }
 
-type instrumentation_library_metrics_mutable = {
-  mutable instrumentation_library : Common_types.instrumentation_library option;
+type scope_metrics_mutable = {
+  mutable scope : Common_types.instrumentation_scope option;
   mutable metrics : Metrics_types.metric list;
   mutable schema_url : string;
 }
 
-let default_instrumentation_library_metrics_mutable () : instrumentation_library_metrics_mutable = {
-  instrumentation_library = None;
+let default_scope_metrics_mutable () : scope_metrics_mutable = {
+  scope = None;
   metrics = [];
   schema_url = "";
 }
 
 type resource_metrics_mutable = {
   mutable resource : Resource_types.resource option;
-  mutable instrumentation_library_metrics : Metrics_types.instrumentation_library_metrics list;
+  mutable scope_metrics : Metrics_types.scope_metrics list;
   mutable schema_url : string;
 }
 
 let default_resource_metrics_mutable () : resource_metrics_mutable = {
   resource = None;
-  instrumentation_library_metrics = [];
+  scope_metrics = [];
   schema_url = "";
 }
 
@@ -443,7 +451,7 @@ let rec decode_histogram_data_point d =
     | Some (4, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(4)" pk
     | Some (5, Pbrt.Bits64) -> begin
-      v.sum <- Pbrt.Decoder.float_as_bits64 d;
+      v.sum <- Some (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (5, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(5)" pk
@@ -467,6 +475,16 @@ let rec decode_histogram_data_point d =
     end
     | Some (10, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(10)" pk
+    | Some (11, Pbrt.Bits64) -> begin
+      v.min <- Some (Pbrt.Decoder.float_as_bits64 d);
+    end
+    | Some (11, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(11)" pk
+    | Some (12, Pbrt.Bits64) -> begin
+      v.max <- Some (Pbrt.Decoder.float_as_bits64 d);
+    end
+    | Some (12, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(12)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   ({
@@ -479,6 +497,8 @@ let rec decode_histogram_data_point d =
     Metrics_types.explicit_bounds = v.explicit_bounds;
     Metrics_types.exemplars = v.exemplars;
     Metrics_types.flags = v.flags;
+    Metrics_types.min = v.min;
+    Metrics_types.max = v.max;
   } : Metrics_types.histogram_data_point)
 
 let rec decode_histogram d =
@@ -561,7 +581,7 @@ let rec decode_exponential_histogram_data_point d =
     | Some (4, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(4)" pk
     | Some (5, Pbrt.Bits64) -> begin
-      v.sum <- Pbrt.Decoder.float_as_bits64 d;
+      v.sum <- Some (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (5, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(5)" pk
@@ -595,6 +615,16 @@ let rec decode_exponential_histogram_data_point d =
     end
     | Some (11, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(11)" pk
+    | Some (12, Pbrt.Bits64) -> begin
+      v.min <- Some (Pbrt.Decoder.float_as_bits64 d);
+    end
+    | Some (12, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(12)" pk
+    | Some (13, Pbrt.Bits64) -> begin
+      v.max <- Some (Pbrt.Decoder.float_as_bits64 d);
+    end
+    | Some (13, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(13)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   ({
@@ -609,6 +639,8 @@ let rec decode_exponential_histogram_data_point d =
     Metrics_types.negative = v.negative;
     Metrics_types.flags = v.flags;
     Metrics_types.exemplars = v.exemplars;
+    Metrics_types.min = v.min;
+    Metrics_types.max = v.max;
   } : Metrics_types.exponential_histogram_data_point)
 
 let rec decode_exponential_histogram d =
@@ -809,8 +841,8 @@ and decode_metric d =
     Metrics_types.data = v.data;
   } : Metrics_types.metric)
 
-let rec decode_instrumentation_library_metrics d =
-  let v = default_instrumentation_library_metrics_mutable () in
+let rec decode_scope_metrics d =
+  let v = default_scope_metrics_mutable () in
   let continue__= ref true in
   while !continue__ do
     match Pbrt.Decoder.key d with
@@ -818,27 +850,27 @@ let rec decode_instrumentation_library_metrics d =
       v.metrics <- List.rev v.metrics;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      v.instrumentation_library <- Some (Common_pb.decode_instrumentation_library (Pbrt.Decoder.nested d));
+      v.scope <- Some (Common_pb.decode_instrumentation_scope (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_metrics), field(1)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_metrics), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
       v.metrics <- (decode_metric (Pbrt.Decoder.nested d)) :: v.metrics;
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_metrics), field(2)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_metrics), field(2)" pk
     | Some (3, Pbrt.Bytes) -> begin
       v.schema_url <- Pbrt.Decoder.string d;
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_library_metrics), field(3)" pk
+      Pbrt.Decoder.unexpected_payload "Message(scope_metrics), field(3)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   ({
-    Metrics_types.instrumentation_library = v.instrumentation_library;
+    Metrics_types.scope = v.scope;
     Metrics_types.metrics = v.metrics;
     Metrics_types.schema_url = v.schema_url;
-  } : Metrics_types.instrumentation_library_metrics)
+  } : Metrics_types.scope_metrics)
 
 let rec decode_resource_metrics d =
   let v = default_resource_metrics_mutable () in
@@ -846,7 +878,7 @@ let rec decode_resource_metrics d =
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
-      v.instrumentation_library_metrics <- List.rev v.instrumentation_library_metrics;
+      v.scope_metrics <- List.rev v.scope_metrics;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
       v.resource <- Some (Resource_pb.decode_resource (Pbrt.Decoder.nested d));
@@ -854,7 +886,7 @@ let rec decode_resource_metrics d =
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_metrics), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      v.instrumentation_library_metrics <- (decode_instrumentation_library_metrics (Pbrt.Decoder.nested d)) :: v.instrumentation_library_metrics;
+      v.scope_metrics <- (decode_scope_metrics (Pbrt.Decoder.nested d)) :: v.scope_metrics;
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_metrics), field(2)" pk
@@ -867,7 +899,7 @@ let rec decode_resource_metrics d =
   done;
   ({
     Metrics_types.resource = v.resource;
-    Metrics_types.instrumentation_library_metrics = v.instrumentation_library_metrics;
+    Metrics_types.scope_metrics = v.scope_metrics;
     Metrics_types.schema_url = v.schema_url;
   } : Metrics_types.resource_metrics)
 
@@ -997,8 +1029,12 @@ let rec encode_histogram_data_point (v:Metrics_types.histogram_data_point) encod
   Pbrt.Encoder.int64_as_bits64 v.Metrics_types.time_unix_nano encoder;
   Pbrt.Encoder.key (4, Pbrt.Bits64) encoder; 
   Pbrt.Encoder.int64_as_bits64 v.Metrics_types.count encoder;
-  Pbrt.Encoder.key (5, Pbrt.Bits64) encoder; 
-  Pbrt.Encoder.float_as_bits64 v.Metrics_types.sum encoder;
+  begin match v.Metrics_types.sum with
+  | Some x -> 
+    Pbrt.Encoder.key (5, Pbrt.Bits64) encoder; 
+    Pbrt.Encoder.float_as_bits64 x encoder;
+  | None -> ();
+  end;
   Pbrt.Encoder.key (6, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.nested (fun encoder ->
     List.iter (fun x -> 
@@ -1017,6 +1053,18 @@ let rec encode_histogram_data_point (v:Metrics_types.histogram_data_point) encod
   ) v.Metrics_types.exemplars;
   Pbrt.Encoder.key (10, Pbrt.Varint) encoder; 
   Pbrt.Encoder.int32_as_varint v.Metrics_types.flags encoder;
+  begin match v.Metrics_types.min with
+  | Some x -> 
+    Pbrt.Encoder.key (11, Pbrt.Bits64) encoder; 
+    Pbrt.Encoder.float_as_bits64 x encoder;
+  | None -> ();
+  end;
+  begin match v.Metrics_types.max with
+  | Some x -> 
+    Pbrt.Encoder.key (12, Pbrt.Bits64) encoder; 
+    Pbrt.Encoder.float_as_bits64 x encoder;
+  | None -> ();
+  end;
   ()
 
 let rec encode_histogram (v:Metrics_types.histogram) encoder = 
@@ -1050,8 +1098,12 @@ let rec encode_exponential_histogram_data_point (v:Metrics_types.exponential_his
   Pbrt.Encoder.int64_as_bits64 v.Metrics_types.time_unix_nano encoder;
   Pbrt.Encoder.key (4, Pbrt.Bits64) encoder; 
   Pbrt.Encoder.int64_as_bits64 v.Metrics_types.count encoder;
-  Pbrt.Encoder.key (5, Pbrt.Bits64) encoder; 
-  Pbrt.Encoder.float_as_bits64 v.Metrics_types.sum encoder;
+  begin match v.Metrics_types.sum with
+  | Some x -> 
+    Pbrt.Encoder.key (5, Pbrt.Bits64) encoder; 
+    Pbrt.Encoder.float_as_bits64 x encoder;
+  | None -> ();
+  end;
   Pbrt.Encoder.key (6, Pbrt.Varint) encoder; 
   Pbrt.Encoder.int32_as_zigzag v.Metrics_types.scale encoder;
   Pbrt.Encoder.key (7, Pbrt.Bits64) encoder; 
@@ -1074,6 +1126,18 @@ let rec encode_exponential_histogram_data_point (v:Metrics_types.exponential_his
     Pbrt.Encoder.key (11, Pbrt.Bytes) encoder; 
     Pbrt.Encoder.nested (encode_exemplar x) encoder;
   ) v.Metrics_types.exemplars;
+  begin match v.Metrics_types.min with
+  | Some x -> 
+    Pbrt.Encoder.key (12, Pbrt.Bits64) encoder; 
+    Pbrt.Encoder.float_as_bits64 x encoder;
+  | None -> ();
+  end;
+  begin match v.Metrics_types.max with
+  | Some x -> 
+    Pbrt.Encoder.key (13, Pbrt.Bits64) encoder; 
+    Pbrt.Encoder.float_as_bits64 x encoder;
+  | None -> ();
+  end;
   ()
 
 let rec encode_exponential_histogram (v:Metrics_types.exponential_histogram) encoder = 
@@ -1165,11 +1229,11 @@ and encode_metric (v:Metrics_types.metric) encoder =
   end;
   ()
 
-let rec encode_instrumentation_library_metrics (v:Metrics_types.instrumentation_library_metrics) encoder = 
-  begin match v.Metrics_types.instrumentation_library with
+let rec encode_scope_metrics (v:Metrics_types.scope_metrics) encoder = 
+  begin match v.Metrics_types.scope with
   | Some x -> 
     Pbrt.Encoder.key (1, Pbrt.Bytes) encoder; 
-    Pbrt.Encoder.nested (Common_pb.encode_instrumentation_library x) encoder;
+    Pbrt.Encoder.nested (Common_pb.encode_instrumentation_scope x) encoder;
   | None -> ();
   end;
   List.iter (fun x -> 
@@ -1189,8 +1253,8 @@ let rec encode_resource_metrics (v:Metrics_types.resource_metrics) encoder =
   end;
   List.iter (fun x -> 
     Pbrt.Encoder.key (2, Pbrt.Bytes) encoder; 
-    Pbrt.Encoder.nested (encode_instrumentation_library_metrics x) encoder;
-  ) v.Metrics_types.instrumentation_library_metrics;
+    Pbrt.Encoder.nested (encode_scope_metrics x) encoder;
+  ) v.Metrics_types.scope_metrics;
   Pbrt.Encoder.key (3, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.string v.Metrics_types.schema_url encoder;
   ()

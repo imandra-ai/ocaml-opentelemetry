@@ -29,9 +29,11 @@ and pp_key_value fmt (v:Common_types.key_value) =
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
-let rec pp_instrumentation_library fmt (v:Common_types.instrumentation_library) = 
+let rec pp_instrumentation_scope fmt (v:Common_types.instrumentation_scope) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "name" Pbrt.Pp.pp_string fmt v.Common_types.name;
     Pbrt.Pp.pp_record_field ~first:false "version" Pbrt.Pp.pp_string fmt v.Common_types.version;
+    Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list pp_key_value) fmt v.Common_types.attributes;
+    Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.Common_types.dropped_attributes_count;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()

@@ -54,8 +54,8 @@ val encode_metric_data : Metrics_types.metric_data -> Pbrt.Encoder.t -> unit
 val encode_metric : Metrics_types.metric -> Pbrt.Encoder.t -> unit
 (** [encode_metric v encoder] encodes [v] with the given [encoder] *)
 
-val encode_instrumentation_library_metrics : Metrics_types.instrumentation_library_metrics -> Pbrt.Encoder.t -> unit
-(** [encode_instrumentation_library_metrics v encoder] encodes [v] with the given [encoder] *)
+val encode_scope_metrics : Metrics_types.scope_metrics -> Pbrt.Encoder.t -> unit
+(** [encode_scope_metrics v encoder] encodes [v] with the given [encoder] *)
 
 val encode_resource_metrics : Metrics_types.resource_metrics -> Pbrt.Encoder.t -> unit
 (** [encode_resource_metrics v encoder] encodes [v] with the given [encoder] *)
@@ -120,8 +120,8 @@ val decode_metric_data : Pbrt.Decoder.t -> Metrics_types.metric_data
 val decode_metric : Pbrt.Decoder.t -> Metrics_types.metric
 (** [decode_metric decoder] decodes a [metric] value from [decoder] *)
 
-val decode_instrumentation_library_metrics : Pbrt.Decoder.t -> Metrics_types.instrumentation_library_metrics
-(** [decode_instrumentation_library_metrics decoder] decodes a [instrumentation_library_metrics] value from [decoder] *)
+val decode_scope_metrics : Pbrt.Decoder.t -> Metrics_types.scope_metrics
+(** [decode_scope_metrics decoder] decodes a [scope_metrics] value from [decoder] *)
 
 val decode_resource_metrics : Pbrt.Decoder.t -> Metrics_types.resource_metrics
 (** [decode_resource_metrics decoder] decodes a [resource_metrics] value from [decoder] *)

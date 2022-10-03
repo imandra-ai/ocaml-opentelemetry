@@ -21,8 +21,8 @@ val encode_status : Trace_types.status -> Pbrt.Encoder.t -> unit
 val encode_span : Trace_types.span -> Pbrt.Encoder.t -> unit
 (** [encode_span v encoder] encodes [v] with the given [encoder] *)
 
-val encode_instrumentation_library_spans : Trace_types.instrumentation_library_spans -> Pbrt.Encoder.t -> unit
-(** [encode_instrumentation_library_spans v encoder] encodes [v] with the given [encoder] *)
+val encode_scope_spans : Trace_types.scope_spans -> Pbrt.Encoder.t -> unit
+(** [encode_scope_spans v encoder] encodes [v] with the given [encoder] *)
 
 val encode_resource_spans : Trace_types.resource_spans -> Pbrt.Encoder.t -> unit
 (** [encode_resource_spans v encoder] encodes [v] with the given [encoder] *)
@@ -51,8 +51,8 @@ val decode_status : Pbrt.Decoder.t -> Trace_types.status
 val decode_span : Pbrt.Decoder.t -> Trace_types.span
 (** [decode_span decoder] decodes a [span] value from [decoder] *)
 
-val decode_instrumentation_library_spans : Pbrt.Decoder.t -> Trace_types.instrumentation_library_spans
-(** [decode_instrumentation_library_spans decoder] decodes a [instrumentation_library_spans] value from [decoder] *)
+val decode_scope_spans : Pbrt.Decoder.t -> Trace_types.scope_spans
+(** [decode_scope_spans decoder] decodes a [scope_spans] value from [decoder] *)
 
 val decode_resource_spans : Pbrt.Decoder.t -> Trace_types.resource_spans
 (** [decode_resource_spans decoder] decodes a [resource_spans] value from [decoder] *)
