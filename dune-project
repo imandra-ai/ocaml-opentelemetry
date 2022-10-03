@@ -64,6 +64,7 @@
    (opentelemetry (= :version))
    (pbrt (>= 2.2))
    (odoc :with-doc)
+   (lwt_ppx :with-test)
    cohttp-lwt
    cohttp-lwt-unix)
   (synopsis "Collector client for opentelemetry, using cohttp + lwt"))
