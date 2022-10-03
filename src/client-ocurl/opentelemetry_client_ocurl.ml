@@ -220,8 +220,6 @@ end = struct
       high_watermark;
     }
 
-  let is_empty_ self = self.size = 0
-
   let timeout_expired_ ~now self : bool =
     match self.timeout with
     | Some t ->
