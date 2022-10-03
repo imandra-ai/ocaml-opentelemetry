@@ -16,15 +16,17 @@ module Server : sig
 
       Use it like this:
 
-          let my_server callback =
-            let callback_traced =
-              Opentelemetry_cohttp_lwt.Server.trace
-                ~service_name:"my-service"
-                (fun _scope -> callback)
-            in
-            Cohttp_lwt_unix.Server.create
-              ~mode:(`TCP (`Port 8080))
-              (Server.make () ~callback:callback_traced)
+      {[
+      let my_server callback =
+        let callback_traced =
+          Opentelemetry_cohttp_lwt.Server.trace
+            ~service_name:"my-service"
+            (fun _scope -> callback)
+        in
+        Cohttp_lwt_unix.Server.create
+          ~mode:(`TCP (`Port 8080))
+          (Server.make () ~callback:callback_traced)
+      ]}
    *)
 
   val with_ :

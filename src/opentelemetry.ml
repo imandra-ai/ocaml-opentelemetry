@@ -981,8 +981,6 @@ end
 (** A set of callbacks that produce metrics when called.
     The metrics are automatically called regularly.
 
-
-
     This allows applications to register metrics callbacks from various points
     in the program (or even in libraries), and not worry about setting
     alarms/intervals to emit them. *)

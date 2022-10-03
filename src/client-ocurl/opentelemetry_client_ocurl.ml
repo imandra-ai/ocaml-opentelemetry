@@ -220,8 +220,6 @@ end = struct
       high_watermark;
     }
 
-  let is_empty_ self = self.size = 0
-
   let timeout_expired_ ~now self : bool =
     match self.timeout with
     | Some t ->
@@ -552,6 +550,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let set_on_tick_callbacks = set_on_tick_callbacks
 
       let tick () =
+        tick_common_ ();
         sample_gc_metrics_if_needed ();
         let@ () = Lock.with_lock in
         let now = Mtime_clock.now () in

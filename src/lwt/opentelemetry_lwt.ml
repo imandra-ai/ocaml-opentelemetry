@@ -4,9 +4,11 @@ module Span_id = Span_id
 module Trace_id = Trace_id
 module Event = Event
 module Span = Span
+module Span_link = Span_link
 module Globals = Globals
 module Timestamp_ns = Timestamp_ns
 module GC_metrics = GC_metrics
+module Metrics_callbacks = Metrics_callbacks
 module Trace_context = Trace_context
 
 module Trace = struct
@@ -58,4 +60,9 @@ end
 module Metrics = struct
   open Proto.Metrics
   include Metrics
+end
+
+module Logs = struct
+  include Proto.Logs
+  include Logs
 end
