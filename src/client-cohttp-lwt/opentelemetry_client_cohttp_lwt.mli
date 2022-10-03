@@ -3,6 +3,8 @@
    https://opentelemetry.io/docs/reference/specification/protocol/exporter/
    *)
 
+open Common_
+
 val get_url : unit -> string
 
 val set_url : string -> unit
