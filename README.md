@@ -11,6 +11,10 @@ connectors to talk to opentelemetry software such as [jaeger](https://www.jaeger
 - library `opentelemetry-client-ocurl` is a backend that communicates
   via http+protobuf with some collector (otelcol, datadog-agent, etc.)
 
+## License
+
+MIT
+
 ## Features
 
 - [x] basic traces
