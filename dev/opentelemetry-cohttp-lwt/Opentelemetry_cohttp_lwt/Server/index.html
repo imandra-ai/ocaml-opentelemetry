@@ -9,7 +9,15 @@
   <span><span class="type-var">'conn</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="xref-unresolved">Cohttp_lwt</span>.Request.t <span class="arrow">&#45;&gt;</span></span>
   <span><span class="type-var">'body</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span>(<span class="xref-unresolved">Cohttp_lwt</span>.Response.t * <span class="type-var">'body</span>)</span> <span class="xref-unresolved">Lwt</span>.t</span></span></code></div><div class="spec-doc"><p>Trace requests to a Cohttp server.</p><p>Use it like this:</p><p>let my_server callback = let callback_traced = Opentelemetry_cohttp_lwt.Server.trace ~service_name:&quot;my-service&quot; (fun _scope -&gt; callback) in Cohttp_lwt_unix.Server.create ~mode:(`TCP (`Port 8080)) (Server.make () ~callback:callback_traced)</p></div></div><div class="odoc-spec"><div class="spec value" id="val-with_" class="anchored"><a href="#val-with_" class="anchor"></a><code><span><span class="keyword">val</span> with_ : 
+  <span><span>(<span class="xref-unresolved">Cohttp_lwt</span>.Response.t * <span class="type-var">'body</span>)</span> <span class="xref-unresolved">Lwt</span>.t</span></span></code></div><div class="spec-doc"><p>Trace requests to a Cohttp server.</p><p>Use it like this:</p><pre><code>let my_server callback =
+  let callback_traced =
+    Opentelemetry_cohttp_lwt.Server.trace
+      ~service_name:&quot;my-service&quot;
+      (fun _scope -&gt; callback)
+  in
+  Cohttp_lwt_unix.Server.create
+    ~mode:(`TCP (`Port 8080))
+    (Server.make () ~callback:callback_traced)</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-with_" class="anchored"><a href="#val-with_" class="anchor"></a><code><span><span class="keyword">val</span> with_ : 
   <span>?trace_state:string <span class="arrow">&#45;&gt;</span></span>
   <span>?service_name:string <span class="arrow">&#45;&gt;</span></span>
   <span>?attrs:<span><a href="../../../opentelemetry/Opentelemetry/Span/index.html#type-key_value">Otel.Span.key_value</a> list</span> <span class="arrow">&#45;&gt;</span></span>
@@ -21,7 +29,7 @@
   <span><span class="type-var">'a</span> <span class="xref-unresolved">Lwt</span>.t</span></span></code></div><div class="spec-doc"><p>Trace a new internal span.</p><p>Identical to <code>Opentelemetry_lwt.Trace.with_</code>, but fetches/stores the trace scope in the <code>x-ocaml-otel-traceparent</code> header in the request for convenience.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-get_trace_context" class="anchored"><a href="#val-get_trace_context" class="anchor"></a><code><span><span class="keyword">val</span> get_trace_context : 
   <span>?from:<span>[ `Internal <span>| `External</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="xref-unresolved">Cohttp_lwt</span>.Request.t <span class="arrow">&#45;&gt;</span></span>
-  <span><a href="../../../opentelemetry/Opentelemetry/Trace/index.html#type-scope">Otel.Trace.scope</a> option</span></span></code></div><div class="spec-doc"><p>Get the tracing scope from the custom <code>x-ocaml-otel-traceparent</code> header added by <code>trace</code> and <code>with_</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-set_trace_context" class="anchored"><a href="#val-set_trace_context" class="anchor"></a><code><span><span class="keyword">val</span> set_trace_context : 
-  <span><a href="../../../opentelemetry/Opentelemetry/Trace/index.html#type-scope">Otel.Trace.scope</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../opentelemetry/Opentelemetry/Scope/index.html#type-t">Otel.Scope.t</a> option</span></span></code></div><div class="spec-doc"><p>Get the tracing scope from the custom <code>x-ocaml-otel-traceparent</code> header added by <code>trace</code> and <code>with_</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-set_trace_context" class="anchored"><a href="#val-set_trace_context" class="anchor"></a><code><span><span class="keyword">val</span> set_trace_context : 
+  <span><a href="../../../opentelemetry/Opentelemetry/Scope/index.html#type-t">Otel.Scope.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="xref-unresolved">Cohttp_lwt</span>.Request.t <span class="arrow">&#45;&gt;</span></span>
   <span class="xref-unresolved">Cohttp_lwt</span>.Request.t</span></code></div><div class="spec-doc"><p>Set the tracing scope in the custom <code>x-ocaml-otel-traceparent</code> header used by <code>trace</code> and <code>with_</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-remove_trace_context" class="anchored"><a href="#val-remove_trace_context" class="anchor"></a><code><span><span class="keyword">val</span> remove_trace_context : <span><span class="xref-unresolved">Cohttp_lwt</span>.Request.t <span class="arrow">&#45;&gt;</span></span> <span class="xref-unresolved">Cohttp_lwt</span>.Request.t</span></code></div><div class="spec-doc"><p>Strip the custom <code>x-ocaml-otel-traceparent</code> header added by <code>trace</code> and <code>with_</code>.</p></div></div></div></body></html>
