@@ -23,7 +23,11 @@ let get_url () = !url
 let set_url s = url := s
 
 let parse_headers s =
-  let parse_header s = Scanf.sscanf s "%s@=%s" (fun key value -> key, value) in
+  let parse_header s =
+    match String.split_on_char '=' s with
+    | [ key; value ] -> key, value
+    | _ -> failwith "Unexpected format for header"
+  in
   String.split_on_char ',' s |> List.map parse_header
 
 let default_headers = []
