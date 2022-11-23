@@ -9,7 +9,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets status_types.ml status_types.mli status_pb.ml status_pb.mli
    status_pp.ml status_pp.mli)
  (deps
@@ -20,7 +20,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets common_types.ml common_types.mli common_pb.ml common_pb.mli
    common_pp.ml common_pp.mli)
  (deps
@@ -33,7 +33,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets resource_types.ml resource_types.mli resource_pb.ml resource_pb.mli
    resource_pp.ml resource_pp.mli)
  (deps
@@ -46,7 +46,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets trace_types.ml trace_types.mli trace_pb.ml trace_pb.mli trace_pp.ml
    trace_pp.mli)
  (deps
@@ -59,7 +59,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets metrics_types.ml metrics_types.mli metrics_pb.ml metrics_pb.mli
    metrics_pp.ml metrics_pp.mli)
  (deps
@@ -72,7 +72,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets logs_types.ml logs_types.mli logs_pb.ml logs_pb.mli logs_pp.ml
    logs_pp.mli)
  (deps
@@ -85,7 +85,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets metrics_service_types.ml metrics_service_types.mli
    metrics_service_pp.ml metrics_service_pp.mli metrics_service_pb.ml
    metrics_service_pb.mli)
@@ -99,7 +99,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets trace_service_types.ml trace_service_types.mli trace_service_pp.ml
    trace_service_pp.mli trace_service_pb.ml trace_service_pb.mli)
  (deps
@@ -112,7 +112,7 @@
 
 (rule
  (alias lint)
- (mode promote)
+ (mode fallback)
  (targets logs_service_types.ml logs_service_types.mli logs_service_pp.ml
    logs_service_pp.mli logs_service_pb.ml logs_service_pb.mli)
  (deps
