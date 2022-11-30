@@ -10,14 +10,25 @@ include Common_
 
 let needs_gc_metrics = Atomic.make false
 
+let last_gc_metrics = Atomic.make (Mtime_clock.now ())
+
+let timeout_gc_metrics = Mtime.Span.(10 * s)
+
 let gc_metrics = ref []
 (* side channel for GC, appended to {!E_metrics}'s data *)
 
 (* capture current GC metrics if {!needs_gc_metrics} is true,
-   and push them into {!gc_metrics} for later
-   collection *)
+   or it has been a long time since the last GC metrics collection,
+   and push them into {!gc_metrics} for later collection *)
 let sample_gc_metrics_if_needed () =
-  if Atomic.compare_and_set needs_gc_metrics true false then (
+  let now = Mtime_clock.now () in
+  let alarm = Atomic.compare_and_set needs_gc_metrics true false in
+  let timeout () =
+    let elapsed = Mtime.span now (Atomic.get last_gc_metrics) in
+    Mtime.Span.compare elapsed timeout_gc_metrics > 0
+  in
+  if alarm || timeout () then (
+    Atomic.set last_gc_metrics now;
     let l =
       OT.Metrics.make_resource_metrics
         ~attrs:(Opentelemetry.GC_metrics.get_runtime_attributes ())
