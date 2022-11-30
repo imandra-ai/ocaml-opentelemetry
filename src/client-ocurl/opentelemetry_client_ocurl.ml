@@ -11,7 +11,7 @@ let needs_gc_metrics = Atomic.make false
 
 let last_gc_metrics = Atomic.make (Mtime_clock.now ())
 
-let timeout_gc_metrics = Mtime.Span.(10 * s)
+let timeout_gc_metrics = Mtime.Span.(20 * s)
 
 let gc_metrics = AList.make ()
 (* side channel for GC, appended to {!E_metrics}'s data *)
