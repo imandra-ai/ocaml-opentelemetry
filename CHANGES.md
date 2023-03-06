@@ -1,4 +1,19 @@
 
+## 0.4
+
+- expose `Scope.get_surrounding`
+- rehault of GC metrics
+- `Trace.with_` now has `force_new_trace_id` param
+- use thread-local storage to store global scope
+- add `Span_link` module
+- add a `Globals.default_span_kind` ref to specify default span kind
+
+- fix(otel-lwt): missing modules now re-exported
+- fix(client-ocurl): fix `tick` version used in the absence of bg thread
+
+- drop dep on ocaml-protoc as the generated code is checked-in
+- update vendored otel to 0.19
+
 ## 0.3
 
 - improve error reporting from ocurl exporter
