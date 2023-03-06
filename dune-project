@@ -4,7 +4,7 @@
 (source
  (github aestheticintegration/ocaml-opentelemetry))
 
-(version 0.3)
+(version 0.4)
 
 (authors "the Imandra team and contributors")
 (maintainers "the Imandra team and contributors")
@@ -53,6 +53,7 @@
   (opentelemetry (= :version))
   (opentelemetry-lwt (= :version))
   (odoc :with-doc)
+  (lwt (>= "5.3"))
   (cohttp-lwt (>= "4.0.0")))
  (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
 
@@ -64,6 +65,7 @@
    (opentelemetry (= :version))
    (pbrt (>= 2.2))
    (odoc :with-doc)
+   (lwt (>= "5.3"))
    (lwt_ppx :with-test)
    cohttp-lwt
    cohttp-lwt-unix)
