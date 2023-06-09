@@ -40,7 +40,7 @@ let remove_ref_ self key : unit =
     Thread.yield ()
   done
 
-let set_ self key (r : _ ref) : unit =
+let set_ref_ self key (r : _ ref) : unit =
   while
     let m = A.get self in
     let m' = Key_map_.add key r m in
@@ -59,8 +59,17 @@ let get_or_create_ref_ (self : _ t) key ~v : _ ref * _ option =
     r, Some old
   with Not_found ->
     let r = ref v in
-    set_ self key r;
+    set_ref_ self key r;
     r, None
+
+let set (self : _ t) v : unit =
+  let key = get_key_ () in
+  let _, _ = get_or_create_ref_ self key ~v in
+  ()
+
+let remove (self : _ t) : unit =
+  let key = get_key_ () in
+  remove_ref_ self key
 
 let get_or_create ~create (self : 'a t) : 'a =
   let key = get_key_ () in
@@ -71,7 +80,7 @@ let get_or_create ~create (self : 'a t) : 'a =
     Gc.finalise (fun _ -> remove_ref_ self key) (Thread.self ());
     let v = create () in
     let r = ref v in
-    set_ self key r;
+    set_ref_ self key r;
     v
 
 let with_ self v f =
