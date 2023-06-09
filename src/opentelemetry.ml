@@ -526,7 +526,6 @@ module Scope = struct
 
   (**/**)
 
-  (* define this locally *)
   let _global_scope : t Thread_local.t = Thread_local.create ()
 
   (**/**)
@@ -536,6 +535,11 @@ module Scope = struct
     match scope with
     | Some _ -> scope
     | None -> Thread_local.get _global_scope
+
+  (** [with_scope sc f] calls [f()] in a context where [sc] is the
+      (thread)-local scope, then reverts to the previous local scope, if any. *)
+  let[@inline] with_scope (sc : t) (f : unit -> 'a) : 'a =
+    Thread_local.with_ _global_scope sc (fun _ -> f ())
 end
 
 open struct
@@ -753,7 +757,7 @@ module Trace = struct
     let span_id = Span_id.create () in
     let scope = { trace_id; span_id; events = []; attrs } in
     (* set global scope in this thread *)
-    Thread_local.with_ Scope._global_scope scope @@ fun _sc ->
+    Scope.with_scope scope @@ fun () ->
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
