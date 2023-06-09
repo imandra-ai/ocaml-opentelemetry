@@ -2,7 +2,7 @@
 (name opentelemetry)
 (generate_opam_files true)
 (source
- (github aestheticintegration/ocaml-opentelemetry))
+ (github imandra-ai/ocaml-opentelemetry))
 
 (version 0.4)
 
