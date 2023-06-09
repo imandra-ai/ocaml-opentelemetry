@@ -19,6 +19,8 @@
    ptime
    (odoc :with-doc)
    (pbrt (>= 2.3)))
+ (depopts
+   trace)
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
