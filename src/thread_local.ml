@@ -31,10 +31,19 @@ let[@inline] get self = try Some (get_exn self) with Not_found -> None
 let[@inline] get_or ~default self = try get_exn self with Not_found -> default
 
 (* remove reference for the key *)
-let[@inline] remove_ref_ self key : unit =
+let remove_ref_ self key : unit =
   while
     let m = A.get self in
     let m' = Key_map_.remove key m in
+    not (A.compare_and_set self m m')
+  do
+    Thread.yield ()
+  done
+
+let set_ self key (r : _ ref) : unit =
+  while
+    let m = A.get self in
+    let m' = Key_map_.add key r m in
     not (A.compare_and_set self m m')
   do
     Thread.yield ()
@@ -50,14 +59,20 @@ let get_or_create_ref_ (self : _ t) key ~v : _ ref * _ option =
     r, Some old
   with Not_found ->
     let r = ref v in
-    while
-      let m = A.get self in
-      let m' = Key_map_.add key r m in
-      not (A.compare_and_set self m m')
-    do
-      Thread.yield ()
-    done;
+    set_ self key r;
     r, None
+
+let get_or_create ~create (self : 'a t) : 'a =
+  let key = get_key_ () in
+  try
+    let r = Key_map_.find key (A.get self) in
+    !r
+  with Not_found ->
+    Gc.finalise (fun _ -> remove_ref_ self key) (Thread.self ());
+    let v = create () in
+    let r = ref v in
+    set_ self key r;
+    v
 
 let with_ self v f =
   let key = get_key_ () in
