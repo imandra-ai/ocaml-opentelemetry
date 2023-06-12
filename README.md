@@ -68,8 +68,14 @@ opentelemetry env variables, or with some custom environment variables.
 ## Collector opentelemetry-client-ocurl
 
 This is a synchronous collector that uses the http+protobuf format
-to send signals (metrics, traces) to some other collector (eg. `otelcol`
+to send signals (metrics, traces, logs) to some other collector (eg. `otelcol`
 or the datadog agent).
+
+## Collector opentelemetry-client-cohttp-lwt
+
+This is a Lwt-friendly collector that uses cohttp to send
+signals to some other collector (e.g. `otelcol`). It must be run
+inside a `Lwt_main.run` scope.
 
 ## License
 
