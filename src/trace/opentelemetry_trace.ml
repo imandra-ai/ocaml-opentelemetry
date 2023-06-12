@@ -138,6 +138,14 @@ let collector () : Trace.collector =
     let name_process _name = ()
 
     let name_thread _name = ()
+
+    let counter_int name cur_val : unit =
+      let m = Otel.Metrics.(gauge ~name [ int cur_val ]) in
+      Otel.Metrics.emit [ m ]
+
+    let counter_float name cur_val : unit =
+      let m = Otel.Metrics.(gauge ~name [ float cur_val ]) in
+      Otel.Metrics.emit [ m ]
   end in
   (module M)
 
