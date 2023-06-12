@@ -77,6 +77,12 @@ This is a Lwt-friendly collector that uses cohttp to send
 signals to some other collector (e.g. `otelcol`). It must be run
 inside a `Lwt_main.run` scope.
 
+## Opentelemetry-trace
+
+The optional library `opentelemetry.trace`, present if [trace](https://github.com/c-cube/trace) is
+installed, provides a collector for `trace`. This collector forwards and translates
+events from `trace` into `opentelemetry`. It's only useful if there also is also a OTEL collector.
+
 ## License
 
 MIT
