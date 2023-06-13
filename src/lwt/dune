@@ -2,4 +2,6 @@
  (name opentelemetry_lwt)
  (public_name opentelemetry-lwt)
  (synopsis "Lwt frontend for opentelemetry")
+ (preprocess
+  (pps lwt_ppx))
  (libraries lwt opentelemetry))
