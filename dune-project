@@ -32,7 +32,8 @@
    (opentelemetry (= :version))
    (cohttp-lwt-unix :with-test)
    (odoc :with-doc)
-   (lwt (>= "5.3")))
+   (lwt (>= "5.3"))
+   lwt_ppx)
  (tags
   (instrumentation tracing opentelemetry datadog lwt)))
 
@@ -68,7 +69,7 @@
    (pbrt (>= 2.2))
    (odoc :with-doc)
    (lwt (>= "5.3"))
-   (lwt_ppx :with-test)
+   lwt_ppx
    cohttp-lwt
    cohttp-lwt-unix)
   (synopsis "Collector client for opentelemetry, using cohttp + lwt"))

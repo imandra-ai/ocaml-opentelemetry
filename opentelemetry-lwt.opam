@@ -15,6 +15,7 @@ depends: [
   "cohttp-lwt-unix" {with-test}
   "odoc" {with-doc}
   "lwt" {>= "5.3"}
+  "lwt_ppx"
 ]
 build: [
   ["dune" "subst"] {dev}
