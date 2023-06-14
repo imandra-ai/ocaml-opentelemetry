@@ -530,14 +530,24 @@ module Scope = struct
 
   (**/**)
 
-  (** Obtain current scope from thread-local storage, if available *)
+  (** Obtain current scope from thread-local storage, if available.
+
+      {b NOTE} In an Lwt context, make sure to use
+      {!Opentelemetry_lwt.Scope.get_surrounding} instead, as thread-local
+      storage will probably not interact with suspension/resumption of green
+      threads as expected. *)
   let get_surrounding ?scope () : t option =
     match scope with
     | Some _ -> scope
     | None -> Thread_local.get _global_scope
 
   (** [with_scope sc f] calls [f()] in a context where [sc] is the
-      (thread)-local scope, then reverts to the previous local scope, if any. *)
+      (thread)-local scope, then reverts to the previous local scope, if any.
+
+      {b NOTE} In an Lwt context, make sure to use
+      {!Opentelemetry_lwt.Scope.with_scope} instead, as thread-local storage
+      will probably not interact with suspension/resumption of green threads as
+      expected. *)
   let[@inline] with_scope (sc : t) (f : unit -> 'a) : 'a =
     Thread_local.with_ _global_scope sc (fun _ -> f ())
 end
@@ -727,6 +737,11 @@ module Trace = struct
       @param force_new_trace_id if true (default false), the span will not use a
       surrounding context, or [scope], or [trace_id], but will always
       create a fresh new trace ID.
+
+      {b NOTE} In an Lwt context, make sure to use
+      {!Opentelemetry_lwt.Trace.with_} instead, as thread-local storage will
+      probably not interact with suspension/resumption of green threads as
+      expected.
 
       {b NOTE} be careful not to call this inside a Gc alarm, as it can
       cause deadlocks. *)

@@ -11,6 +11,10 @@ module GC_metrics = GC_metrics
 module Metrics_callbacks = Metrics_callbacks
 module Trace_context = Trace_context
 
+(** See {!Opentelemetry.Scope}; but with several functions overridden to use
+    [Lwt.Sequence_associated_storage] instead of our homegrown {!Thread_local}.
+
+    @see <https://github.com/ocsigen/lwt/blob/5.4.1/src/core/lwt.ml#L739-L775> Lwt.Sequence_associated_storage *)
 module Scope = struct
   include Scope
 
@@ -20,6 +24,10 @@ module Scope = struct
 
   (**/**)
 
+  (** Obtain current scope from Lwt's sequence-associated storage, if one
+      exists; see {!with_scope}.
+
+      @see <https://ocaml.org/p/lwt/5.5.0/doc/Lwt/index.html#val-get> Lwt.get *)
   let get_surrounding ?scope () : t option =
     let surrounding = Lwt.get _global_scope_key in
     match scope, surrounding with
@@ -27,6 +35,12 @@ module Scope = struct
     | None, Some _ -> surrounding
     | None, None -> None
 
+  (** [with_scope sc f] calls [f()] in a context where [sc] is the
+      sequence-local implicit {!Scope.t}; then reverts to the previous local
+      scope, if any. Lwt will suspend and restore this implicit scope as tasks
+      are suspended and restored.
+
+      @see <https://ocaml.org/p/lwt/5.5.0/doc/Lwt/index.html#val-with_value> Lwt.with_value *)
   let[@inline] with_scope (sc : t) (f : unit -> 'a) : 'a =
     Lwt.with_value _global_scope_key (Some sc) f
 end
