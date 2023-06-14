@@ -51,12 +51,14 @@ module Trace = struct
     in
     let trace_id =
       match trace_id, scope with
+      | _ when force_new_trace_id -> Trace_id.create ()
       | Some trace_id, _ -> trace_id
       | None, Some scope -> scope.trace_id
       | None, None -> Trace_id.create ()
     in
     let parent =
       match parent, scope with
+      | _ when force_new_trace_id -> None
       | Some span_id, _ -> Some span_id
       | None, Some scope -> Some scope.span_id
       | None, None -> None
