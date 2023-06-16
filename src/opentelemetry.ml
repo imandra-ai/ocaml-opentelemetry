@@ -252,8 +252,6 @@ module Trace_id : sig
 
   val of_hex : string -> t
 end = struct
-  open Proto.Trace
-
   type t = bytes
 
   let to_bytes self = self
@@ -294,8 +292,6 @@ module Span_id : sig
 
   val of_hex : string -> t
 end = struct
-  open Proto.Trace
-
   type t = bytes
 
   let to_bytes self = self

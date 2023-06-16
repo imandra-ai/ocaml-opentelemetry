@@ -143,7 +143,6 @@ end = struct
       ?parent:(Option.map (fun scope -> scope.Otel.Trace.span_id) scope)
       ?links name
       (fun scope ->
-        let open Lwt.Syntax in
         let req = set_trace_context scope req in
         f req)
 end
@@ -152,7 +151,7 @@ let client ?(scope : Otel.Scope.t option) (module C : Cohttp_lwt.S.Client) =
   let module Traced = struct
     open Lwt.Syntax
 
-    let attrs_for ~uri ~meth () =
+    let attrs_for ~uri ~meth:_ () =
       [
         "http.method", `String (Code.string_of_method `GET);
         "http.url", `String (Uri.to_string uri);

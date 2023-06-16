@@ -58,7 +58,6 @@ module Trace = struct
 end
 
 module Metrics = struct
-  open Proto.Metrics
   include Metrics
 end
 

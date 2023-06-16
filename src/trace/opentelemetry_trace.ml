@@ -3,8 +3,6 @@ module TLS = Otel.Thread_local
 
 type span = Trace.span
 
-let ( let@ ) = ( @@ )
-
 (** Table indexed by Trace spans *)
 module Span_tbl = Hashtbl.Make (struct
   include Int64
@@ -119,7 +117,7 @@ let collector () : Trace.collector =
 
         ()
 
-    let message ?span ~data msg : unit =
+    let message ?span ~data:_ msg : unit =
       (* gather information from context *)
       let old_scope = Otel.Scope.get_surrounding () in
       let trace_id = Option.map (fun sc -> sc.Otel.Scope.trace_id) old_scope in

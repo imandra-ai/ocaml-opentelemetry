@@ -164,15 +164,7 @@ end
 module Batch : sig
   type 'a t
 
-  val push : 'a t -> 'a -> bool
-  (** [push batch x] pushes [x] into the batch, and heuristically
-      returns [true] if the batch is ready to be emitted (to know if we should
-      wake up the sending thread, if any) *)
-
   val push' : 'a t -> 'a -> unit
-
-  val is_ready : now:Mtime.t -> _ t -> bool
-  (** is the batch ready to be sent? This is heuristic. *)
 
   val pop_if_ready : ?force:bool -> now:Mtime.t -> 'a t -> 'a list option
   (** Is the batch ready to be emitted? If batching is disabled,
@@ -205,8 +197,6 @@ end = struct
       high_watermark;
     }
 
-  let is_empty_ self = self.size = 0
-
   let timeout_expired_ ~now self : bool =
     match self.timeout with
     | Some t ->
@@ -218,8 +208,6 @@ end = struct
     match self.batch with
     | None -> self.size > 0
     | Some b -> self.size >= b
-
-  let is_ready ~now self : bool = is_full_ self || timeout_expired_ ~now self
 
   let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
     if self.size > 0 && (force || is_full_ self || timeout_expired_ ~now self)

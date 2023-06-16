@@ -28,8 +28,6 @@ let[@inline] get_exn (self : _ t) =
 
 let[@inline] get self = try Some (get_exn self) with Not_found -> None
 
-let[@inline] get_or ~default self = try get_exn self with Not_found -> default
-
 (* remove reference for the key *)
 let remove_ref_ self key : unit =
   while
