@@ -1,9 +1,9 @@
 module Atomic = Opentelemetry_atomic.Atomic
 include Opentelemetry.Lock
 
-let[@inline] ( let@ ) f x = f x
-
 let spf = Printf.sprintf
+
+let ( let@ ) = ( @@ )
 
 let tid () = Thread.id @@ Thread.self ()
 
@@ -21,11 +21,6 @@ let url =
 let get_url () = !url
 
 let set_url s = url := s
-
-(** [with_mutex m f] calls [f()] in a section where [m] is locked. *)
-let[@inline] with_mutex_ m f =
-  Mutex.lock m;
-  Fun.protect ~finally:(fun () -> Mutex.unlock m) f
 
 let parse_headers s =
   let parse_header s =

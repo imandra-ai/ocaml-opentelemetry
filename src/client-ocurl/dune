@@ -2,4 +2,4 @@
  (name opentelemetry_client_ocurl)
  (public_name opentelemetry-client-ocurl)
  (libraries opentelemetry opentelemetry.atomic curl pbrt threads mtime
-   mtime.clock.os))
+   mtime.clock.os ezcurl ezcurl.core))

@@ -14,10 +14,6 @@ val get_headers : unit -> (string * string) list
 val set_headers : (string * string) list -> unit
 (** Set http headers that are sent on every http query to the collector. *)
 
-val set_mutex : lock:(unit -> unit) -> unlock:(unit -> unit) -> unit
-(** Set a lock/unlock pair to protect the critical sections
-    of {!Opentelemetry.Collector.BACKEND} *)
-
 module Atomic = Opentelemetry_atomic.Atomic
 module Config = Config
 
