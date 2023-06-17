@@ -1,3 +1,5 @@
+(** Configuration for the ocurl backend *)
+
 type t = private {
   debug: bool;
   url: string;

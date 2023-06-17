@@ -18,10 +18,6 @@ let pp out self =
     debug url ppheaders headers batch_timeout_ms bg_threads
 
 let make ?(debug = !debug_) ?(url = get_url ()) ?(headers = get_headers ())
-    ?(batch_timeout_ms = 500) ?bg_threads () : t =
-  let bg_threads =
-    match bg_threads with
-    | Some n -> max n 2
-    | None -> 4
-  in
+    ?(batch_timeout_ms = 500) ?(bg_threads = 4) () : t =
+  let bg_threads = max 2 (min bg_threads 32) in
   { debug; url; headers; batch_timeout_ms; bg_threads }
