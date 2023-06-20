@@ -118,9 +118,11 @@ end = struct
     if !debug_ || config.debug then
       Printf.eprintf "opentelemetry: send http POST to %s (%dB)\n%!" url
         (String.length data);
+    let headers =
+      ("Content-Type", "application/x-protobuf") :: config.headers
+    in
     match
-      Ezcurl.post ~headers:config.headers ~client ~params:[] ~url
-        ~content:(`String data) ()
+      Ezcurl.post ~headers ~client ~params:[] ~url ~content:(`String data) ()
     with
     | Ok { code; _ } when code >= 200 && code < 300 -> ()
     | Ok { code; body; headers = _; info = _ } ->
