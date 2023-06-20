@@ -13,9 +13,9 @@ let push self l =
     self.len <- self.len + List.length l
   )
 
-let len self = self.len
+let[@inline] len self = self.len
 
-let time_started self = self.started
+let[@inline] time_started self = self.started
 
 let pop_all self =
   let l = self.l in
