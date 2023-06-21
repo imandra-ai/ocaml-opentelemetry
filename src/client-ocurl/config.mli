@@ -15,6 +15,9 @@ type t = private {
       only checked when a new event occurs. Default 500. *)
   bg_threads: int;
       (** Are there background threads, and how many? Default [4] *)
+  ticker_thread: bool;
+      (** If true, start a thread that regularly checks if signals should
+          be sent to the collector. Default [true] *)
 }
 (** Configuration.
 
@@ -27,6 +30,7 @@ val make :
   ?headers:(string * string) list ->
   ?batch_timeout_ms:int ->
   ?bg_threads:int ->
+  ?ticker_thread:bool ->
   unit ->
   t
 (** Make a configuration.

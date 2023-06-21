@@ -415,9 +415,26 @@ let mk_backend ~stop ~config () : (module Collector.BACKEND) =
   end in
   (module M)
 
+(** thread that calls [tick()] regularly, to help enforce timeouts *)
+let setup_ticker_thread ~stop ~sleep_ms (module B : Collector.BACKEND) () =
+  let sleep_s = float sleep_ms /. 1000. in
+  let tick_loop () =
+    while not @@ Atomic.get stop do
+      Thread.delay sleep_s;
+      B.tick ()
+    done
+  in
+  start_bg_thread tick_loop
+
 let setup_ ?(stop = Atomic.make false) ~(config : Config.t) () =
   let ((module B) as backend) = mk_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
+
+  if config.ticker_thread then (
+    let sleep_ms = min 5_000 (max 2 config.batch_timeout_ms) in
+    ignore (setup_ticker_thread ~stop ~sleep_ms backend () : Thread.t)
+  );
+
   B.cleanup
 
 let setup ?stop ?(config = Config.make ()) ?(enable = true) () =
