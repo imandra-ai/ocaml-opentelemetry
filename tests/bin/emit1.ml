@@ -3,7 +3,7 @@ module Atomic = Opentelemetry_atomic.Atomic
 
 let spf = Printf.sprintf
 
-let ( let@ ) f x = f x
+let ( let@ ) = ( @@ )
 
 let sleep_inner = ref 0.1
 
@@ -98,21 +98,13 @@ let () =
   let ts_start = Unix.gettimeofday () in
 
   let debug = ref false in
-  let thread = ref true in
   let n_bg_threads = ref 0 in
-  let batch_traces = ref 400 in
-  let batch_metrics = ref 3 in
   let opts =
     [
       "--debug", Arg.Bool (( := ) debug), " enable debug output";
-      "--thread", Arg.Bool (( := ) thread), " use a background thread";
       ( "--stress-alloc",
         Arg.Bool (( := ) stress_alloc_),
         " perform heavy allocs in inner loop" );
-      "--batch-traces", Arg.Int (( := ) batch_traces), " size of traces batch";
-      ( "--batch-metrics",
-        Arg.Int (( := ) batch_metrics),
-        " size of metrics batch" );
       "--sleep-inner", Arg.Set_float sleep_inner, " sleep (in s) in inner loop";
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
@@ -123,17 +115,8 @@ let () =
 
   Arg.parse opts (fun _ -> ()) "emit1 [opt]*";
 
-  let some_if_nzero r =
-    if !r > 0 then
-      Some !r
-    else
-      None
-  in
   let config =
     Opentelemetry_client_ocurl.Config.make ~debug:!debug
-      ~batch_traces:(some_if_nzero batch_traces)
-      ~batch_metrics:(some_if_nzero batch_metrics)
-      ~thread:!thread
       ?bg_threads:
         (let n = !n_bg_threads in
          if n = 0 then

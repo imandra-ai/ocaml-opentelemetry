@@ -45,8 +45,9 @@
    (opentelemetry (= :version))
    (pbrt (>= 2.3))
    (odoc :with-doc)
+   (ezcurl (>= 0.2.3))
    ocurl)
-  (synopsis "Collector client for opentelemetry, using http + ocurl"))
+  (synopsis "Collector client for opentelemetry, using http + ezcurl"))
 
 (package
  (name opentelemetry-cohttp-lwt)
