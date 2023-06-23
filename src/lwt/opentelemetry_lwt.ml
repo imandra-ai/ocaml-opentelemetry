@@ -47,14 +47,13 @@ module Trace = struct
       in
       emit ?service_name [ span ]
     in
-    Lwt.catch
-      (fun () ->
-        let* x = f scope in
-        let () = finally (Ok ()) in
-        Lwt.return x)
-      (fun e ->
-        let () = finally (Error (Printexc.to_string e)) in
-        Lwt.fail e)
+    try%lwt
+      let* x = f scope in
+      let () = finally (Ok ()) in
+      Lwt.return x
+    with e ->
+      let () = finally (Error (Printexc.to_string e)) in
+      Lwt.fail e
 end
 
 module Metrics = struct

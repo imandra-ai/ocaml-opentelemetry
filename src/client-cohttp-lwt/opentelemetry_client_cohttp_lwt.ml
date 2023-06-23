@@ -105,11 +105,11 @@ end = struct
     let body = Cohttp_lwt.Body.of_string bod in
 
     let* r =
-      Lwt.catch
-        (fun () ->
-          let+ r = Httpc.post ~headers ~body uri in
-          Ok r)
-        (fun e -> Lwt.return @@ Error e)
+      try%lwt
+        let+ r = Httpc.post ~headers ~body uri in
+        Ok r
+      with e ->
+        Lwt.return @@ Error e
     in
     match r with
     | Error e ->

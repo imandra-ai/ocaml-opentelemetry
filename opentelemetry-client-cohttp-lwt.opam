@@ -15,7 +15,7 @@ depends: [
   "pbrt" {>= "2.2"}
   "odoc" {with-doc}
   "lwt" {>= "5.3"}
-  "lwt_ppx" {with-test}
+  "lwt_ppx"
   "cohttp-lwt"
   "cohttp-lwt-unix"
 ]
