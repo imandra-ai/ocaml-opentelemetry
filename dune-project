@@ -4,7 +4,7 @@
 (source
  (github imandra-ai/ocaml-opentelemetry))
 
-(version 0.4)
+(version 0.5)
 
 (authors "the Imandra team and contributors")
 (maintainers "the Imandra team and contributors")
@@ -33,7 +33,7 @@
    (cohttp-lwt-unix :with-test)
    (odoc :with-doc)
    (lwt (>= "5.3"))
-   lwt_ppx)
+   (lwt_ppx (>= "2.0")))
  (tags
   (instrumentation tracing opentelemetry datadog lwt)))
 
@@ -70,7 +70,7 @@
    (pbrt (>= 2.2))
    (odoc :with-doc)
    (lwt (>= "5.3"))
-   lwt_ppx
+   (lwt_ppx (>= "2.0"))
    cohttp-lwt
    cohttp-lwt-unix)
   (synopsis "Collector client for opentelemetry, using cohttp + lwt"))

@@ -1,4 +1,10 @@
 
+## 0.5
+
+- new implementation for ocurl backend, using ezcurl and queues
+- refactor lwt: Use `try%lwt` over `Lwt.catch`
+- add `opentelemetry.trace` (optional, depends on `trace`)
+
 ## 0.4
 
 - expose `Scope.get_surrounding`
