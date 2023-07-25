@@ -61,9 +61,7 @@ let collector () : Trace.collector =
       in
 
       let new_scope =
-        match old_scope with
-        | None -> { Otel.Scope.span_id; trace_id; events = []; attrs = [] }
-        | Some sc -> sc
+        { Otel.Scope.span_id; trace_id; events = []; attrs = [] }
       in
       TLS.set Otel.Scope._global_scope new_scope;
 
