@@ -716,17 +716,9 @@ module Trace = struct
 
   let add_attrs = Scope.add_attrs [@@deprecated "use Scope.add_attrs"]
 
-  (** Sync span guard.
-
-      @param force_new_trace_id if true (default false), the span will not use a
-      surrounding context, or [scope], or [trace_id], but will always
-      create a fresh new trace ID.
-
-      {b NOTE} be careful not to call this inside a Gc alarm, as it can
-      cause deadlocks. *)
-  let with_ ?(force_new_trace_id = false) ?trace_state ?service_name
+  let with_' ?(force_new_trace_id = false) ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
-      ?links name (f : Scope.t -> 'a) : 'a =
+      ?links name cb =
     let scope =
       if force_new_trace_id then
         None
@@ -770,10 +762,28 @@ module Trace = struct
       in
       emit ?service_name [ span ]
     in
+    let thunk () = cb scope in
+    thunk, finally
+
+  (** Sync span guard.
+
+      @param force_new_trace_id if true (default false), the span will not use a
+      surrounding context, or [scope], or [trace_id], but will always
+      create a fresh new trace ID.
+
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can
+      cause deadlocks. *)
+  let with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
+      ?trace_id ?parent ?scope ?links name (cb : Scope.t -> 'a) : 'a =
+    let thunk, finally =
+      with_' ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
+        ?trace_id ?parent ?scope ?links name cb
+    in
+
     try
-      let x = f scope in
+      let rv = thunk () in
       finally (Ok ());
-      x
+      rv
     with e ->
       finally (Error (Printexc.to_string e));
       raise e
