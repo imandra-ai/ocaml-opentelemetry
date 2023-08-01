@@ -1,7 +1,5 @@
 (** Opentelemetry types and instrumentation *)
 
-module Thread_local = Thread_local
-
 module Lock = Lock
 (** Global lock. *)
 
@@ -522,7 +520,7 @@ module Scope = struct
 
   (**/**)
 
-  let _global_scope : t Thread_local.t = Thread_local.create ()
+  let _ambient_scope : t Ambient_context.key = Ambient_context.create_key ()
 
   (**/**)
 
@@ -530,12 +528,12 @@ module Scope = struct
   let get_surrounding ?scope () : t option =
     match scope with
     | Some _ -> scope
-    | None -> Thread_local.get _global_scope
+    | None -> Ambient_context.get _ambient_scope
 
   (** [with_scope sc f] calls [f()] in a context where [sc] is the
       (thread)-local scope, then reverts to the previous local scope, if any. *)
   let[@inline] with_scope (sc : t) (f : unit -> 'a) : 'a =
-    Thread_local.with_ _global_scope sc (fun _ -> f ())
+    Ambient_context.with_binding _ambient_scope sc (fun _ -> f ())
 end
 
 open struct

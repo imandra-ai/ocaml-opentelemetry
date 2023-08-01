@@ -17,6 +17,7 @@
  (depends
    (ocaml (>= "4.08"))
    ptime
+   ambient-context
    (odoc :with-doc)
    (pbrt (>= 2.3)))
  (depopts
@@ -29,6 +30,7 @@
  (synopsis "Lwt-compatible instrumentation for https://opentelemetry.io")
  (depends
    (ocaml (>= "4.08"))
+   ambient-context
    (opentelemetry (= :version))
    (cohttp-lwt-unix :with-test)
    (odoc :with-doc)
