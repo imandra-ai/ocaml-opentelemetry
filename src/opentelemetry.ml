@@ -518,26 +518,20 @@ module Scope = struct
     if Collector.has_backend () then
       scope.attrs <- List.rev_append (attrs ()) scope.attrs
 
-  (**/**)
+  (** The opaque key necessary to access/set the ambient scope with
+      {!Ambient_context}. *)
+  let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
 
-  let _ambient_scope : t Ambient_context.key = Ambient_context.create_key ()
-
-  (**/**)
-
-  (** Obtain current scope from thread-local storage, if available *)
-  let get_surrounding ?scope () : t option =
+  (** Obtain current scope from {!Ambient_context}, if available. *)
+  let get_ambient_scope ?scope () : t option =
     match scope with
     | Some _ -> scope
-    | None -> Ambient_context.get _ambient_scope
+    | None -> Ambient_context.get ambient_scope_key
 
-  (** [with_scope sc f] calls [f()] in a context where [sc] is the
+  (** [with_ambient_scope sc f] calls [f()] in a context where [sc] is the
       (thread)-local scope, then reverts to the previous local scope, if any. *)
-  let[@inline] with_scope (sc : t) (f : unit -> 'a) : 'a =
-    Ambient_context.with_binding _ambient_scope sc (fun _ -> f ())
-end
-
-open struct
-  let get_surrounding_scope = Scope.get_surrounding
+  let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
+    Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
 end
 
 (** Span Link
@@ -723,7 +717,7 @@ module Trace = struct
       if force_new_trace_id then
         None
       else
-        get_surrounding_scope ?scope ()
+        Scope.get_ambient_scope ?scope ()
     in
     let trace_id =
       match trace_id, scope with
@@ -743,7 +737,7 @@ module Trace = struct
     let span_id = Span_id.create () in
     let scope = { trace_id; span_id; events = []; attrs } in
     (* set global scope in this thread *)
-    Scope.with_scope scope @@ fun () ->
+    Scope.with_ambient_scope scope @@ fun () ->
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
@@ -768,7 +762,7 @@ module Trace = struct
   (** Sync span guard.
 
       @param force_new_trace_id if true (default false), the span will not use a
-      surrounding context, or [scope], or [trace_id], but will always
+      ambient scope, [scope], or [trace_id], but will always
       create a fresh new trace ID.
 
       {b NOTE} be careful not to call this inside a Gc alarm, as it can

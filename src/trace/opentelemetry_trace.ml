@@ -19,7 +19,7 @@ let collector () : Trace.collector =
 
       let start_time = Otel.Timestamp_ns.now_unix_ns () in
 
-      let old_scope = Otel.Scope.get_surrounding () in
+      let old_scope = Otel.Scope.get_ambient_scope () in
       let trace_id =
         match old_scope with
         | None -> Otel.Trace_id.create ()
@@ -30,8 +30,7 @@ let collector () : Trace.collector =
         { Otel.Scope.span_id; trace_id; events = []; attrs = [] }
       in
 
-      Ambient_context.with_binding Otel.Scope._ambient_scope new_scope
-      @@ fun () ->
+      Otel.Scope.with_ambient_scope new_scope @@ fun () ->
       let rv = cb span in
 
       let end_time = Otel.Timestamp_ns.now_unix_ns () in
@@ -53,12 +52,11 @@ let collector () : Trace.collector =
         ~__LINE__:_ ~data:_ _name : Trace.explicit_span =
       failwith "nyi"
 
-    let exit_explicit_span _sp =
-      failwith "nyi"
+    let exit_explicit_span _sp = failwith "nyi"
 
     let message ?span ~data:_ msg : unit =
       (* gather information from context *)
-      let old_scope = Otel.Scope.get_surrounding () in
+      let old_scope = Otel.Scope.get_ambient_scope () in
       let trace_id = Option.map (fun sc -> sc.Otel.Scope.trace_id) old_scope in
 
       let span_id =
