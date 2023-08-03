@@ -27,7 +27,13 @@
   ambient-context
   (odoc :with-doc)
   (pbrt
-   (>= 2.3)))
+   (>= 2.3))
+  (ocaml-lsp-server :with-dev-setup)
+  (ocamlformat
+   (and
+    :with-dev-setup
+    (>= 0.24)
+    (< 0.25))))
  (depopts
   (trace
    (>= 0.1)))
