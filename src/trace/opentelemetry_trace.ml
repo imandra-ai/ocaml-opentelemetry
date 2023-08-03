@@ -36,23 +36,26 @@ let collector () : Trace.collector =
       let end_time = Otel.Timestamp_ns.now_unix_ns () in
 
       let o_span : Otel.Span.t =
-        let last_dot = String.rindex __FUNCTION__ '.' in
-        let module_path = String.sub __FUNCTION__ 0 last_dot in
-        let function_name =
-          String.sub __FUNCTION__ (last_dot + 1)
-            (String.length __FUNCTION__ - last_dot - 1)
-        in
         let attrs =
-          [
-            "code.filepath", `String __FILE__;
-            "code.lineno", `Int __LINE__;
-            "code.function", `String function_name;
-            "code.namespace", `String module_path;
-          ]
-          @ data
+          match __FUNCTION__ with
+          | None ->
+            [ "code.filepath", `String __FILE__; "code.lineno", `Int __LINE__ ]
+          | Some __FUNCTION__ ->
+            let last_dot = String.rindex __FUNCTION__ '.' in
+            let module_path = String.sub __FUNCTION__ 0 last_dot in
+            let function_name =
+              String.sub __FUNCTION__ (last_dot + 1)
+                (String.length __FUNCTION__ - last_dot - 1)
+            in
+            [
+              "code.filepath", `String __FILE__;
+              "code.lineno", `Int __LINE__;
+              "code.function", `String function_name;
+              "code.namespace", `String module_path;
+            ]
         in
         Otel.Span.create ~trace_id:new_scope.trace_id ~id:span_id ~start_time
-          ~end_time ~attrs name
+          ~end_time ~attrs:(attrs @ data) name
         |> fst
       in
 
@@ -60,11 +63,15 @@ let collector () : Trace.collector =
 
       rv
 
-    let enter_explicit_span ~surrounding:_ ?__FUNCTION__:_ ~__FILE__:_
-        ~__LINE__:_ ~data:_ _name : Trace.explicit_span =
-      failwith "nyi"
+    let enter_manual_span ~parent:_ ~__FUNCTION__:_ ~__FILE__:_ ~__LINE__:_
+        ~data:_ _name : Trace.explicit_span =
+      (* TODO: print debugging warning if OTEL_OCAML_DEBUG is enabled *)
+      Trace.Collector.dummy_explicit_span
 
-    let exit_explicit_span _sp = failwith "nyi"
+    let exit_manual_span es =
+      (* TODO: print debugging warning if OTEL_OCAML_DEBUG is enabled *)
+      assert (es == Trace.Collector.dummy_explicit_span);
+      ()
 
     let message ?span ~data:_ msg : unit =
       (* gather information from context *)
