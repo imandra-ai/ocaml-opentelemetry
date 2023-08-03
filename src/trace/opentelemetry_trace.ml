@@ -13,7 +13,7 @@ let span_of_i64 (id : int64) : Otel.Span_id.t =
 
 let collector () : Trace.collector =
   let module M = struct
-    let with_span ~__FUNCTION__:_ ~__FILE__ ~__LINE__ ~data name cb =
+    let with_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name cb =
       let span_id = Otel.Span_id.create () in
       let span = conv_span_to_i64 span_id in
 
@@ -36,8 +36,20 @@ let collector () : Trace.collector =
       let end_time = Otel.Timestamp_ns.now_unix_ns () in
 
       let o_span : Otel.Span.t =
+        let last_dot = String.rindex __FUNCTION__ '.' in
+        let module_path = String.sub __FUNCTION__ 0 last_dot in
+        let function_name =
+          String.sub __FUNCTION__ (last_dot + 1)
+            (String.length __FUNCTION__ - last_dot - 1)
+        in
         let attrs =
-          [ "file", `String __FILE__; "line", `Int __LINE__ ] @ data
+          [
+            "code.filepath", `String __FILE__;
+            "code.lineno", `Int __LINE__;
+            "code.function", `String function_name;
+            "code.namespace", `String module_path;
+          ]
+          @ data
         in
         Otel.Span.create ~trace_id:new_scope.trace_id ~id:span_id ~start_time
           ~end_time ~attrs name
