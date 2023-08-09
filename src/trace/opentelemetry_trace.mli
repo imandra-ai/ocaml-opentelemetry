@@ -1,4 +1,4 @@
-val collector : unit -> Trace.collector
+val collector : unit -> Trace_core.collector
 (** Make a Trace collector that uses the OTEL backend to send spans and logs *)
 
 val setup : unit -> unit
