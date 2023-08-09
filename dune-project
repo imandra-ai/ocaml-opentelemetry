@@ -20,7 +20,9 @@
    (odoc :with-doc)
    (pbrt (>= 2.3)))
  (depopts
-   (trace (>= 0.1)))
+   trace)
+ (conflicts
+   (trace (or (< 0.3) (>= 0.4))))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 

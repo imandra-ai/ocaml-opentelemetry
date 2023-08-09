@@ -15,8 +15,9 @@ depends: [
   "odoc" {with-doc}
   "pbrt" {>= "2.3"}
 ]
-depopts: [
-  "trace" {>= "0.1"}
+depopts: ["trace"]
+conflicts: [
+  "trace" {< "0.3" | >= "0.4"}
 ]
 build: [
   ["dune" "subst"] {dev}
