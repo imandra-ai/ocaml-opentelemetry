@@ -123,7 +123,14 @@ end = struct
     Pbrt.Encoder.reset encoder;
     encode x encoder;
     let data = Pbrt.Encoder.to_string encoder in
-    let url = config.Config.url ^ path in
+    let url =
+      let url = config.Config.url in
+      if String.ends_with url ~suffix:"/" then
+        String.sub url 0 (String.length url - 1)
+      else
+        url
+    in
+    let url = url ^ path in
     if !debug_ || config.debug then
       Printf.eprintf "opentelemetry: send http POST to %s (%dB)\n%!" url
         (String.length data);
