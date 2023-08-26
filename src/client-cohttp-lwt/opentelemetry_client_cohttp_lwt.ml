@@ -93,7 +93,14 @@ end = struct
   (* send the content to the remote endpoint/path *)
   let send (_self : t) ~(config : Config.t) ~path ~decode (bod : string) :
       ('a, error) result Lwt.t =
-    let full_url = config.url ^ path in
+    let url =
+      let url = config.url in
+      if String.ends_with url ~suffix:"/" then
+        String.sub url 0 (String.length url - 1)
+      else
+        url
+    in
+    let full_url = url ^ path in
     let uri = Uri.of_string full_url in
 
     let open Cohttp in
