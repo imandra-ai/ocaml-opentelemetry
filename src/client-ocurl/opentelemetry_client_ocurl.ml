@@ -66,8 +66,17 @@ end
 (** start a thread in the background, running [f()] *)
 let start_bg_thread (f : unit -> unit) : Thread.t =
   let run () =
-    (* block some signals: USR1 USR2 TERM PIPE ALARM STOP, see [$ kill -L] *)
-    ignore (Thread.sigmask Unix.SIG_BLOCK [ 10; 12; 13; 14; 15; 19 ] : _ list);
+    let signals =
+      [
+        Sys.sigusr1;
+        Sys.sigusr2;
+        Sys.sigterm;
+        Sys.sigpipe;
+        Sys.sigalrm;
+        Sys.sigstop;
+      ]
+    in
+    ignore (Thread.sigmask Unix.SIG_BLOCK signals : _ list);
     f ()
   in
   Thread.create run ()
