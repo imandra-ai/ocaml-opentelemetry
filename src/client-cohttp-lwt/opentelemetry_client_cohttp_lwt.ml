@@ -559,6 +559,9 @@ end
 
 let setup_ ?(stop = Atomic.make false) ~(config : Config.t) () =
   debug_ := config.debug;
+
+  if config.url <> get_url () then set_url config.url;
+
   let module B =
     Backend
       (struct

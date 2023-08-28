@@ -1,2 +1,2 @@
-ocurl url = http://localhost:4318
-cohttp url = http://localhost:4318
+ocurl url = http://localhost:3000
+cohttp url = http://localhost:3000
