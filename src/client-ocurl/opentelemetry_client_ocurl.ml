@@ -430,6 +430,8 @@ let setup_ ?(stop = Atomic.make false) ~(config : Config.t) () =
   let ((module B) as backend) = mk_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
+  if config.url <> get_url () then set_url config.url;
+
   if config.ticker_thread then (
     let sleep_ms = min 5_000 (max 2 config.batch_timeout_ms) in
     ignore (setup_ticker_thread ~stop ~sleep_ms backend () : Thread.t)
