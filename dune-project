@@ -36,7 +36,7 @@
     (< 0.25))))
  (depopts
   (trace
-   (>= 0.1)))
+   (>= 0.3)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 

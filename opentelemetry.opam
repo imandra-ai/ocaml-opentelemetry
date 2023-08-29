@@ -19,7 +19,7 @@ depends: [
   "ocamlformat" {with-dev-setup & >= "0.24" & < "0.25"}
 ]
 depopts: [
-  "trace" {>= "0.1"}
+  "trace" {>= "0.3"}
 ]
 build: [
   ["dune" "subst"] {dev}
