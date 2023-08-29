@@ -18,8 +18,9 @@ depends: [
   "ocaml-lsp-server" {with-dev-setup}
   "ocamlformat" {with-dev-setup & >= "0.24" & < "0.25"}
 ]
-depopts: [
-  "trace" {>= "0.3"}
+depopts: ["trace"]
+conflicts: [
+  "trace" {< "0.3" | >= "0.4"}
 ]
 build: [
   ["dune" "subst"] {dev}

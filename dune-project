@@ -34,9 +34,12 @@
     :with-dev-setup
     (>= 0.24)
     (< 0.25))))
- (depopts
+ (depopts trace)
+ (conflicts
   (trace
-   (>= 0.3)))
+   (or
+    (< 0.3)
+    (>= 0.4))))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
