@@ -1,7 +1,7 @@
 ## next version
 
-- replace `Thread_local` with `ocaml-ambient-context`, allowing for implicit scope in Lwt/Eio contexts
-- update `ocaml-trace` interface to use the new `trace.0.3`-style API (breaking)
+- replace `Thread_local` with `ocaml-ambient-context`, allowing for implicit scope in Lwt/Eio contexts (#34)
+- update `ocaml-trace` interface to use the new `trace.0.3`-style API (breaking, see #34)
 
 ## 0.5
 
