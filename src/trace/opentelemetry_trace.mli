@@ -2,15 +2,35 @@ module Otel := Opentelemetry
 module Otrace := Trace
 module TLS := Ambient_context_tls.Thread_local
 
-(** [ocaml-opentelemetry.trace] implements a {!Trace_core.Collector} for {{:https://v3.ocaml.org/p/trace} ocaml-trace}.
+(** [ocaml-opentelemetry.trace] implements a {!Trace_core.Collector} for
+    {{:https://v3.ocaml.org/p/trace} ocaml-trace}.
 
     After installing this collector with {!setup}, you can consume libraries
-    that use ocaml-trace, and they will automatically emit OpenTelemetry spans
+    that use [ocaml-trace], and they will automatically emit OpenTelemetry spans
     and logs.
 
     Both explicit scope (in the [_manual] functions such as [enter_manual_span])
     and implicit scope (in {!Internal.M.with_span}, via {!Ambient_context}) are
-    supported; see the detailed notes on {!Internal.M.enter_manual_span}. *)
+    supported; see the detailed notes on {!Internal.M.enter_manual_span}.
+
+    {1 Well-known identifiers}
+
+    Because [ocaml-trace]'s API is a subset of OpenTelemetry functionality, this
+    interface allows for a few 'well-known' identifiers to be used in
+    [Trace]-instrumented libraries that wish to further support OpenTelemetry
+    usage:
+
+    - If a key of ["otrace.spankind"] is included in the {!Trace.user_data}
+      passed to [with_span] et al., it will be used as the
+      {!Opentelemetry.Span.kind} of the emitted span. (See
+      {!Internal.spankind_of_string} for the list of supported values.)
+
+      {[ocaml
+      let describe () = [ "otrace.spankind", `String "CLIENT" ] in
+      Trace.with_span ~__FILE__ ~__LINE__ ~data:describe "my-span" @@ fun _ ->
+        (* ... *)
+      ]}
+    *)
 
 val setup : unit -> unit
 (** Install the OTEL backend as a Trace collector *)
