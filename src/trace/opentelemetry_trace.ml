@@ -2,6 +2,45 @@ module Otel = Opentelemetry
 module Otrace = Trace (* ocaml-trace *)
 module TLS = Ambient_context_tls.Thread_local
 
+module Well_known = struct
+  let spankind_key = "otrace.spankind"
+
+  let internal = `String "INTERNAL"
+
+  let server = `String "SERVER"
+
+  let client = `String "CLIENT"
+
+  let producer = `String "PRODUCER"
+
+  let consumer = `String "CONSUMER"
+
+  let spankind_of_string =
+    let open Otel.Span in
+    function
+    | "INTERNAL" -> Span_kind_internal
+    | "SERVER" -> Span_kind_server
+    | "CLIENT" -> Span_kind_client
+    | "PRODUCER" -> Span_kind_producer
+    | "CONSUMER" -> Span_kind_consumer
+    | _ -> Span_kind_unspecified
+
+  let otel_attrs_of_otrace_data data =
+    let kind : Otel.Span.kind ref = ref Otel.Span.Span_kind_unspecified in
+    let data =
+      List.filter_map
+        (function
+          | name, `String v when name = "otrace.spankind" ->
+            kind := spankind_of_string v;
+            None
+          | x -> Some x)
+        data
+    in
+    !kind, data
+end
+
+open Well_known
+
 module Internal = struct
   type span_begin = {
     id: Otel.Span_id.t;
@@ -44,29 +83,6 @@ module Internal = struct
     let bs = Bytes.create 8 in
     Bytes.set_int64_le bs 0 id;
     Otel.Span_id.of_bytes bs
-
-  let spankind_of_string =
-    let open Otel.Span in
-    function
-    | "INTERNAL" -> Span_kind_internal
-    | "SERVER" -> Span_kind_server
-    | "CLIENT" -> Span_kind_client
-    | "PRODUCER" -> Span_kind_producer
-    | "CONSUMER" -> Span_kind_consumer
-    | _ -> Span_kind_unspecified
-
-  let otel_attrs_of_otrace_data data =
-    let kind : Otel.Span.kind ref = ref Otel.Span.Span_kind_unspecified in
-    let data =
-      List.filter_map
-        (function
-          | name, `String v when name = "otrace.spankind" ->
-            kind := spankind_of_string v;
-            None
-          | x -> Some x)
-        data
-    in
-    !kind, data
 
   let enter_span' ?explicit_parent ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
       =

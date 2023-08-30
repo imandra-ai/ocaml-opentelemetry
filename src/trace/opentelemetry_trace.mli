@@ -13,20 +13,20 @@ module TLS := Ambient_context_tls.Thread_local
     and implicit scope (in {!Internal.M.with_span}, via {!Ambient_context}) are
     supported; see the detailed notes on {!Internal.M.enter_manual_span}.
 
-    {1 Well-known identifiers}
+    {1:wellknown Well-known identifiers}
 
     Because [ocaml-trace]'s API is a subset of OpenTelemetry functionality, this
     interface allows for a few 'well-known' identifiers to be used in
     [Trace]-instrumented libraries that wish to further support OpenTelemetry
     usage:
 
-    - If a key of ["otrace.spankind"] is included in the {!Trace.user_data}
-      passed to [with_span] et al., it will be used as the
+    - If a key of exactly ["otrace.spankind"] is included in the
+      {!Trace.user_data} passed to [with_span] et al., it will be used as the
       {!Opentelemetry.Span.kind} of the emitted span. (See
       {!Internal.spankind_of_string} for the list of supported values.)
 
       {[ocaml
-      let describe () = [ "otrace.spankind", `String "CLIENT" ] in
+      let describe () = [ Opentelemetry_trace.(spankind_key, client) ] in
       Trace.with_span ~__FILE__ ~__LINE__ ~data:describe "my-span" @@ fun _ ->
         (* ... *)
       ]}
@@ -40,6 +40,27 @@ val setup_with_otel_backend : Opentelemetry.Collector.backend -> unit
 
 val collector : unit -> Trace.collector
 (** Make a Trace collector that uses the OTEL backend to send spans and logs *)
+
+(** Static references for well-known identifiers; see {!label-wellknown}. *)
+module Well_known : sig
+  val spankind_key : string
+
+  val internal : Otrace.user_data
+
+  val server : Otrace.user_data
+
+  val client : Otrace.user_data
+
+  val producer : Otrace.user_data
+
+  val consumer : Otrace.user_data
+
+  val spankind_of_string : string -> Otel.Span.kind
+
+  val otel_attrs_of_otrace_data :
+    (string * Otrace.user_data) list ->
+    Otel.Span.kind * Otel.Span.key_value list
+end
 
 (** Internal implementation details; do not consider these stable. *)
 module Internal : sig
@@ -149,12 +170,6 @@ module Internal : sig
   val otrace_of_otel : Otel.Span_id.t -> Otrace.span
 
   val otel_of_otrace : Otrace.span -> Otel.Span_id.t
-
-  val spankind_of_string : string -> Otel.Span.kind
-
-  val otel_attrs_of_otrace_data :
-    (string * Otrace.user_data) list ->
-    Otel.Span.kind * Otel.Span.key_value list
 
   val enter_span' :
     ?explicit_parent:Otrace.span ->
