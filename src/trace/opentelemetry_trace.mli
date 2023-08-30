@@ -2,7 +2,7 @@ module Otel := Opentelemetry
 module Otrace := Trace
 module TLS := Ambient_context_tls.Thread_local
 
-(** [ocaml-opentelemetry.trace] implements a {!Trace_core.Collector} for
+(** [opentelemetry.trace] implements a {!Trace_core.Collector} for
     {{:https://v3.ocaml.org/p/trace} ocaml-trace}.
 
     After installing this collector with {!setup}, you can consume libraries
@@ -18,7 +18,10 @@ module TLS := Ambient_context_tls.Thread_local
     Because [ocaml-trace]'s API is a subset of OpenTelemetry functionality, this
     interface allows for a few 'well-known' identifiers to be used in
     [Trace]-instrumented libraries that wish to further support OpenTelemetry
-    usage:
+    usage.
+
+    (These strings will not change in subsequent versions of this library, so
+    you do not need to depend on [opentelemetry.trace] to use them.)
 
     - If a key of exactly ["otrace.spankind"] is included in the
       {!Trace.user_data} passed to [with_span] et al., it will be used as the
