@@ -528,8 +528,11 @@ module Scope = struct
     | Some _ -> scope
     | None -> Ambient_context.get ambient_scope_key
 
-  (** [with_ambient_scope sc f] calls [f()] in a context where [sc] is the
-      (thread)-local scope, then reverts to the previous local scope, if any. *)
+  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
+      the (thread|continuation)-local scope, then reverts to the previous local
+      scope, if any.
+
+      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
   let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
     Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
 end
@@ -761,12 +764,20 @@ module Trace = struct
 
   (** Sync span guard.
 
-      @param force_new_trace_id if true (default false), the span will not use a
-      ambient scope, [scope], or [trace_id], but will always
-      create a fresh new trace ID.
+      Notably, this includes {e implicit} scope-tracking: if called without a
+      [~scope] argument (or [~parent]/[~trace_id]), it will check in the
+      {!Ambient_context} for a surrounding environment, and use that as the
+      scope. Similarly, it uses {!Scope.with_ambient_scope} to {e set} a new
+      scope in the ambient context, so that any logically-nested calls to
+      {!with_} will use this span as their parent.
 
       {b NOTE} be careful not to call this inside a Gc alarm, as it can
-      cause deadlocks. *)
+      cause deadlocks.
+
+      @param force_new_trace_id if true (default false), the span will not use a
+      ambient scope, the [~scope] argument, nor [~trace_id], but will instead
+      always create fresh identifiers for this span *)
+
   let with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
       ?trace_id ?parent ?scope ?links name (cb : Scope.t -> 'a) : 'a =
     let thunk, finally =

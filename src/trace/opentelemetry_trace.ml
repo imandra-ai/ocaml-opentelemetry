@@ -17,7 +17,6 @@ module Internal = struct
     parent_scope: Otel.Scope.t option;
   }
 
-  (** Table indexed by ocaml-trace spans *)
   module Active_span_tbl = Hashtbl.Make (struct
     include Int64
 
