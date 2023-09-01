@@ -125,7 +125,7 @@ end = struct
     let data = Pbrt.Encoder.to_string encoder in
     let url =
       let url = config.Config.url in
-      if String.ends_with url ~suffix:"/" then
+      if url <> "" && String.get url (String.length url - 1) = '/' then
         String.sub url 0 (String.length url - 1)
       else
         url
