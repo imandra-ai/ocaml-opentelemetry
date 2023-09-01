@@ -95,7 +95,7 @@ end = struct
       ('a, error) result Lwt.t =
     let url =
       let url = config.url in
-      if String.ends_with url ~suffix:"/" then
+      if url <> "" && String.get url (String.length url - 1) = '/' then
         String.sub url 0 (String.length url - 1)
       else
         url
@@ -115,8 +115,7 @@ end = struct
       try%lwt
         let+ r = Httpc.post ~headers ~body uri in
         Ok r
-      with e ->
-        Lwt.return @@ Error e
+      with e -> Lwt.return @@ Error e
     in
     match r with
     | Error e ->
