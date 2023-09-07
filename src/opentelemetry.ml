@@ -925,8 +925,8 @@ module Logs = struct
   let pp_severity = Logs_pp.pp_severity_number
 
   type flags = Logs_types.log_record_flags =
-    | Log_record_flag_unspecified
-    | Log_record_flag_trace_flags_mask
+    | Log_record_flags_do_not_use
+    | Log_record_flags_trace_flags_mask
 
   let pp_flags = Logs_pp.pp_log_record_flags
 
