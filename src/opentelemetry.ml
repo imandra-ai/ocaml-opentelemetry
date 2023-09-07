@@ -436,10 +436,11 @@ module Globals = struct
     List.rev_append (List.filter not_redundant !global_attributes) into
 
   (** Default span kind in {!Span.create}.
-      This will be used in all spans that do not specify [~kind] explicitly.
+      This will be used in all spans that do not specify [~kind] explicitly;
+      it is set to "internal", following directions from the [.proto] file.
       It can be convenient to set "client" or "server" uniformly in here.
       @since 0.4 *)
-  let default_span_kind = ref Proto.Trace.Span_kind_unspecified
+  let default_span_kind = ref Proto.Trace.Span_kind_internal
 
   let mk_attributes ?(service_name = !service_name) ?(attrs = []) () : _ list =
     let l = List.map _conv_key_value attrs in
