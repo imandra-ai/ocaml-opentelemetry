@@ -244,8 +244,8 @@ let rec decode_logs_data d =
 
 let rec decode_log_record_flags d = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Logs_types.Log_record_flag_unspecified:Logs_types.log_record_flags)
-  | 255 -> (Logs_types.Log_record_flag_trace_flags_mask:Logs_types.log_record_flags)
+  | 0 -> (Logs_types.Log_record_flags_do_not_use:Logs_types.log_record_flags)
+  | 255 -> (Logs_types.Log_record_flags_trace_flags_mask:Logs_types.log_record_flags)
   | _ -> Pbrt.Decoder.malformed_variant "log_record_flags"
 
 let rec encode_severity_number (v:Logs_types.severity_number) encoder =
@@ -344,5 +344,5 @@ let rec encode_logs_data (v:Logs_types.logs_data) encoder =
 
 let rec encode_log_record_flags (v:Logs_types.log_record_flags) encoder =
   match v with
-  | Logs_types.Log_record_flag_unspecified -> Pbrt.Encoder.int_as_varint (0) encoder
-  | Logs_types.Log_record_flag_trace_flags_mask -> Pbrt.Encoder.int_as_varint 255 encoder
+  | Logs_types.Log_record_flags_do_not_use -> Pbrt.Encoder.int_as_varint (0) encoder
+  | Logs_types.Log_record_flags_trace_flags_mask -> Pbrt.Encoder.int_as_varint 255 encoder

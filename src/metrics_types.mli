@@ -82,6 +82,7 @@ type exponential_histogram_data_point = {
   exemplars : exemplar list;
   min : float option;
   max : float option;
+  zero_threshold : float;
 }
 
 type exponential_histogram = {
@@ -139,8 +140,8 @@ type metrics_data = {
 }
 
 type data_point_flags =
-  | Flag_none 
-  | Flag_no_recorded_value 
+  | Data_point_flags_do_not_use 
+  | Data_point_flags_no_recorded_value_mask 
 
 
 (** {2 Default values} *)
@@ -233,6 +234,7 @@ val default_exponential_histogram_data_point :
   ?exemplars:exemplar list ->
   ?min:float option ->
   ?max:float option ->
+  ?zero_threshold:float ->
   unit ->
   exponential_histogram_data_point
 (** [default_exponential_histogram_data_point ()] is the default value for type [exponential_histogram_data_point] *)
