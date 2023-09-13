@@ -1,2 +1,3 @@
 #!/bin/sh
-exec dune exec --profile=release tests/bin/emit1.exe -- $@
+OPTS="--profile=release --display=quiet --ignore-promoted-rules"
+exec dune exec $OPTS tests/bin/emit1.exe -- $@
