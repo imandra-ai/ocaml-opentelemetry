@@ -1,5 +1,6 @@
 
-OPTS="--profile=release --ignore-promoted-rules"
+OPTS=--profile=release --ignore-promoted-rules
+
 all:
 	@dune build @all $(OPTS)
 
