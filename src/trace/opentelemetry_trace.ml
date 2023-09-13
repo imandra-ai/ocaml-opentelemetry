@@ -18,7 +18,7 @@ module Active_spans = struct
     parent_span: Otel.Span_id.t option;
     start_time: int64;
     name: string;
-    data: (string * Trace_core.user_data) list;
+    mutable data: (string * Trace_core.user_data) list;
     __FILE__: string;
     __LINE__: int;
     new_scope: Otel.Scope.t;
@@ -88,6 +88,17 @@ let collector () : Trace_core.collector =
           name;
           data;
         } )
+
+    let add_data_to_span span data : unit =
+      let active_spans = Active_spans.get () in
+      match Span_tbl.find_opt active_spans.tbl span with
+      | None -> () (* TODO: log warning *)
+      | Some bsp -> bsp.data <- List.rev_append data bsp.data
+
+    let add_data_to_manual_span (es : Trace_core.explicit_span) data =
+      match Meta_map.find k_begin_span es.meta with
+      | None -> () (* TODO: log warning *)
+      | Some bsp -> bsp.data <- List.rev_append data bsp.data
 
     let enter_span ?__FUNCTION__:_ ~__FILE__ ~__LINE__ ~data name : span =
       let span, bsp = enter_span_ ~__FILE__ ~__LINE__ ~data name in
