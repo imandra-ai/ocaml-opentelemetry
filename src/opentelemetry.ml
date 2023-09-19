@@ -147,6 +147,69 @@ module Collector = struct
 
   type backend = (module BACKEND)
 
+  module Noop_backend : BACKEND = struct
+    let noop_sender _ ~ret = ret ()
+
+    let send_trace : Trace.resource_spans list sender = { send = noop_sender }
+
+    let send_metrics : Metrics.resource_metrics list sender =
+      { send = noop_sender }
+
+    let send_logs : Logs.resource_logs list sender = { send = noop_sender }
+
+    let signal_emit_gc_metrics () = ()
+
+    let tick () = ()
+
+    let set_on_tick_callbacks _cbs = ()
+
+    let cleanup () = ()
+  end
+
+  module Debug_backend (B : BACKEND) : BACKEND = struct
+    open Proto
+
+    let send_trace : Trace.resource_spans list sender =
+      {
+        send =
+          (fun l ~ret ->
+            Format.eprintf "SPANS: %a@."
+              (Format.pp_print_list Trace.pp_resource_spans)
+              l;
+            B.send_trace.send l ~ret);
+      }
+
+    let send_metrics : Metrics.resource_metrics list sender =
+      {
+        send =
+          (fun l ~ret ->
+            Format.eprintf "METRICS: %a@."
+              (Format.pp_print_list Metrics.pp_resource_metrics)
+              l;
+            B.send_metrics.send l ~ret);
+      }
+
+    let send_logs : Logs.resource_logs list sender =
+      {
+        send =
+          (fun l ~ret ->
+            Format.eprintf "LOGS: %a@."
+              (Format.pp_print_list Logs.pp_resource_logs)
+              l;
+            B.send_logs.send l ~ret);
+      }
+
+    let signal_emit_gc_metrics () = B.signal_emit_gc_metrics ()
+
+    let tick () = B.tick ()
+
+    let set_on_tick_callbacks cbs = B.set_on_tick_callbacks cbs
+
+    let cleanup () = B.cleanup ()
+  end
+
+  let debug_backend : backend = (module Debug_backend (Noop_backend))
+
   (* hidden *)
   open struct
     let on_tick_cbs_ = ref []
@@ -193,6 +256,14 @@ module Collector = struct
     match !backend with
     | None -> ()
     | Some (module B) -> B.tick ()
+
+  let with_setup_debug_backend b ?(enable = true) () f =
+    let (module B : BACKEND) = b in
+    if enable then (
+      set_backend b;
+      Fun.protect ~finally:B.cleanup f
+    ) else
+      f ()
 end
 
 module Util_ = struct

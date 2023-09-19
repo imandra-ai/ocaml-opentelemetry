@@ -108,8 +108,7 @@ end = struct
       try%lwt
         let+ r = Httpc.post ~headers ~body uri in
         Ok r
-      with e ->
-        Lwt.return @@ Error e
+      with e -> Lwt.return @@ Error e
     in
     match r with
     | Error e ->
@@ -551,7 +550,7 @@ end)
     }
 end
 
-let setup_ ?(stop = Atomic.make false) ~(config : Config.t) () =
+let create_backend ?(stop = Atomic.make false) ?(config = Config.make ()) () =
   debug_ := config.debug;
   let module B =
     Backend
@@ -562,12 +561,17 @@ let setup_ ?(stop = Atomic.make false) ~(config : Config.t) () =
       end)
       ()
   in
-  Opentelemetry.Collector.set_backend (module B);
+  (module B : OT.Collector.BACKEND)
+
+let setup_ ?stop ?config () =
+  let backend = create_backend ?stop ?config () in
+  let (module B : OT.Collector.BACKEND) = backend in
+  OT.Collector.set_backend backend;
   B.cleanup
 
-let setup ?stop ?(config = Config.make ()) ?(enable = true) () =
+let setup ?stop ?config ?(enable = true) () =
   if enable then (
-    let cleanup = setup_ ?stop ~config () in
+    let cleanup = setup_ ?stop ?config () in
     at_exit cleanup
   )
 

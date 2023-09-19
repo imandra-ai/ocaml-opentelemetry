@@ -325,7 +325,8 @@ end = struct
     )
 end
 
-let mk_backend ~stop ~config () : (module Collector.BACKEND) =
+let create_backend ?(stop = Atomic.make false)
+    ?(config : Config.t = Config.make ()) () : (module Collector.BACKEND) =
   let module M = struct
     open Opentelemetry.Proto
     open Opentelemetry.Collector
@@ -426,8 +427,9 @@ let setup_ticker_thread ~stop ~sleep_ms (module B : Collector.BACKEND) () =
   in
   start_bg_thread tick_loop
 
-let setup_ ?(stop = Atomic.make false) ~(config : Config.t) () =
-  let ((module B) as backend) = mk_backend ~stop ~config () in
+let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
+    =
+  let ((module B) as backend) = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
   if config.ticker_thread then (
@@ -437,15 +439,15 @@ let setup_ ?(stop = Atomic.make false) ~(config : Config.t) () =
 
   B.cleanup
 
-let setup ?stop ?(config = Config.make ()) ?(enable = true) () =
+let setup ?stop ?config ?(enable = true) () =
   if enable then (
-    let cleanup = setup_ ?stop ~config () in
+    let cleanup = setup_ ?stop ?config () in
     at_exit cleanup
   )
 
-let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f =
+let with_setup ?stop ?config ?(enable = true) () f =
   if enable then (
-    let cleanup = setup_ ?stop ~config () in
+    let cleanup = setup_ ?stop ?config () in
     Fun.protect ~finally:cleanup f
   ) else
     f ()
