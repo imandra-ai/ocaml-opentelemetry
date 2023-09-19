@@ -26,6 +26,7 @@
   ptime
   ambient-context
   (odoc :with-doc)
+  (alcotest :with-test)
   (pbrt
    (>= 2.3))
   (ocaml-lsp-server :with-dev-setup)

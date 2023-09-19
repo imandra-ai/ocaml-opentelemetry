@@ -1,0 +1,3 @@
+(tests
+ (names test_implicit_scope_sync)
+ (libraries alcotest opentelemetry opentelemetry-client-cohttp-lwt))
