@@ -810,8 +810,6 @@ module Trace = struct
     let start_time = Timestamp_ns.now_unix_ns () in
     let span_id = Span_id.create () in
     let scope = { trace_id; span_id; events = []; attrs } in
-    (* set global scope in this thread *)
-    Scope.with_ambient_scope scope @@ fun () ->
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
@@ -830,7 +828,10 @@ module Trace = struct
       in
       emit ?service_name [ span ]
     in
-    let thunk () = cb scope in
+    let thunk () =
+      (* set global scope in this thread *)
+      Scope.with_ambient_scope scope @@ fun () -> cb scope
+    in
     thunk, finally
 
   (** Sync span guard.
