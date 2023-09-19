@@ -435,10 +435,12 @@ let mk_backend ~stop ~config () : (module Collector.BACKEND) =
 let setup_ticker_thread ~stop ~sleep_ms (module B : Collector.BACKEND) () =
   let sleep_s = float sleep_ms /. 1000. in
   let tick_loop () =
-    while not @@ Atomic.get stop do
-      Thread.delay sleep_s;
-      B.tick ()
-    done
+    try
+      while not @@ Atomic.get stop do
+        Thread.delay sleep_s;
+        B.tick ()
+      done
+    with B_queue.Closed -> ()
   in
   start_bg_thread tick_loop
 
