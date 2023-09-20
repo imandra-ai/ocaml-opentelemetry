@@ -58,8 +58,8 @@ type logs_data = {
 }
 
 type log_record_flags =
-  | Log_record_flag_unspecified 
-  | Log_record_flag_trace_flags_mask 
+  | Log_record_flags_do_not_use 
+  | Log_record_flags_trace_flags_mask 
 
 let rec default_severity_number () = (Severity_number_unspecified:severity_number)
 
@@ -113,4 +113,4 @@ let rec default_logs_data
   resource_logs;
 }
 
-let rec default_log_record_flags () = (Log_record_flag_unspecified:log_record_flags)
+let rec default_log_record_flags () = (Log_record_flags_do_not_use:log_record_flags)

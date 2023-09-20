@@ -61,8 +61,8 @@ type logs_data = {
 }
 
 type log_record_flags =
-  | Log_record_flag_unspecified 
-  | Log_record_flag_trace_flags_mask 
+  | Log_record_flags_do_not_use 
+  | Log_record_flags_trace_flags_mask 
 
 
 (** {2 Default values} *)

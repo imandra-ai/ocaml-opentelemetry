@@ -116,6 +116,7 @@ type exponential_histogram_data_point_mutable = {
   mutable exemplars : Metrics_types.exemplar list;
   mutable min : float option;
   mutable max : float option;
+  mutable zero_threshold : float;
 }
 
 let default_exponential_histogram_data_point_mutable () : exponential_histogram_data_point_mutable = {
@@ -132,6 +133,7 @@ let default_exponential_histogram_data_point_mutable () : exponential_histogram_
   exemplars = [];
   min = None;
   max = None;
+  zero_threshold = 0.;
 }
 
 type exponential_histogram_mutable = {
@@ -625,6 +627,11 @@ let rec decode_exponential_histogram_data_point d =
     end
     | Some (13, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(13)" pk
+    | Some (14, Pbrt.Bits64) -> begin
+      v.zero_threshold <- Pbrt.Decoder.float_as_bits64 d;
+    end
+    | Some (14, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(14)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   ({
@@ -641,6 +648,7 @@ let rec decode_exponential_histogram_data_point d =
     Metrics_types.exemplars = v.exemplars;
     Metrics_types.min = v.min;
     Metrics_types.max = v.max;
+    Metrics_types.zero_threshold = v.zero_threshold;
   } : Metrics_types.exponential_histogram_data_point)
 
 let rec decode_exponential_histogram d =
@@ -924,8 +932,8 @@ let rec decode_metrics_data d =
 
 let rec decode_data_point_flags d = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Metrics_types.Flag_none:Metrics_types.data_point_flags)
-  | 1 -> (Metrics_types.Flag_no_recorded_value:Metrics_types.data_point_flags)
+  | 0 -> (Metrics_types.Data_point_flags_do_not_use:Metrics_types.data_point_flags)
+  | 1 -> (Metrics_types.Data_point_flags_no_recorded_value_mask:Metrics_types.data_point_flags)
   | _ -> Pbrt.Decoder.malformed_variant "data_point_flags"
 
 let rec encode_exemplar_value (v:Metrics_types.exemplar_value) encoder = 
@@ -1138,6 +1146,8 @@ let rec encode_exponential_histogram_data_point (v:Metrics_types.exponential_his
     Pbrt.Encoder.float_as_bits64 x encoder;
   | None -> ();
   end;
+  Pbrt.Encoder.key (14, Pbrt.Bits64) encoder; 
+  Pbrt.Encoder.float_as_bits64 v.Metrics_types.zero_threshold encoder;
   ()
 
 let rec encode_exponential_histogram (v:Metrics_types.exponential_histogram) encoder = 
@@ -1268,5 +1278,5 @@ let rec encode_metrics_data (v:Metrics_types.metrics_data) encoder =
 
 let rec encode_data_point_flags (v:Metrics_types.data_point_flags) encoder =
   match v with
-  | Metrics_types.Flag_none -> Pbrt.Encoder.int_as_varint (0) encoder
-  | Metrics_types.Flag_no_recorded_value -> Pbrt.Encoder.int_as_varint 1 encoder
+  | Metrics_types.Data_point_flags_do_not_use -> Pbrt.Encoder.int_as_varint (0) encoder
+  | Metrics_types.Data_point_flags_no_recorded_value_mask -> Pbrt.Encoder.int_as_varint 1 encoder

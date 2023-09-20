@@ -66,8 +66,17 @@ end
 (** start a thread in the background, running [f()] *)
 let start_bg_thread (f : unit -> unit) : Thread.t =
   let run () =
-    (* block some signals: USR1 USR2 TERM PIPE ALARM STOP, see [$ kill -L] *)
-    ignore (Thread.sigmask Unix.SIG_BLOCK [ 10; 12; 13; 14; 15; 19 ] : _ list);
+    let signals =
+      [
+        Sys.sigusr1;
+        Sys.sigusr2;
+        Sys.sigterm;
+        Sys.sigpipe;
+        Sys.sigalrm;
+        Sys.sigstop;
+      ]
+    in
+    ignore (Thread.sigmask Unix.SIG_BLOCK signals : _ list);
     f ()
   in
   Thread.create run ()
@@ -114,7 +123,14 @@ end = struct
     Pbrt.Encoder.reset encoder;
     encode x encoder;
     let data = Pbrt.Encoder.to_string encoder in
-    let url = config.Config.url ^ path in
+    let url =
+      let url = config.Config.url in
+      if url <> "" && String.get url (String.length url - 1) = '/' then
+        String.sub url 0 (String.length url - 1)
+      else
+        url
+    in
+    let url = url ^ path in
     if !debug_ || config.debug then
       Printf.eprintf "opentelemetry: send http POST to %s (%dB)\n%!" url
         (String.length data);
@@ -420,10 +436,12 @@ let create_backend ?(stop = Atomic.make false)
 let setup_ticker_thread ~stop ~sleep_ms (module B : Collector.BACKEND) () =
   let sleep_s = float sleep_ms /. 1000. in
   let tick_loop () =
-    while not @@ Atomic.get stop do
-      Thread.delay sleep_s;
-      B.tick ()
-    done
+    try
+      while not @@ Atomic.get stop do
+        Thread.delay sleep_s;
+        B.tick ()
+      done
+    with B_queue.Closed -> ()
   in
   start_bg_thread tick_loop
 
@@ -431,6 +449,8 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
     =
   let ((module B) as backend) = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
+
+  if config.url <> get_url () then set_url config.url;
 
   if config.ticker_thread then (
     let sleep_ms = min 5_000 (max 2 config.batch_timeout_ms) in

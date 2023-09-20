@@ -479,7 +479,7 @@ module Globals = struct
   let service_instance_id = ref None
 
   let instrumentation_library =
-    default_instrumentation_scope ~version:"0.2" ~name:"ocaml-opentelemetry" ()
+    default_instrumentation_scope ~version:"0.2" ~name:"ocaml-otel" ()
 
   (** Global attributes, initially set
       via OTEL_RESOURCE_ATTRIBUTES and modifiable
@@ -507,10 +507,11 @@ module Globals = struct
     List.rev_append (List.filter not_redundant !global_attributes) into
 
   (** Default span kind in {!Span.create}.
-      This will be used in all spans that do not specify [~kind] explicitly.
+      This will be used in all spans that do not specify [~kind] explicitly;
+      it is set to "internal", following directions from the [.proto] file.
       It can be convenient to set "client" or "server" uniformly in here.
       @since 0.4 *)
-  let default_span_kind = ref Proto.Trace.Span_kind_unspecified
+  let default_span_kind = ref Proto.Trace.Span_kind_internal
 
   let mk_attributes ?(service_name = !service_name) ?(attrs = []) () : _ list =
     let l = List.map _conv_key_value attrs in
@@ -1011,8 +1012,8 @@ module Logs = struct
   let pp_severity = Logs_pp.pp_severity_number
 
   type flags = Logs_types.log_record_flags =
-    | Log_record_flag_unspecified
-    | Log_record_flag_trace_flags_mask
+    | Log_record_flags_do_not_use
+    | Log_record_flags_trace_flags_mask
 
   let pp_flags = Logs_pp.pp_log_record_flags
 

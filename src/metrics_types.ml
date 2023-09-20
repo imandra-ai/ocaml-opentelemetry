@@ -79,6 +79,7 @@ type exponential_histogram_data_point = {
   exemplars : exemplar list;
   min : float option;
   max : float option;
+  zero_threshold : float;
 }
 
 type exponential_histogram = {
@@ -136,8 +137,8 @@ type metrics_data = {
 }
 
 type data_point_flags =
-  | Flag_none 
-  | Flag_no_recorded_value 
+  | Data_point_flags_do_not_use 
+  | Data_point_flags_no_recorded_value_mask 
 
 let rec default_exemplar_value () : exemplar_value = As_double (0.)
 
@@ -247,6 +248,7 @@ let rec default_exponential_histogram_data_point
   ?exemplars:((exemplars:exemplar list) = [])
   ?min:((min:float option) = None)
   ?max:((max:float option) = None)
+  ?zero_threshold:((zero_threshold:float) = 0.)
   () : exponential_histogram_data_point  = {
   attributes;
   start_time_unix_nano;
@@ -261,6 +263,7 @@ let rec default_exponential_histogram_data_point
   exemplars;
   min;
   max;
+  zero_threshold;
 }
 
 let rec default_exponential_histogram 
@@ -343,4 +346,4 @@ let rec default_metrics_data
   resource_metrics;
 }
 
-let rec default_data_point_flags () = (Flag_none:data_point_flags)
+let rec default_data_point_flags () = (Data_point_flags_do_not_use:data_point_flags)

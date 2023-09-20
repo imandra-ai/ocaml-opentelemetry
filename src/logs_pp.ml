@@ -67,5 +67,5 @@ let rec pp_logs_data fmt (v:Logs_types.logs_data) =
 
 let rec pp_log_record_flags fmt (v:Logs_types.log_record_flags) =
   match v with
-  | Logs_types.Log_record_flag_unspecified -> Format.fprintf fmt "Log_record_flag_unspecified"
-  | Logs_types.Log_record_flag_trace_flags_mask -> Format.fprintf fmt "Log_record_flag_trace_flags_mask"
+  | Logs_types.Log_record_flags_do_not_use -> Format.fprintf fmt "Log_record_flags_do_not_use"
+  | Logs_types.Log_record_flags_trace_flags_mask -> Format.fprintf fmt "Log_record_flags_trace_flags_mask"

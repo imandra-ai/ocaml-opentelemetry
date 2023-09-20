@@ -3,8 +3,6 @@ name: build
 on:
   pull_request:
   push:
-    branches:
-      - master
 
 jobs:
   build:
@@ -18,6 +16,7 @@ jobs:
         ocaml-compiler:
           - 4.08.x
           - 4.13.x
+          - 5.0.x
 
     runs-on: ${{ matrix.os }}
 

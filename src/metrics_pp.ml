@@ -96,6 +96,7 @@ let rec pp_exponential_histogram_data_point fmt (v:Metrics_types.exponential_his
     Pbrt.Pp.pp_record_field ~first:false "exemplars" (Pbrt.Pp.pp_list pp_exemplar) fmt v.Metrics_types.exemplars;
     Pbrt.Pp.pp_record_field ~first:false "min" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.min;
     Pbrt.Pp.pp_record_field ~first:false "max" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Metrics_types.max;
+    Pbrt.Pp.pp_record_field ~first:false "zero_threshold" Pbrt.Pp.pp_float fmt v.Metrics_types.zero_threshold;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -172,5 +173,5 @@ let rec pp_metrics_data fmt (v:Metrics_types.metrics_data) =
 
 let rec pp_data_point_flags fmt (v:Metrics_types.data_point_flags) =
   match v with
-  | Metrics_types.Flag_none -> Format.fprintf fmt "Flag_none"
-  | Metrics_types.Flag_no_recorded_value -> Format.fprintf fmt "Flag_no_recorded_value"
+  | Metrics_types.Data_point_flags_do_not_use -> Format.fprintf fmt "Data_point_flags_do_not_use"
+  | Metrics_types.Data_point_flags_no_recorded_value_mask -> Format.fprintf fmt "Data_point_flags_no_recorded_value_mask"
