@@ -126,6 +126,12 @@ module Internal : sig
 
         (See the notes at {!enter_manual_span} about {!Ambient_context}.) *)
 
+    val add_data_to_span :
+      Otrace.span -> (string * Otrace.user_data) list -> unit
+
+    val add_data_to_manual_span :
+      Otrace.explicit_span -> (string * Otrace.user_data) list -> unit
+
     val message :
       ?span:Otrace.span ->
       data:(string * Otrace.user_data) list ->
@@ -138,9 +144,11 @@ module Internal : sig
 
     val name_thread : string -> unit
 
-    val counter_int : string -> int -> unit
+    val counter_int :
+      data:(string * Otrace.user_data) list -> string -> int -> unit
 
-    val counter_float : string -> float -> unit
+    val counter_float :
+      data:(string * Otrace.user_data) list -> string -> float -> unit
   end
 
   type span_begin = {

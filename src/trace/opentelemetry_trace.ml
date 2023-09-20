@@ -215,6 +215,19 @@ module Internal = struct
         let otel_span = exit_span' otrace_id sb in
         Otel.Trace.emit [ otel_span ]
 
+    let add_data_to_span otrace_id data =
+      let active_spans = Active_spans.get () in
+      match Active_span_tbl.find_opt active_spans.tbl otrace_id with
+      | None ->
+        (* FIXME: some kind of error/debug logging *)
+        ()
+      | Some sb ->
+        Active_span_tbl.replace active_spans.tbl otrace_id
+          { sb with data = sb.data @ data }
+
+    let add_data_to_manual_span Otrace.{ span = otrace_id; _ } data =
+      add_data_to_span otrace_id data
+
     let message ?span ~data:_ msg : unit =
       (* gather information from context *)
       let old_scope = Otel.Scope.get_ambient_scope () in
@@ -235,11 +248,11 @@ module Internal = struct
 
     let name_thread _name = ()
 
-    let counter_int name cur_val : unit =
+    let counter_int ~data:_ name cur_val : unit =
       let m = Otel.Metrics.(gauge ~name [ int cur_val ]) in
       Otel.Metrics.emit [ m ]
 
-    let counter_float name cur_val : unit =
+    let counter_float ~data:_ name cur_val : unit =
       let m = Otel.Metrics.(gauge ~name [ float cur_val ]) in
       Otel.Metrics.emit [ m ]
   end

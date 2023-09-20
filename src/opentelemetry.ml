@@ -435,6 +435,7 @@ type value =
   [ `Int of int
   | `String of string
   | `Bool of bool
+  | `Float of float
   | `None
   ]
 
@@ -448,6 +449,7 @@ let _conv_value =
   | `Int i -> Some (Int_value (Int64.of_int i))
   | `String s -> Some (String_value s)
   | `Bool b -> Some (Bool_value b)
+  | `Float f -> Some (Double_value f)
   | `None -> None
 
 (**/**)
@@ -679,7 +681,7 @@ module Span : sig
   val id : t -> Span_id.t
 
   type key_value =
-    string * [ `Int of int | `String of string | `Bool of bool | `None ]
+    string * [ `Int of int | `String of string | `Bool of bool | `Float of float | `None ]
 
   val create :
     ?kind:kind ->
@@ -716,7 +718,7 @@ end = struct
     | Span_kind_consumer
 
   type key_value =
-    string * [ `Int of int | `String of string | `Bool of bool | `None ]
+    string * [ `Int of int | `String of string | `Bool of bool | `Float of float | `None ]
 
   type nonrec status_code = status_status_code =
     | Status_code_unset
