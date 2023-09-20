@@ -1,6 +1,6 @@
 module Otel = Opentelemetry
 module Otrace = Trace (* ocaml-trace *)
-module TLS = Ambient_context_tls.Thread_local
+module TLS = Ambient_context_tls.TLS
 
 module Well_known = struct
   let spankind_key = "otrace.spankind"
