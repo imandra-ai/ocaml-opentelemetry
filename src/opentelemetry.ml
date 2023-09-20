@@ -682,7 +682,13 @@ module Span : sig
   val id : t -> Span_id.t
 
   type key_value =
-    string * [ `Int of int | `String of string | `Bool of bool | `Float of float | `None ]
+    string
+    * [ `Int of int
+      | `String of string
+      | `Bool of bool
+      | `Float of float
+      | `None
+      ]
 
   val create :
     ?kind:kind ->
@@ -719,7 +725,13 @@ end = struct
     | Span_kind_consumer
 
   type key_value =
-    string * [ `Int of int | `String of string | `Bool of bool | `Float of float | `None ]
+    string
+    * [ `Int of int
+      | `String of string
+      | `Bool of bool
+      | `Float of float
+      | `None
+      ]
 
   type nonrec status_code = status_status_code =
     | Status_code_unset

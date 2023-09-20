@@ -6,8 +6,10 @@
 (executable
  (name emit1_cohttp)
  (modules emit1_cohttp)
- (preprocess (pps lwt_ppx))
- (libraries unix opentelemetry opentelemetry-lwt opentelemetry-client-cohttp-lwt lwt.unix))
+ (preprocess
+  (pps lwt_ppx))
+ (libraries unix opentelemetry opentelemetry-lwt
+   opentelemetry-client-cohttp-lwt lwt.unix))
 
 (executable
  (name cohttp_client)
