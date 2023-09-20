@@ -39,8 +39,8 @@
  (conflicts
   (trace
    (or
-    (< 0.3)
-    (>= 0.4))))
+    (< 0.4)
+    (>= 0.5))))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
