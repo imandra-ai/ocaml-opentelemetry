@@ -248,12 +248,14 @@ module Internal = struct
 
     let name_thread _name = ()
 
-    let counter_int ~data:_ name cur_val : unit =
-      let m = Otel.Metrics.(gauge ~name [ int cur_val ]) in
+    let counter_int ~data name cur_val : unit =
+      let _kind, attrs = otel_attrs_of_otrace_data data in
+      let m = Otel.Metrics.(gauge ~name [ int ~attrs cur_val ]) in
       Otel.Metrics.emit [ m ]
 
-    let counter_float ~data:_ name cur_val : unit =
-      let m = Otel.Metrics.(gauge ~name [ float cur_val ]) in
+    let counter_float ~data name cur_val : unit =
+      let _kind, attrs = otel_attrs_of_otrace_data data in
+      let m = Otel.Metrics.(gauge ~name [ float ~attrs cur_val ]) in
       Otel.Metrics.emit [ m ]
   end
 end
