@@ -11,7 +11,10 @@
 
 (authors "the Imandra team and contributors")
 
-(maintainers "the Imandra team and contributors")
+(maintainers
+ "Simon Cruanes <simon.cruanes.2007@m4x.org>"
+ "Matt Bray <mattjbray@gmail.com>"
+ "ELLIOTTCABLE <opam@ell.io>")
 
 (license MIT)
 
