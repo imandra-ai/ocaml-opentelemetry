@@ -12,11 +12,16 @@ depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.08"}
   "ptime"
+  "ambient-context"
   "odoc" {with-doc}
+  "alcotest" {with-test}
   "pbrt" {>= "2.3"}
+  "ocaml-lsp-server" {with-dev-setup}
+  "ocamlformat" {with-dev-setup & >= "0.24" & < "0.25"}
 ]
-depopts: [
-  "trace" {>= "0.1"}
+depopts: ["trace"]
+conflicts: [
+  "trace" {< "0.4" | >= "0.5"}
 ]
 build: [
   ["dune" "subst"] {dev}

@@ -17,6 +17,12 @@ val set_headers : (string * string) list -> unit
 module Atomic = Opentelemetry_atomic.Atomic
 module Config = Config
 
+val create_backend :
+  ?stop:bool Atomic.t ->
+  ?config:Config.t ->
+  unit ->
+  (module Opentelemetry.Collector.BACKEND)
+
 val setup :
   ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.

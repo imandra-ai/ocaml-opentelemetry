@@ -1,9 +1,13 @@
+## next version
+
+- replace `Thread_local` with `ocaml-ambient-context`, allowing for implicit scope in Lwt/Eio contexts (#34)
+- update `ocaml-trace` interface to use the new `trace.0.3`-style API (breaking, see #34)
 
 ## 0.5
 
 - new implementation for ocurl backend, using ezcurl and queues
 - refactor lwt: Use `try%lwt` over `Lwt.catch`
-- add `opentelemetry.trace` (optional, depends on `trace`)
+- add `opentelemetry.trace` (optional, depends on `ocaml-trace`)
 
 ## 0.4
 
