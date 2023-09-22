@@ -3,14 +3,24 @@
   <span>?start_time_unix_nano:<a href="../../../opentelemetry/Opentelemetry/Timestamp_ns/index.html#type-t">Opentelemetry.Timestamp_ns.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>?now:<a href="../../../opentelemetry/Opentelemetry/Timestamp_ns/index.html#type-t">Opentelemetry.Timestamp_ns.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>?attrs:
-    <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span>float <span class="arrow">&#45;&gt;</span></span>
   <span class="xref-unresolved">Opentelemetry__.Metrics_types.number_data_point</span></span></code></div><div class="spec-doc"><p>Number data point, as a float</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-int"><a href="#val-int" class="anchor"></a><code><span><span class="keyword">val</span> int : 
   <span>?start_time_unix_nano:<a href="../../../opentelemetry/Opentelemetry/Timestamp_ns/index.html#type-t">Opentelemetry.Timestamp_ns.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>?now:<a href="../../../opentelemetry/Opentelemetry/Timestamp_ns/index.html#type-t">Opentelemetry.Timestamp_ns.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>?attrs:
-    <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span>int <span class="arrow">&#45;&gt;</span></span>
   <span class="xref-unresolved">Opentelemetry__.Metrics_types.number_data_point</span></span></code></div><div class="spec-doc"><p>Number data point, as an int</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-gauge"><a href="#val-gauge" class="anchor"></a><code><span><span class="keyword">val</span> gauge : 
@@ -29,7 +39,12 @@
   <span>?start_time_unix_nano:<a href="../../../opentelemetry/Opentelemetry/Timestamp_ns/index.html#type-t">Opentelemetry.Timestamp_ns.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>?now:<a href="../../../opentelemetry/Opentelemetry/Timestamp_ns/index.html#type-t">Opentelemetry.Timestamp_ns.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>?attrs:
-    <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span>?exemplars:<span><span class="xref-unresolved">Opentelemetry__.Metrics_types.exemplar</span> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span>?explicit_bounds:<span>float list</span> <span class="arrow">&#45;&gt;</span></span>
@@ -47,12 +62,22 @@
   <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-make_resource_metrics"><a href="#val-make_resource_metrics" class="anchor"></a><code><span><span class="keyword">val</span> make_resource_metrics : 
   <span>?service_name:string <span class="arrow">&#45;&gt;</span></span>
   <span>?attrs:
-    <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span class="xref-unresolved">Opentelemetry__.Metrics_types.resource_metrics</span></span></code></div><div class="spec-doc"><p>Aggregate metrics into a <code>Proto</code>.Metrics.resource_metrics</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit"><a href="#val-emit" class="anchor"></a><code><span><span class="keyword">val</span> emit : 
   <span>?attrs:
-    <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   unit</span></code></div><div class="spec-doc"><p>Emit some metrics to the collector (sync). This blocks until the backend has pushed the metrics into some internal queue, or discarded them.</p><p><b>NOTE</b> be careful not to call this inside a Gc alarm, as it can cause deadlocks.</p></div></div></details></div></div></body></html>

@@ -4,7 +4,12 @@
   <span><a href="../Proto/Common/index.html#type-key_value">Proto.Common.key_value</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-default_span_kind"><a href="#val-default_span_kind" class="anchor"></a><code><span><span class="keyword">val</span> default_span_kind : <span><a href="../Proto/Trace/index.html#type-span_span_kind">Proto.Trace.span_span_kind</a> <span class="xref-unresolved">Stdlib</span>.ref</span></span></code></div><div class="spec-doc"><p>Default span kind in <a href="../Span/index.html#val-create"><code>Span.create</code></a>. This will be used in all spans that do not specify <code>~kind</code> explicitly; it is set to &quot;internal&quot;, following directions from the <code>.proto</code> file. It can be convenient to set &quot;client&quot; or &quot;server&quot; uniformly in here.</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 0.4</li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-mk_attributes"><a href="#val-mk_attributes" class="anchor"></a><code><span><span class="keyword">val</span> mk_attributes : 
   <span>?service_name:string <span class="arrow">&#45;&gt;</span></span>
   <span>?attrs:
-    <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span>unit <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../Proto/Common/index.html#type-key_value">Proto.Common.key_value</a> list</span></span></code></div></div></div></body></html>

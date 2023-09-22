@@ -99,7 +99,12 @@
   <span class="type-var">'a</span></span></code></div><div class="spec-doc"><p>Make a log entry with format</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-emit"><a href="#val-emit" class="anchor"></a><code><span><span class="keyword">val</span> emit : 
   <span>?service_name:string <span class="arrow">&#45;&gt;</span></span>
   <span>?attrs:
-    <span><span>(string * <span>[&lt; <span>`Bool of bool</span> <span><span>| `Int</span> of int</span> <span>| `None</span> <span><span>| `String</span> of string</span> ]</span>)</span>
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
       list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   unit</span></code></div><div class="spec-doc"><p>Emit logs.</p><p>This instructs the collector to send the logs to some backend at a later date. <b>NOTE</b> be careful not to call this inside a Gc alarm, as it can cause deadlocks.</p></div></div></details></div></div></body></html>
