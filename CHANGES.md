@@ -1,5 +1,7 @@
 ## next version
 
+## 0.6
+
 - fix ticker thread shutdown
 - migrated to OTEL proto files v1.0
 - replace `Thread_local` with `ocaml-ambient-context`, allowing for implicit scope in Lwt/Eio contexts (#34)
