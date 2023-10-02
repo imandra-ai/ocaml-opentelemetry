@@ -1,5 +1,5 @@
 module Otel = Opentelemetry
-module Otrace = Trace (* ocaml-trace *)
+module Otrace = Trace_core (* ocaml-trace *)
 module TLS = Ambient_context_tls.TLS
 
 module Well_known = struct
@@ -260,9 +260,9 @@ module Internal = struct
   end
 end
 
-let collector () : Trace.collector = (module Internal.M)
+let collector () : Otrace.collector = (module Internal.M)
 
-let setup () = Trace.setup_collector @@ collector ()
+let setup () = Otrace.setup_collector @@ collector ()
 
 let setup_with_otel_backend b : unit =
   Otel.Collector.set_backend b;

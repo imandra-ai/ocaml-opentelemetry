@@ -1,5 +1,5 @@
 module Otel := Opentelemetry
-module Otrace := Trace
+module Otrace := Trace_core
 module TLS := Ambient_context_tls.TLS
 
 (** [opentelemetry.trace] implements a {!Trace_core.Collector} for
@@ -24,13 +24,14 @@ module TLS := Ambient_context_tls.TLS
     you do not need to depend on [opentelemetry.trace] to use them.)
 
     - If a key of exactly ["otrace.spankind"] is included in the
-      {!Trace.user_data} passed to [with_span] et al., it will be used as the
-      {!Opentelemetry.Span.kind} of the emitted span. (See
+      {!Trace_core.user_data} passed to [with_span] et al., it will be used as
+      the {!Opentelemetry.Span.kind} of the emitted span. (See
       {!Internal.spankind_of_string} for the list of supported values.)
 
       {[ocaml
       let describe () = [ Opentelemetry_trace.(spankind_key, client) ] in
-      Trace.with_span ~__FILE__ ~__LINE__ ~data:describe "my-span" @@ fun _ ->
+      Trace_core.with_span ~__FILE__ ~__LINE__ ~data:describe "my-span"
+      @@ fun _ ->
         (* ... *)
       ]}
     *)
@@ -41,7 +42,7 @@ val setup : unit -> unit
 val setup_with_otel_backend : Opentelemetry.Collector.backend -> unit
 (** Same as {!setup},  but also install the given backend as OTEL backend *)
 
-val collector : unit -> Trace.collector
+val collector : unit -> Trace_core.collector
 (** Make a Trace collector that uses the OTEL backend to send spans and logs *)
 
 (** Static references for well-known identifiers; see {!label-wellknown}. *)
@@ -77,7 +78,7 @@ module Internal : sig
       (Otrace.span -> 'a) ->
       'a
     (** Implements {!Trace_core.Collector.S.with_span}, with the OpenTelemetry
-        collector as the backend. Invoked via {!Trace.with_span}.
+        collector as the backend. Invoked via {!Trace_core.with_span}.
 
         Notably, this has the same implicit-scope semantics as
         {!Opentelemetry.Trace.with_}, and requires configuration of
@@ -94,22 +95,23 @@ module Internal : sig
       data:(string * Otrace.user_data) list ->
       string (* span name *) ->
       Otrace.explicit_span
-    (** Implements {!Trace_core.Collector.S.enter_manual_span}, with the OpenTelemetry
-        collector as the backend. Invoked at {!Trace.enter_manual_toplevel_span}
-        and {!Trace.enter_manual_sub_span}; requires an eventual call to
-        {!Trace.exit_manual_span}.
+    (** Implements {!Trace_core.Collector.S.enter_manual_span}, with the
+        OpenTelemetry collector as the backend. Invoked at
+        {!Trace_core.enter_manual_toplevel_span} and
+        {!Trace_core.enter_manual_sub_span}; requires an eventual call to
+        {!Trace_core.exit_manual_span}.
 
         These 'manual span' functions {e do not} implement the same implicit-
         scope semantics of {!with_span}; and thus don't need to wrap a single
         stack-frame / callback; you can freely enter a span at any point, store
-        the returned {!Trace.explicit_span}, and exit it at any later point with
-        {!Trace.exit_manual_span}.
+        the returned {!Trace_core.explicit_span}, and exit it at any later point
+        with {!Trace_core.exit_manual_span}.
 
         However, for that same reason, they also cannot update the
         {!Ambient_context} — that is, when you invoke the various [manual]
         functions, if you then invoke other functions that use
-        {!Trace.with_span}, those callees {e will not} see the span you entered
-        manually as their [parent].
+        {!Trace_core.with_span}, those callees {e will not} see the span you
+        entered manually as their [parent].
 
         Generally, the best practice is to only use these [manual] functions at
         the 'leaves' of your callstack: that is, don't invoke user callbacks
@@ -120,9 +122,9 @@ module Internal : sig
     val exit_manual_span : Otrace.explicit_span -> unit
     (** Implements {!Trace_core.Collector.S.exit_manual_span}, with the
         OpenTelemetry collector as the backend. Invoked at
-        {!Trace.exit_manual_span}. Expects the [explicit_span] returned from an
-        earlier call to {!Trace.enter_manual_toplevel_span} or
-        {!Trace.enter_manual_sub_span}.
+        {!Trace_core.exit_manual_span}. Expects the [explicit_span] returned
+        from an earlier call to {!Trace_core.enter_manual_toplevel_span} or
+        {!Trace_core.enter_manual_sub_span}.
 
         (See the notes at {!enter_manual_span} about {!Ambient_context}.) *)
 
