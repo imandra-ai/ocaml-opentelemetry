@@ -19,6 +19,8 @@ end
 
    This is mostly useful internally. Users should not need to touch it. *)
 module Proto = struct
+  open Opentelemetry_proto
+
   module Common = struct
     include Common_types
     include Common_pp
@@ -887,6 +889,7 @@ end
 
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#metric-signal} the spec} *)
 module Metrics = struct
+  open Opentelemetry_proto
   open Metrics_types
 
   type t = Metrics_types.metric
@@ -989,6 +992,7 @@ end
 
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#log-signal} the spec} *)
 module Logs = struct
+  open Opentelemetry_proto
   open Logs_types
 
   type t = log_record
