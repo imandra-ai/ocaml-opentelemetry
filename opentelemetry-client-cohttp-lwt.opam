@@ -23,7 +23,6 @@ depends: [
   "cohttp-lwt"
   "cohttp-lwt-unix"
   "alcotest" {with-test}
-  "opentelemetry-client-ocurl" {with-test & = version}
 ]
 build: [
   ["dune" "subst"] {dev}
