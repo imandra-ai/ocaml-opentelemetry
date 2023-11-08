@@ -1,4 +1,3 @@
-
 (library
  (name opentelemetry_proto)
  (public_name opentelemetry.proto)
@@ -123,4 +122,3 @@
  (action
   (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
     -ml_out . -pp -binary)))
-
