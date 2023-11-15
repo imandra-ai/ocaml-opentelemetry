@@ -5,13 +5,17 @@
 (** {2 Types} *)
 
 type any_value =
-  | Bytes_value of bytes
-  | Kvlist_value of key_value_list
-  | Array_value of array_value
-  | Double_value of float
-  | Int_value of int64
-  | Bool_value of bool
   | String_value of string
+  | Bool_value of bool
+  | Int_value of int64
+  | Double_value of float
+  | Array_value of array_value
+  | Kvlist_value of key_value_list
+  | Bytes_value of bytes
+
+and array_value = {
+  values : any_value list;
+}
 
 and key_value_list = {
   values : key_value list;
@@ -20,10 +24,6 @@ and key_value_list = {
 and key_value = {
   key : string;
   value : any_value option;
-}
-
-and array_value = {
-  values : any_value list;
 }
 
 type instrumentation_scope = {
@@ -39,6 +39,12 @@ type instrumentation_scope = {
 val default_any_value : unit -> any_value
 (** [default_any_value ()] is the default value for type [any_value] *)
 
+val default_array_value : 
+  ?values:any_value list ->
+  unit ->
+  array_value
+(** [default_array_value ()] is the default value for type [array_value] *)
+
 val default_key_value_list : 
   ?values:key_value list ->
   unit ->
@@ -51,12 +57,6 @@ val default_key_value :
   unit ->
   key_value
 (** [default_key_value ()] is the default value for type [key_value] *)
-
-val default_array_value : 
-  ?values:any_value list ->
-  unit ->
-  array_value
-(** [default_array_value ()] is the default value for type [array_value] *)
 
 val default_instrumentation_scope : 
   ?name:string ->

@@ -1,4 +1,3 @@
-
 (** resource.proto Pretty Printing *)
 
 

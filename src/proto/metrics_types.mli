@@ -4,33 +4,9 @@
 
 (** {2 Types} *)
 
-type summary_data_point_value_at_quantile = {
-  quantile : float;
-  value : float;
-}
-
-type summary_data_point = {
-  attributes : Common_types.key_value list;
-  start_time_unix_nano : int64;
-  time_unix_nano : int64;
-  count : int64;
-  sum : float;
-  quantile_values : summary_data_point_value_at_quantile list;
-  flags : int32;
-}
-
-type summary = {
-  data_points : summary_data_point list;
-}
-
-type exponential_histogram_data_point_buckets = {
-  offset : int32;
-  bucket_counts : int64 list;
-}
-
 type exemplar_value =
-  | As_int of int64
   | As_double of float
+  | As_int of int64
 
 and exemplar = {
   filtered_attributes : Common_types.key_value list;
@@ -40,21 +16,21 @@ and exemplar = {
   trace_id : bytes;
 }
 
-type exponential_histogram_data_point = {
+type number_data_point_value =
+  | As_double of float
+  | As_int of int64
+
+and number_data_point = {
   attributes : Common_types.key_value list;
   start_time_unix_nano : int64;
   time_unix_nano : int64;
-  count : int64;
-  sum : float option;
-  scale : int32;
-  zero_count : int64;
-  positive : exponential_histogram_data_point_buckets option;
-  negative : exponential_histogram_data_point_buckets option;
-  flags : int32;
+  value : number_data_point_value;
   exemplars : exemplar list;
-  min : float option;
-  max : float option;
-  zero_threshold : float;
+  flags : int32;
+}
+
+type gauge = {
+  data_points : number_data_point list;
 }
 
 type aggregation_temporality =
@@ -62,9 +38,10 @@ type aggregation_temporality =
   | Aggregation_temporality_delta 
   | Aggregation_temporality_cumulative 
 
-type exponential_histogram = {
-  data_points : exponential_histogram_data_point list;
+type sum = {
+  data_points : number_data_point list;
   aggregation_temporality : aggregation_temporality;
+  is_monotonic : bool;
 }
 
 type histogram_data_point = {
@@ -86,35 +63,58 @@ type histogram = {
   aggregation_temporality : aggregation_temporality;
 }
 
-type number_data_point_value =
-  | As_int of int64
-  | As_double of float
+type exponential_histogram_data_point_buckets = {
+  offset : int32;
+  bucket_counts : int64 list;
+}
 
-and number_data_point = {
+type exponential_histogram_data_point = {
   attributes : Common_types.key_value list;
   start_time_unix_nano : int64;
   time_unix_nano : int64;
-  value : number_data_point_value;
+  count : int64;
+  sum : float option;
+  scale : int32;
+  zero_count : int64;
+  positive : exponential_histogram_data_point_buckets option;
+  negative : exponential_histogram_data_point_buckets option;
+  flags : int32;
   exemplars : exemplar list;
+  min : float option;
+  max : float option;
+  zero_threshold : float;
+}
+
+type exponential_histogram = {
+  data_points : exponential_histogram_data_point list;
+  aggregation_temporality : aggregation_temporality;
+}
+
+type summary_data_point_value_at_quantile = {
+  quantile : float;
+  value : float;
+}
+
+type summary_data_point = {
+  attributes : Common_types.key_value list;
+  start_time_unix_nano : int64;
+  time_unix_nano : int64;
+  count : int64;
+  sum : float;
+  quantile_values : summary_data_point_value_at_quantile list;
   flags : int32;
 }
 
-type sum = {
-  data_points : number_data_point list;
-  aggregation_temporality : aggregation_temporality;
-  is_monotonic : bool;
-}
-
-type gauge = {
-  data_points : number_data_point list;
+type summary = {
+  data_points : summary_data_point list;
 }
 
 type metric_data =
-  | Summary of summary
-  | Exponential_histogram of exponential_histogram
-  | Histogram of histogram
-  | Sum of sum
   | Gauge of gauge
+  | Sum of sum
+  | Histogram of histogram
+  | Exponential_histogram of exponential_histogram
+  | Summary of summary
 
 and metric = {
   name : string;
@@ -146,38 +146,6 @@ type data_point_flags =
 
 (** {2 Default values} *)
 
-val default_summary_data_point_value_at_quantile : 
-  ?quantile:float ->
-  ?value:float ->
-  unit ->
-  summary_data_point_value_at_quantile
-(** [default_summary_data_point_value_at_quantile ()] is the default value for type [summary_data_point_value_at_quantile] *)
-
-val default_summary_data_point : 
-  ?attributes:Common_types.key_value list ->
-  ?start_time_unix_nano:int64 ->
-  ?time_unix_nano:int64 ->
-  ?count:int64 ->
-  ?sum:float ->
-  ?quantile_values:summary_data_point_value_at_quantile list ->
-  ?flags:int32 ->
-  unit ->
-  summary_data_point
-(** [default_summary_data_point ()] is the default value for type [summary_data_point] *)
-
-val default_summary : 
-  ?data_points:summary_data_point list ->
-  unit ->
-  summary
-(** [default_summary ()] is the default value for type [summary] *)
-
-val default_exponential_histogram_data_point_buckets : 
-  ?offset:int32 ->
-  ?bucket_counts:int64 list ->
-  unit ->
-  exponential_histogram_data_point_buckets
-(** [default_exponential_histogram_data_point_buckets ()] is the default value for type [exponential_histogram_data_point_buckets] *)
-
 val default_exemplar_value : unit -> exemplar_value
 (** [default_exemplar_value ()] is the default value for type [exemplar_value] *)
 
@@ -191,34 +159,36 @@ val default_exemplar :
   exemplar
 (** [default_exemplar ()] is the default value for type [exemplar] *)
 
-val default_exponential_histogram_data_point : 
+val default_number_data_point_value : unit -> number_data_point_value
+(** [default_number_data_point_value ()] is the default value for type [number_data_point_value] *)
+
+val default_number_data_point : 
   ?attributes:Common_types.key_value list ->
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
-  ?count:int64 ->
-  ?sum:float option ->
-  ?scale:int32 ->
-  ?zero_count:int64 ->
-  ?positive:exponential_histogram_data_point_buckets option ->
-  ?negative:exponential_histogram_data_point_buckets option ->
-  ?flags:int32 ->
+  ?value:number_data_point_value ->
   ?exemplars:exemplar list ->
-  ?min:float option ->
-  ?max:float option ->
-  ?zero_threshold:float ->
+  ?flags:int32 ->
   unit ->
-  exponential_histogram_data_point
-(** [default_exponential_histogram_data_point ()] is the default value for type [exponential_histogram_data_point] *)
+  number_data_point
+(** [default_number_data_point ()] is the default value for type [number_data_point] *)
+
+val default_gauge : 
+  ?data_points:number_data_point list ->
+  unit ->
+  gauge
+(** [default_gauge ()] is the default value for type [gauge] *)
 
 val default_aggregation_temporality : unit -> aggregation_temporality
 (** [default_aggregation_temporality ()] is the default value for type [aggregation_temporality] *)
 
-val default_exponential_histogram : 
-  ?data_points:exponential_histogram_data_point list ->
+val default_sum : 
+  ?data_points:number_data_point list ->
   ?aggregation_temporality:aggregation_temporality ->
+  ?is_monotonic:bool ->
   unit ->
-  exponential_histogram
-(** [default_exponential_histogram ()] is the default value for type [exponential_histogram] *)
+  sum
+(** [default_sum ()] is the default value for type [sum] *)
 
 val default_histogram_data_point : 
   ?attributes:Common_types.key_value list ->
@@ -243,33 +213,63 @@ val default_histogram :
   histogram
 (** [default_histogram ()] is the default value for type [histogram] *)
 
-val default_number_data_point_value : unit -> number_data_point_value
-(** [default_number_data_point_value ()] is the default value for type [number_data_point_value] *)
+val default_exponential_histogram_data_point_buckets : 
+  ?offset:int32 ->
+  ?bucket_counts:int64 list ->
+  unit ->
+  exponential_histogram_data_point_buckets
+(** [default_exponential_histogram_data_point_buckets ()] is the default value for type [exponential_histogram_data_point_buckets] *)
 
-val default_number_data_point : 
+val default_exponential_histogram_data_point : 
   ?attributes:Common_types.key_value list ->
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
-  ?value:number_data_point_value ->
+  ?count:int64 ->
+  ?sum:float option ->
+  ?scale:int32 ->
+  ?zero_count:int64 ->
+  ?positive:exponential_histogram_data_point_buckets option ->
+  ?negative:exponential_histogram_data_point_buckets option ->
+  ?flags:int32 ->
   ?exemplars:exemplar list ->
+  ?min:float option ->
+  ?max:float option ->
+  ?zero_threshold:float ->
+  unit ->
+  exponential_histogram_data_point
+(** [default_exponential_histogram_data_point ()] is the default value for type [exponential_histogram_data_point] *)
+
+val default_exponential_histogram : 
+  ?data_points:exponential_histogram_data_point list ->
+  ?aggregation_temporality:aggregation_temporality ->
+  unit ->
+  exponential_histogram
+(** [default_exponential_histogram ()] is the default value for type [exponential_histogram] *)
+
+val default_summary_data_point_value_at_quantile : 
+  ?quantile:float ->
+  ?value:float ->
+  unit ->
+  summary_data_point_value_at_quantile
+(** [default_summary_data_point_value_at_quantile ()] is the default value for type [summary_data_point_value_at_quantile] *)
+
+val default_summary_data_point : 
+  ?attributes:Common_types.key_value list ->
+  ?start_time_unix_nano:int64 ->
+  ?time_unix_nano:int64 ->
+  ?count:int64 ->
+  ?sum:float ->
+  ?quantile_values:summary_data_point_value_at_quantile list ->
   ?flags:int32 ->
   unit ->
-  number_data_point
-(** [default_number_data_point ()] is the default value for type [number_data_point] *)
+  summary_data_point
+(** [default_summary_data_point ()] is the default value for type [summary_data_point] *)
 
-val default_sum : 
-  ?data_points:number_data_point list ->
-  ?aggregation_temporality:aggregation_temporality ->
-  ?is_monotonic:bool ->
+val default_summary : 
+  ?data_points:summary_data_point list ->
   unit ->
-  sum
-(** [default_sum ()] is the default value for type [sum] *)
-
-val default_gauge : 
-  ?data_points:number_data_point list ->
-  unit ->
-  gauge
-(** [default_gauge ()] is the default value for type [gauge] *)
+  summary
+(** [default_summary ()] is the default value for type [summary] *)
 
 val default_metric_data : unit -> metric_data
 (** [default_metric_data ()] is the default value for type [metric_data] *)

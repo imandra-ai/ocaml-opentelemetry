@@ -2,13 +2,17 @@
 
 
 type any_value =
-  | Bytes_value of bytes
-  | Kvlist_value of key_value_list
-  | Array_value of array_value
-  | Double_value of float
-  | Int_value of int64
-  | Bool_value of bool
   | String_value of string
+  | Bool_value of bool
+  | Int_value of int64
+  | Double_value of float
+  | Array_value of array_value
+  | Kvlist_value of key_value_list
+  | Bytes_value of bytes
+
+and array_value = {
+  values : any_value list;
+}
 
 and key_value_list = {
   values : key_value list;
@@ -19,10 +23,6 @@ and key_value = {
   value : any_value option;
 }
 
-and array_value = {
-  values : any_value list;
-}
-
 type instrumentation_scope = {
   name : string;
   version : string;
@@ -30,7 +30,13 @@ type instrumentation_scope = {
   dropped_attributes_count : int32;
 }
 
-let rec default_any_value () : any_value = Bytes_value (Bytes.create 0)
+let rec default_any_value () : any_value = String_value ("")
+
+and default_array_value 
+  ?values:((values:any_value list) = [])
+  () : array_value  = {
+  values;
+}
 
 and default_key_value_list 
   ?values:((values:key_value list) = [])
@@ -44,12 +50,6 @@ and default_key_value
   () : key_value  = {
   key;
   value;
-}
-
-and default_array_value 
-  ?values:((values:any_value list) = [])
-  () : array_value  = {
-  values;
 }
 
 let rec default_instrumentation_scope 

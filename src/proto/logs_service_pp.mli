@@ -1,4 +1,3 @@
-
 (** logs_service.proto Pretty Printing *)
 
 

@@ -1,4 +1,3 @@
-
 (** metrics_service.proto Pretty Printing *)
 
 
