@@ -1,10 +1,9 @@
 (library
- (name opentelemetry)
- (synopsis "API for opentelemetry instrumentation")
+ (name opentelemetry_proto)
+ (public_name opentelemetry.proto)
+ (synopsis "Protobuf generated code for opentelemetry")
  (flags :standard -warn-error -a+8)
- (libraries ambient-context ptime ptime.clock.os pbrt threads
-   opentelemetry.atomic)
- (public_name opentelemetry))
+ (libraries pbrt))
 
 ; ### protobuf rules ###
 

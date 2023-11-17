@@ -30,14 +30,6 @@
   ambient-context
   (odoc :with-doc)
   (alcotest :with-test)
-  (opentelemetry-client-cohttp-lwt
-   (and
-    :with-test
-    (= :version)))
-  (opentelemetry-client-ocurl
-   (and
-    :with-test
-    (= :version)))
   (pbrt
    (>= 2.3))
   (ocaml-lsp-server :with-dev-setup)
@@ -70,15 +62,7 @@
    (>= "5.3"))
   (lwt_ppx
    (>= "2.0"))
-  (alcotest :with-test)
-  (opentelemetry-client-cohttp-lwt
-   (and
-    :with-test
-    (= :version)))
-  (opentelemetry-client-ocurl
-   (and
-    :with-test
-    (= :version))))
+  (alcotest :with-test))
  (tags
   (instrumentation tracing opentelemetry datadog lwt)))
 
@@ -99,11 +83,7 @@
   (ezcurl
    (>= 0.2.3))
   ocurl
-  (alcotest :with-test)
-  (opentelemetry-client-cohttp-lwt
-   (and
-    :with-test
-    (= :version))))
+  (alcotest :with-test))
  (synopsis "Collector client for opentelemetry, using http + ezcurl"))
 
 (package
@@ -120,15 +100,7 @@
    (>= "5.3"))
   (cohttp-lwt
    (>= "4.0.0"))
-  (alcotest :with-test)
-  (opentelemetry-client-cohttp-lwt
-   (and
-    :with-test
-    (= :version)))
-  (opentelemetry-client-ocurl
-   (and
-    :with-test
-    (= :version))))
+  (alcotest :with-test))
  (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
 
 (package
@@ -150,9 +122,5 @@
    (>= "2.0"))
   cohttp-lwt
   cohttp-lwt-unix
-  (alcotest :with-test)
-  (opentelemetry-client-ocurl
-   (and
-    :with-test
-    (= :version))))
+  (alcotest :with-test))
  (synopsis "Collector client for opentelemetry, using cohttp + lwt"))

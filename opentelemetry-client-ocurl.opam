@@ -21,7 +21,6 @@ depends: [
   "ezcurl" {>= "0.2.3"}
   "ocurl"
   "alcotest" {with-test}
-  "opentelemetry-client-cohttp-lwt" {with-test & = version}
 ]
 build: [
   ["dune" "subst"] {dev}
