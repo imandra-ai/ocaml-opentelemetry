@@ -31,7 +31,7 @@
   (odoc :with-doc)
   (alcotest :with-test)
   (pbrt
-   (>= 2.3))
+   (and (>= 2.3) (< 3.0)))
   (ocaml-lsp-server :with-dev-setup)
   (ocamlformat
    (and
@@ -78,7 +78,7 @@
   (opentelemetry
    (= :version))
   (pbrt
-   (>= 2.3))
+   (and (>= 2.3) (< 3.0)))
   (odoc :with-doc)
   (ezcurl
    (>= 0.2.3))
@@ -114,7 +114,7 @@
   (opentelemetry
    (= :version))
   (pbrt
-   (>= 2.2))
+   (and (>= 2.2) (< 3.0)))
   (odoc :with-doc)
   (lwt
    (>= "5.3"))
