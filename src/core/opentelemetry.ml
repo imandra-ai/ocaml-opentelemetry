@@ -1,7 +1,5 @@
 (** Opentelemetry types and instrumentation *)
 
-module Thread_local = Thread_local
-
 module Lock = Lock
 (** Global lock. *)
 
@@ -21,6 +19,8 @@ end
 
    This is mostly useful internally. Users should not need to touch it. *)
 module Proto = struct
+  open Opentelemetry_proto
+
   module Common = struct
     include Common_types
     include Common_pp
@@ -437,6 +437,7 @@ type value =
   [ `Int of int
   | `String of string
   | `Bool of bool
+  | `Float of float
   | `None
   ]
 
@@ -450,6 +451,7 @@ let _conv_value =
   | `Int i -> Some (Int_value (Int64.of_int i))
   | `String s -> Some (String_value s)
   | `Bool b -> Some (Bool_value b)
+  | `Float f -> Some (Double_value f)
   | `None -> None
 
 (**/**)
@@ -592,26 +594,23 @@ module Scope = struct
     if Collector.has_backend () then
       scope.attrs <- List.rev_append (attrs ()) scope.attrs
 
-  (**/**)
+  (** The opaque key necessary to access/set the ambient scope with
+      {!Ambient_context}. *)
+  let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
 
-  let _global_scope : t Thread_local.t = Thread_local.create ()
-
-  (**/**)
-
-  (** Obtain current scope from thread-local storage, if available *)
-  let get_surrounding ?scope () : t option =
+  (** Obtain current scope from {!Ambient_context}, if available. *)
+  let get_ambient_scope ?scope () : t option =
     match scope with
     | Some _ -> scope
-    | None -> Thread_local.get _global_scope
+    | None -> Ambient_context.get ambient_scope_key
 
-  (** [with_scope sc f] calls [f()] in a context where [sc] is the
-      (thread)-local scope, then reverts to the previous local scope, if any. *)
-  let[@inline] with_scope (sc : t) (f : unit -> 'a) : 'a =
-    Thread_local.with_ _global_scope sc (fun _ -> f ())
-end
+  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
+      the (thread|continuation)-local scope, then reverts to the previous local
+      scope, if any.
 
-open struct
-  let get_surrounding_scope = Scope.get_surrounding
+      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
+  let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
+    Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
 end
 
 (** Span Link
@@ -685,7 +684,13 @@ module Span : sig
   val id : t -> Span_id.t
 
   type key_value =
-    string * [ `Int of int | `String of string | `Bool of bool | `None ]
+    string
+    * [ `Int of int
+      | `String of string
+      | `Bool of bool
+      | `Float of float
+      | `None
+      ]
 
   val create :
     ?kind:kind ->
@@ -722,7 +727,13 @@ end = struct
     | Span_kind_consumer
 
   type key_value =
-    string * [ `Int of int | `String of string | `Bool of bool | `None ]
+    string
+    * [ `Int of int
+      | `String of string
+      | `Bool of bool
+      | `Float of float
+      | `None
+      ]
 
   type nonrec status_code = status_status_code =
     | Status_code_unset
@@ -790,22 +801,14 @@ module Trace = struct
 
   let add_attrs = Scope.add_attrs [@@deprecated "use Scope.add_attrs"]
 
-  (** Sync span guard.
-
-      @param force_new_trace_id if true (default false), the span will not use a
-      surrounding context, or [scope], or [trace_id], but will always
-      create a fresh new trace ID.
-
-      {b NOTE} be careful not to call this inside a Gc alarm, as it can
-      cause deadlocks. *)
-  let with_ ?(force_new_trace_id = false) ?trace_state ?service_name
+  let with_' ?(force_new_trace_id = false) ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
-      ?links name (f : Scope.t -> 'a) : 'a =
+      ?links name cb =
     let scope =
       if force_new_trace_id then
         None
       else
-        get_surrounding_scope ?scope ()
+        Scope.get_ambient_scope ?scope ()
     in
     let trace_id =
       match trace_id, scope with
@@ -824,8 +827,6 @@ module Trace = struct
     let start_time = Timestamp_ns.now_unix_ns () in
     let span_id = Span_id.create () in
     let scope = { trace_id; span_id; events = []; attrs } in
-    (* set global scope in this thread *)
-    Scope.with_scope scope @@ fun () ->
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
@@ -844,10 +845,39 @@ module Trace = struct
       in
       emit ?service_name [ span ]
     in
+    let thunk () =
+      (* set global scope in this thread *)
+      Scope.with_ambient_scope scope @@ fun () -> cb scope
+    in
+    thunk, finally
+
+  (** Sync span guard.
+
+      Notably, this includes {e implicit} scope-tracking: if called without a
+      [~scope] argument (or [~parent]/[~trace_id]), it will check in the
+      {!Ambient_context} for a surrounding environment, and use that as the
+      scope. Similarly, it uses {!Scope.with_ambient_scope} to {e set} a new
+      scope in the ambient context, so that any logically-nested calls to
+      {!with_} will use this span as their parent.
+
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can
+      cause deadlocks.
+
+      @param force_new_trace_id if true (default false), the span will not use a
+      ambient scope, the [~scope] argument, nor [~trace_id], but will instead
+      always create fresh identifiers for this span *)
+
+  let with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
+      ?trace_id ?parent ?scope ?links name (cb : Scope.t -> 'a) : 'a =
+    let thunk, finally =
+      with_' ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
+        ?trace_id ?parent ?scope ?links name cb
+    in
+
     try
-      let x = f scope in
+      let rv = thunk () in
       finally (Ok ());
-      x
+      rv
     with e ->
       finally (Error (Printexc.to_string e));
       raise e
@@ -859,6 +889,7 @@ end
 
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#metric-signal} the spec} *)
 module Metrics = struct
+  open Opentelemetry_proto
   open Metrics_types
 
   type t = Metrics_types.metric
@@ -961,6 +992,7 @@ end
 
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#log-signal} the spec} *)
 module Logs = struct
+  open Opentelemetry_proto
   open Logs_types
 
   type t = log_record

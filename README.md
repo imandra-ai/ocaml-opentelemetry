@@ -26,10 +26,11 @@ MIT
   * [x] batching, perf, etc.
 - [ ] async collector relying on ocurl-multi
 - [ ] interface with `logs` (carry context around)
+- [x] implicit scope (via [ambient-context][])
 
 ## Use
 
-For now, instrument manually:
+For now, instrument traces/spans, logs, and metrics manually:
 
 ```ocaml
 module Otel = Opentelemetry
@@ -45,16 +46,34 @@ let foo () =
     ]);
   do_more_work();
   ()
+```
 
+### Setup
+
+If you're writing a top-level application, you need to perform some initial configuration.
+
+1. Set the [`service_name`][];
+2. configure our [ambient-context][] dependency with the appropriate storage for your environment — TLS, Lwt, Eio ... (see [their docs][install-ambient-storage] for more details);
+3. and install a [`Collector`][] (usually by calling your collector's `with_setup` function.)
+
+For example, if your application is using Lwt, and you're using `ocurl` as your collector, you might do something like this:
+
+```ocaml
 let main () =
   Otel.Globals.service_name := "my_service";
   Otel.GC_metrics.basic_setup();
 
+  Ambient_context.with_storage_provider (Ambient_context_lwt.storage ()) @@ fun () ->
   Opentelemetry_client_ocurl.with_setup () @@ fun () ->
   (* … *)
   foo ();
   (* … *)
-``` 
+```
+
+  [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Globals/index.html#val-service_name>
+  [`Collector`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Collector/index.html>
+  [ambient-context]: <https://v3.ocaml.org/p/ambient-context>
+  [install-ambient-storage]: <https://github.com/ELLIOTTCABLE/ocaml-ambient-context#-as-a-top-level-application>
 
 ## Configuration
 

@@ -1,7 +1,6 @@
-
 (library
-  (name opentelemetry_trace)
-  (public_name opentelemetry.trace)
-  (synopsis "Use opentelemetry as a collector for trace")
-  (optional)
-  (libraries trace opentelemetry))
+ (name opentelemetry_trace)
+ (public_name opentelemetry.trace)
+ (synopsis "Use opentelemetry as a collector for trace")
+ (optional)
+ (libraries ambient-context ambient-context.tls trace.core opentelemetry))
