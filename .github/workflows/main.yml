@@ -35,12 +35,17 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext-flags: --with-test
+          dune-cache: true
+          allow-prerelease-opam: true
+
+      - run: |
+          opam pin ocaml-protoc 3.0.1 -y -n
+          opam pin pbrt 3.0.1 -y -n
+          opam install ocaml-protoc pbrt -y
 
       - run: opam install . --deps-only --with-test
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt,opentelemetry-client-cohttp-lwt
-
-      - run: opam pin ocaml-protoc --dev -y
 
       - run: opam exec -- dune build @lint
 
