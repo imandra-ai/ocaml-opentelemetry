@@ -313,6 +313,3 @@ val decode_pb_resource_spans : Pbrt.Decoder.t -> resource_spans
 
 val decode_pb_traces_data : Pbrt.Decoder.t -> traces_data
 (** [decode_pb_traces_data decoder] decodes a [traces_data] binary value from [decoder] *)
-
-
-(** {2 Services} *)

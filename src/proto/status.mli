@@ -52,6 +52,3 @@ val encode_pb_status : status -> Pbrt.Encoder.t -> unit
 
 val decode_pb_status : Pbrt.Decoder.t -> status
 (** [decode_pb_status decoder] decodes a [status] binary value from [decoder] *)
-
-
-(** {2 Services} *)

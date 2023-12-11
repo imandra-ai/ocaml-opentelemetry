@@ -155,6 +155,3 @@ val decode_pb_key_value : Pbrt.Decoder.t -> key_value
 
 val decode_pb_instrumentation_scope : Pbrt.Decoder.t -> instrumentation_scope
 (** [decode_pb_instrumentation_scope decoder] decodes a [instrumentation_scope] binary value from [decoder] *)
-
-
-(** {2 Services} *)

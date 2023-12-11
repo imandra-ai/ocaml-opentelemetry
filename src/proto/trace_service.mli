@@ -99,24 +99,3 @@ val decode_pb_export_trace_partial_success : Pbrt.Decoder.t -> export_trace_part
 
 val decode_pb_export_trace_service_response : Pbrt.Decoder.t -> export_trace_service_response
 (** [decode_pb_export_trace_service_response decoder] decodes a [export_trace_service_response] binary value from [decoder] *)
-
-
-(** {2 Services} *)
-
-(** TraceService service *)
-module TraceService : sig
-  open Pbrt_services
-  open Pbrt_services.Value_mode
-  
-  module Client : sig
-    
-    val export : (export_trace_service_request, unary, export_trace_service_response, unary) Client.rpc
-  end
-  
-  module Server : sig
-    (** Produce a server implementation from handlers *)
-    val make : 
-      export:((export_trace_service_request, unary, export_trace_service_response, unary) Server.rpc -> 'handler) ->
-      unit -> 'handler Pbrt_services.Server.t
-  end
-end

@@ -663,6 +663,3 @@ val decode_pb_metrics_data : Pbrt.Decoder.t -> metrics_data
 
 val decode_pb_data_point_flags : Pbrt.Decoder.t -> data_point_flags
 (** [decode_pb_data_point_flags decoder] decodes a [data_point_flags] binary value from [decoder] *)
-
-
-(** {2 Services} *)

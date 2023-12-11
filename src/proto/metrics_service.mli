@@ -99,24 +99,3 @@ val decode_pb_export_metrics_partial_success : Pbrt.Decoder.t -> export_metrics_
 
 val decode_pb_export_metrics_service_response : Pbrt.Decoder.t -> export_metrics_service_response
 (** [decode_pb_export_metrics_service_response decoder] decodes a [export_metrics_service_response] binary value from [decoder] *)
-
-
-(** {2 Services} *)
-
-(** MetricsService service *)
-module MetricsService : sig
-  open Pbrt_services
-  open Pbrt_services.Value_mode
-  
-  module Client : sig
-    
-    val export : (export_metrics_service_request, unary, export_metrics_service_response, unary) Client.rpc
-  end
-  
-  module Server : sig
-    (** Produce a server implementation from handlers *)
-    val make : 
-      export:((export_metrics_service_request, unary, export_metrics_service_response, unary) Server.rpc -> 'handler) ->
-      unit -> 'handler Pbrt_services.Server.t
-  end
-end

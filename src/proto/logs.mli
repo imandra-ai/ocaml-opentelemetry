@@ -217,6 +217,3 @@ val decode_pb_logs_data : Pbrt.Decoder.t -> logs_data
 
 val decode_pb_log_record_flags : Pbrt.Decoder.t -> log_record_flags
 (** [decode_pb_log_record_flags decoder] decodes a [log_record_flags] binary value from [decoder] *)
-
-
-(** {2 Services} *)

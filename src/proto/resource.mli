@@ -49,6 +49,3 @@ val encode_pb_resource : resource -> Pbrt.Encoder.t -> unit
 
 val decode_pb_resource : Pbrt.Decoder.t -> resource
 (** [decode_pb_resource decoder] decodes a [resource] binary value from [decoder] *)
-
-
-(** {2 Services} *)

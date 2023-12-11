@@ -15,66 +15,10 @@ end
 
 (** {2 Wire format} *)
 
+module Proto = Opentelemetry_proto
 (** Protobuf types.
 
    This is mostly useful internally. Users should not need to touch it. *)
-module Proto = struct
-  open Opentelemetry_proto
-
-  module Common = struct
-    include Common_types
-    include Common_pp
-    include Common_pb
-  end
-
-  module Resource = struct
-    include Resource_types
-    include Resource_pp
-    include Resource_pb
-  end
-
-  module Trace = struct
-    include Trace_types
-    include Trace_pp
-    include Trace_pb
-  end
-
-  module Metrics = struct
-    include Metrics_types
-    include Metrics_pp
-    include Metrics_pb
-  end
-
-  module Trace_service = struct
-    include Trace_service_types
-    include Trace_service_pb
-    include Trace_service_pp
-  end
-
-  module Metrics_service = struct
-    include Metrics_service_types
-    include Metrics_service_pp
-    include Metrics_service_pb
-  end
-
-  module Status = struct
-    include Status_types
-    include Status_pp
-    include Status_pb
-  end
-
-  module Logs = struct
-    include Logs_types
-    include Logs_pb
-    include Logs_pp
-  end
-
-  module Logs_service = struct
-    include Logs_service_types
-    include Logs_service_pb
-    include Logs_service_pp
-  end
-end
 
 (** {2 Timestamps} *)
 
@@ -105,7 +49,7 @@ end
 
     Note: most users will not need to touch this module *)
 module Collector = struct
-  open Proto
+  open Opentelemetry_proto
 
   type 'msg sender = { send: 'a. 'msg -> ret:(unit -> 'a) -> 'a }
   (** Sender interface for a message of type [msg].
@@ -889,10 +833,10 @@ end
 
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#metric-signal} the spec} *)
 module Metrics = struct
-  open Opentelemetry_proto
-  open Metrics_types
+  open Proto
+  open Proto.Metrics
 
-  type t = Metrics_types.metric
+  type t = Metrics.metric
   (** A single metric, measuring some time-varying quantity or statistical
       distribution. It is composed of one or more data points that have
       precise values and time stamps. Each distinct metric should have a
@@ -925,7 +869,7 @@ module Metrics = struct
     let data = Gauge (default_gauge ~data_points:l ()) in
     default_metric ~name ?description ?unit_ ~data ()
 
-  type aggregation_temporality = Metrics_types.aggregation_temporality =
+  type aggregation_temporality = Metrics.aggregation_temporality =
     | Aggregation_temporality_unspecified
     | Aggregation_temporality_delta
     | Aggregation_temporality_cumulative
@@ -993,12 +937,12 @@ end
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#log-signal} the spec} *)
 module Logs = struct
   open Opentelemetry_proto
-  open Logs_types
+  open Logs
 
   type t = log_record
 
   (** Severity level of a log event *)
-  type severity = Logs_types.severity_number =
+  type severity = Logs.severity_number =
     | Severity_number_unspecified
     | Severity_number_trace
     | Severity_number_trace2
@@ -1025,13 +969,13 @@ module Logs = struct
     | Severity_number_fatal3
     | Severity_number_fatal4
 
-  let pp_severity = Logs_pp.pp_severity_number
+  let pp_severity = Logs.pp_severity_number
 
-  type flags = Logs_types.log_record_flags =
+  type flags = Logs.log_record_flags =
     | Log_record_flags_do_not_use
     | Log_record_flags_trace_flags_mask
 
-  let pp_flags = Logs_pp.pp_log_record_flags
+  let pp_flags = Logs.pp_log_record_flags
 
   (** Make a single log entry *)
   let make ?time ?(observed_time_unix_nano = Timestamp_ns.now_unix_ns ())
