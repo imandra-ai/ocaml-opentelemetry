@@ -13,19 +13,19 @@ tags: ["instrumentation" "tracing" "opentelemetry" "datadog" "jaeger"]
 homepage: "https://github.com/imandra-ai/ocaml-opentelemetry"
 bug-reports: "https://github.com/imandra-ai/ocaml-opentelemetry/issues"
 depends: [
-  "dune" {>= "2.7"}
+  "dune" {>= "2.9"}
   "ocaml" {>= "4.08"}
   "ptime"
   "ambient-context"
   "odoc" {with-doc}
   "alcotest" {with-test}
-  "pbrt" {>= "2.3" & < "3.0"}
+  "pbrt" {>= "3.0" & < "4.0"}
   "ocaml-lsp-server" {with-dev-setup}
   "ocamlformat" {with-dev-setup & >= "0.24" & < "0.25"}
 ]
 depopts: ["trace"]
 conflicts: [
-  "trace" {< "0.4" | >= "0.5"}
+  "trace" {< "0.4" | >= "0.6"}
 ]
 build: [
   ["dune" "subst"] {dev}
@@ -36,9 +36,11 @@ build: [
     name
     "-j"
     jobs
+    "--promote-install-files=false"
     "@install"
     "@runtest" {with-test}
     "@doc" {with-doc}
   ]
+  ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/imandra-ai/ocaml-opentelemetry.git"

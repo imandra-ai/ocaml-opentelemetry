@@ -1,4 +1,4 @@
-(lang dune 2.7)
+(lang dune 2.9)
 
 (name opentelemetry)
 
@@ -31,7 +31,7 @@
   (odoc :with-doc)
   (alcotest :with-test)
   (pbrt
-   (and (>= 2.3) (< 3.0)))
+   (and (>= 3.0) (< 4.0)))
   (ocaml-lsp-server :with-dev-setup)
   (ocamlformat
    (and
@@ -43,7 +43,7 @@
   (trace
    (or
     (< 0.4)
-    (>= 0.5))))
+    (>= 0.6))))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
@@ -77,8 +77,6 @@
   ; atomic ; vendored
   (opentelemetry
    (= :version))
-  (pbrt
-   (and (>= 2.3) (< 3.0)))
   (odoc :with-doc)
   (ezcurl
    (>= 0.2.3))
@@ -113,8 +111,6 @@
   ; for spans
   (opentelemetry
    (= :version))
-  (pbrt
-   (and (>= 2.2) (< 3.0)))
   (odoc :with-doc)
   (lwt
    (>= "5.3"))
