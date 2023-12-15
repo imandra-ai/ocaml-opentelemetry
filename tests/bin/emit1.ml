@@ -11,6 +11,8 @@ let sleep_outer = ref 2.0
 
 let n_jobs = ref 1
 
+let n = ref max_int
+
 let num_sleep = Atomic.make 0
 
 let stress_alloc_ = ref true
@@ -22,12 +24,17 @@ let num_tr = Atomic.make 0
 let run_job () =
   let@ () = Fun.protect ~finally:(fun () -> Atomic.set stop true) in
   let i = ref 0 in
-  while not @@ Atomic.get stop do
+  let cnt = ref 0 in
+
+  while (not @@ Atomic.get stop) && !cnt < !n do
     let@ _scope =
       Atomic.incr num_tr;
       T.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
         ~attrs:[ "i", `Int !i ]
     in
+
+    (* Printf.printf "cnt=%d\n%!" !cnt; *)
+    incr cnt;
 
     for j = 0 to 4 do
       (* parent scope is found via thread local storage *)
@@ -109,6 +116,7 @@ let () =
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
       "--bg-threads", Arg.Set_int n_bg_threads, " number of background threads";
+      "-n", Arg.Set_int n, " number of iterations (default ∞)";
     ]
     |> Arg.align
   in
