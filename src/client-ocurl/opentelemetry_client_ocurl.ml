@@ -370,14 +370,14 @@ end = struct
           | Event.E_metric m -> Batch.push batches.metrics m
           | Event.E_trace tr -> Batch.push batches.traces tr
           | Event.E_logs logs -> Batch.push batches.logs logs
-          | Event.E_tick -> ()
+          | Event.E_tick ->
+            (* the only impact of "tick" is that it wakes us up regularly *)
+            ()
           | Event.E_flush_all -> must_flush_all := true
         in
 
-        while not (Queue.is_empty local_q) do
-          let ev = Queue.pop local_q in
-          process_ev ev
-        done;
+        Queue.iter process_ev local_q;
+        Queue.clear local_q;
 
         if !must_flush_all then (
           if Batch.len batches.metrics > 0 then send_metrics ();
@@ -545,7 +545,8 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
   Atomic.set Self_trace.enabled config.self_trace;
 
   if config.ticker_thread then (
-    let sleep_ms = min 5_000 (max 2 config.batch_timeout_ms) in
+    (* at most a minute *)
+    let sleep_ms = min 60_000 (max 2 config.ticker_interval_ms) in
     ignore (setup_ticker_thread ~stop ~sleep_ms backend () : Thread.t)
   );
 
