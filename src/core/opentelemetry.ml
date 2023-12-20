@@ -86,7 +86,7 @@ module Collector = struct
     (** Should be called regularly for background processing,
         timeout checks, etc. *)
 
-    val set_on_tick_callbacks : (unit -> unit) list ref -> unit
+    val set_on_tick_callbacks : (unit -> unit) AList.t -> unit
     (** Give the collector the list of callbacks to be executed
         when [tick()] is called. Each such callback should be short and
         reentrant. Depending on the collector's implementation, it might be
@@ -162,7 +162,7 @@ module Collector = struct
 
   (* hidden *)
   open struct
-    let on_tick_cbs_ = ref []
+    let on_tick_cbs_ = AList.make ()
 
     let backend : backend option ref = ref None
   end
@@ -198,7 +198,7 @@ module Collector = struct
 
   let[@inline] rand_bytes_8 () = !Rand_bytes.rand_bytes_8 ()
 
-  let on_tick f = on_tick_cbs_ := f :: !on_tick_cbs_
+  let[@inline] on_tick f = AList.add on_tick_cbs_ f
 
   (** Do background work. Call this regularly if the collector doesn't
       already have a ticker thread or internal timer. *)
@@ -1138,7 +1138,8 @@ end
     These metrics are emitted after each GC collection. *)
 module GC_metrics : sig
   val basic_setup : unit -> unit
-  (** Setup a hook that will emit GC statistics regularly *)
+  (** Setup a hook that will emit GC statistics on every tick (assuming
+      a ticker thread) *)
 
   val get_runtime_attributes : unit -> Span.key_value list
   (** Get OCaml name and version runtime attributes *)
@@ -1158,13 +1159,13 @@ end = struct
   let get_runtime_attributes () = Lazy.force runtime_attributes
 
   let basic_setup () =
-    (* emit metrics when GC is called *)
-    let on_gc () =
+    let on_tick () =
       match Collector.get_backend () with
       | None -> ()
       | Some (module C) -> C.signal_emit_gc_metrics ()
     in
-    ignore (Gc.create_alarm on_gc : Gc.alarm)
+
+    Collector.on_tick on_tick
 
   let bytes_per_word = Sys.word_size / 8
 

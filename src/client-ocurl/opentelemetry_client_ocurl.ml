@@ -431,15 +431,14 @@ let create_backend ?(stop = Atomic.make false)
             ret ());
       }
 
-    let on_tick_cbs_ = Atomic.make (ref [])
+    let on_tick_cbs_ = Atomic.make (AList.make ())
 
     let set_on_tick_callbacks = Atomic.set on_tick_cbs_
 
     let tick () =
       sample_gc_metrics_if_needed ();
       Backend_impl.send_event backend Event.E_tick;
-      let l = Atomic.get on_tick_cbs_ in
-      List.iter (fun f -> f ()) !l
+      List.iter (fun f -> f ()) (AList.get @@ Atomic.get on_tick_cbs_)
 
     let cleanup () = Backend_impl.shutdown backend
   end in
