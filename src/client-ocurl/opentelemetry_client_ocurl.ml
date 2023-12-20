@@ -5,7 +5,6 @@
 
 module OT = Opentelemetry
 module Config = Config
-module Trace' = Opentelemetry.Trace
 open Opentelemetry
 include Common_
 
@@ -17,6 +16,61 @@ let timeout_gc_metrics = Mtime.Span.(20 * s)
 
 (** side channel for GC, appended to metrics batch data *)
 let gc_metrics = AList.make ()
+
+(** Side channel for self-tracing *)
+let self_spans = AList.make ()
+
+(** Mini tracing module that doesn't go through the
+    collector (and thus doesn't create new batches, etc.) *)
+module Self_trace = struct
+  let enabled = Atomic.make true
+
+  let add_event (scope : Scope.t) ev = scope.events <- ev :: scope.events
+
+  let dummy_trace_id_ = Trace_id.create ()
+
+  let dummy_span_id = Span_id.create ()
+
+  let with_ ?kind ?(attrs = []) name f =
+    if Atomic.get enabled then (
+      let scope = Scope.get_ambient_scope () in
+      let parent, trace_id =
+        match scope with
+        | None -> None, Trace_id.create ()
+        | Some sc -> Some sc.span_id, sc.trace_id
+      in
+      let span_id = Span_id.create () in
+      let start_time = Timestamp_ns.now_unix_ns () in
+
+      let scope = { Scope.trace_id; span_id; events = []; attrs } in
+
+      let finally () =
+        let span, _ =
+          (* TODO: should the attrs passed to with_ go on the Span
+             (in Span.create) or on the ResourceSpan (in emit)?
+             (question also applies to Opentelemetry_lwt.Trace.with) *)
+          Span.create ~trace_id ?parent ?kind ~attrs:scope.attrs ~id:span_id
+            ~start_time
+            ~end_time:(Timestamp_ns.now_unix_ns ())
+            name
+        in
+        AList.add self_spans span
+      in
+      let@ () = Scope.with_ambient_scope scope in
+      Fun.protect ~finally (fun () -> f scope)
+    ) else (
+      (* do nothing *)
+      let scope =
+        {
+          Scope.trace_id = dummy_trace_id_;
+          span_id = dummy_span_id;
+          attrs = [];
+          events = [];
+        }
+      in
+      f scope
+    )
+end
 
 (** capture current GC metrics if {!needs_gc_metrics} is true
     or it has been a long time since the last GC metrics collection,
@@ -122,11 +176,13 @@ end = struct
   let send_http_ ~stop ~config (client : Curl.t) encoder ~path ~encode x : unit
       =
     let@ _sc =
-      Trace'.with_ ~kind:Span.Span_kind_producer "otel-ocurl.send-http"
+      Self_trace.with_ ~kind:Span.Span_kind_producer "otel-ocurl.send-http"
     in
 
     let data =
-      let@ _sc = Trace'.with_ ~kind:Span.Span_kind_internal "encode-proto" in
+      let@ _sc =
+        Self_trace.with_ ~kind:Span.Span_kind_internal "encode-proto"
+      in
       Pbrt.Encoder.reset encoder;
       encode x encoder;
       Pbrt.Encoder.to_string encoder
@@ -148,16 +204,16 @@ end = struct
     in
     match
       let@ _sc =
-        Trace'.with_ ~kind:Span.Span_kind_internal "curl.post"
-          ~attrs:[ "sz", `Int (String.length data) ]
+        Self_trace.with_ ~kind:Span.Span_kind_internal "curl.post"
+          ~attrs:[ "sz", `Int (String.length data); "url", `String url ]
       in
       Ezcurl.post ~headers ~client ~params:[] ~url ~content:(`String data) ()
     with
     | Ok { code; _ } when code >= 200 && code < 300 -> ()
     | Ok { code; body; headers = _; info = _ } ->
       Atomic.incr n_errors;
-      Trace'.add_event _sc (fun () ->
-          Opentelemetry.Event.make "error" ~attrs:[ "code", `Int code ]);
+      Self_trace.add_event _sc
+      @@ Opentelemetry.Event.make "error" ~attrs:[ "code", `Int code ];
 
       if !debug_ || config.debug then (
         let dec = Pbrt.Decoder.of_string body in
@@ -187,6 +243,11 @@ end = struct
   let send_logs_http ~stop ~config (client : Curl.t) encoder
       (l : Logs.resource_logs list list) : unit =
     let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
+    let@ _sp =
+      Self_trace.with_ ~kind:Span_kind_producer "send-logs"
+        ~attrs:[ "n", `Int (List.length l) ]
+    in
+
     let x =
       Logs_service.default_export_logs_service_request ~resource_logs:l ()
     in
@@ -196,6 +257,11 @@ end = struct
   let send_metrics_http ~stop ~config curl encoder
       (l : Metrics.resource_metrics list list) : unit =
     let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
+    let@ _sp =
+      Self_trace.with_ ~kind:Span_kind_producer "send-metrics"
+        ~attrs:[ "n", `Int (List.length l) ]
+    in
+
     let x =
       Metrics_service.default_export_metrics_service_request ~resource_metrics:l
         ()
@@ -206,6 +272,11 @@ end = struct
   let send_traces_http ~stop ~config curl encoder
       (l : Trace.resource_spans list list) : unit =
     let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
+    let@ _sp =
+      Self_trace.with_ ~kind:Span_kind_producer "send-traces"
+        ~attrs:[ "n", `Int (List.length l) ]
+    in
+
     let x =
       Trace_service.default_export_trace_service_request ~resource_spans:l ()
     in
@@ -264,8 +335,8 @@ end = struct
     in
 
     let send_metrics () =
-      B_queue.push self.send_q
-        (To_send.Send_metric (Batch.pop_all batches.metrics))
+      let metrics = AList.pop_all gc_metrics :: Batch.pop_all batches.metrics in
+      B_queue.push self.send_q (To_send.Send_metric metrics)
     in
 
     let send_logs () =
@@ -273,8 +344,16 @@ end = struct
     in
 
     let send_traces () =
-      B_queue.push self.send_q
-        (To_send.Send_trace (Batch.pop_all batches.traces))
+      let traces = Batch.pop_all batches.traces in
+      let self_spans = AList.pop_all self_spans in
+      let traces =
+        if self_spans != [] then (
+          let resource = Opentelemetry.Trace.make_resource_spans self_spans in
+          [ resource ] :: traces
+        ) else
+          traces
+      in
+      B_queue.push self.send_q (To_send.Send_trace traces)
     in
 
     try
@@ -463,6 +542,7 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
   Opentelemetry.Collector.set_backend backend;
 
   if config.url <> get_url () then set_url config.url;
+  Atomic.set Self_trace.enabled config.self_trace;
 
   if config.ticker_thread then (
     let sleep_ms = min 5_000 (max 2 config.batch_timeout_ms) in

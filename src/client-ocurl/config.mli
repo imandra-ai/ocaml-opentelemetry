@@ -18,6 +18,9 @@ type t = private {
   ticker_thread: bool;
       (** If true, start a thread that regularly checks if signals should
           be sent to the collector. Default [true] *)
+  self_trace: bool;
+      (** If true, the OTEL library will also emit its own spans.
+          @since NEXT_RELEASE *)
 }
 (** Configuration.
 
@@ -31,6 +34,7 @@ val make :
   ?batch_timeout_ms:int ->
   ?bg_threads:int ->
   ?ticker_thread:bool ->
+  ?self_trace:bool ->
   unit ->
   t
 (** Make a configuration.
