@@ -5,6 +5,7 @@
 
 module OT = Opentelemetry
 module Config = Config
+module Trace' = Opentelemetry.Trace
 open Opentelemetry
 include Common_
 
@@ -120,9 +121,17 @@ end = struct
 
   let send_http_ ~stop ~config (client : Curl.t) encoder ~path ~encode x : unit
       =
-    Pbrt.Encoder.reset encoder;
-    encode x encoder;
-    let data = Pbrt.Encoder.to_string encoder in
+    let@ _sc =
+      Trace'.with_ ~kind:Span.Span_kind_producer "otel-ocurl.send-http"
+    in
+
+    let data =
+      let@ _sc = Trace'.with_ ~kind:Span.Span_kind_internal "encode-proto" in
+      Pbrt.Encoder.reset encoder;
+      encode x encoder;
+      Pbrt.Encoder.to_string encoder
+    in
+
     let url =
       let url = config.Config.url in
       if url <> "" && String.get url (String.length url - 1) = '/' then
