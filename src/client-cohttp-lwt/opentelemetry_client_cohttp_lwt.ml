@@ -147,7 +147,7 @@ end = struct
 
         let r =
           try
-            let status = Status.decode_status dec in
+            let status = Status.decode_pb_status dec in
             Error (`Status (code, status))
           with e ->
             let bt = Printexc.get_backtrace () in
@@ -318,7 +318,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
           ~resource_metrics:l ()
       in
       send_http_ curl encoder ~path:"/v1/metrics"
-        ~encode:Metrics_service.encode_export_metrics_service_request x
+        ~encode:Metrics_service.encode_pb_export_metrics_service_request x
 
     let send_traces_http curl encoder (l : Trace.resource_spans list list) =
       let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
@@ -326,7 +326,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         Trace_service.default_export_trace_service_request ~resource_spans:l ()
       in
       send_http_ curl encoder ~path:"/v1/traces"
-        ~encode:Trace_service.encode_export_trace_service_request x
+        ~encode:Trace_service.encode_pb_export_trace_service_request x
 
     let send_logs_http curl encoder (l : Logs.resource_logs list list) =
       let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
@@ -334,7 +334,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         Logs_service.default_export_logs_service_request ~resource_logs:l ()
       in
       send_http_ curl encoder ~path:"/v1/logs"
-        ~encode:Logs_service.encode_export_logs_service_request x
+        ~encode:Logs_service.encode_pb_export_logs_service_request x
 
     (* emit metrics, if the batch is full or timeout lapsed *)
     let emit_metrics_maybe ~now ?force httpc encoder : bool Lwt.t =

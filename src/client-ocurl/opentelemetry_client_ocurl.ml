@@ -147,7 +147,7 @@ end = struct
         let dec = Pbrt.Decoder.of_string body in
         let body =
           try
-            let status = Status.decode_status dec in
+            let status = Status.decode_pb_status dec in
             Format.asprintf "%a" Status.pp_status status
           with _ ->
             spf "(could not decode status)\nraw bytes: %s" (str_to_hex body)
@@ -175,7 +175,7 @@ end = struct
       Logs_service.default_export_logs_service_request ~resource_logs:l ()
     in
     send_http_ ~stop ~config client encoder ~path:"/v1/logs"
-      ~encode:Logs_service.encode_export_logs_service_request x
+      ~encode:Logs_service.encode_pb_export_logs_service_request x
 
   let send_metrics_http ~stop ~config curl encoder
       (l : Metrics.resource_metrics list list) : unit =
@@ -185,7 +185,7 @@ end = struct
         ()
     in
     send_http_ ~stop ~config curl encoder ~path:"/v1/metrics"
-      ~encode:Metrics_service.encode_export_metrics_service_request x
+      ~encode:Metrics_service.encode_pb_export_metrics_service_request x
 
   let send_traces_http ~stop ~config curl encoder
       (l : Trace.resource_spans list list) : unit =
@@ -194,7 +194,7 @@ end = struct
       Trace_service.default_export_trace_service_request ~resource_spans:l ()
     in
     send_http_ ~stop ~config curl encoder ~path:"/v1/traces"
-      ~encode:Trace_service.encode_export_trace_service_request x
+      ~encode:Trace_service.encode_pb_export_trace_service_request x
 
   let[@inline] send_event (self : t) ev : unit = B_queue.push self.q ev
 
