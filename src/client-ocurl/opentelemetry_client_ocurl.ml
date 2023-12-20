@@ -17,11 +17,7 @@ let timeout_gc_metrics = Mtime.Span.(20 * s)
 (** side channel for GC, appended to metrics batch data *)
 let gc_metrics = AList.make ()
 
-(** Side channel for self-tracing *)
-let self_spans = AList.make ()
-
-(** Mini tracing module that doesn't go through the
-    collector (and thus doesn't create new batches, etc.) *)
+(** Mini tracing module (disabled if [config.self_trace=false]) *)
 module Self_trace = struct
   let enabled = Atomic.make true
 
@@ -31,34 +27,10 @@ module Self_trace = struct
 
   let dummy_span_id = Span_id.create ()
 
-  let with_ ?kind ?(attrs = []) name f =
-    if Atomic.get enabled then (
-      let scope = Scope.get_ambient_scope () in
-      let parent, trace_id =
-        match scope with
-        | None -> None, Trace_id.create ()
-        | Some sc -> Some sc.span_id, sc.trace_id
-      in
-      let span_id = Span_id.create () in
-      let start_time = Timestamp_ns.now_unix_ns () in
-
-      let scope = { Scope.trace_id; span_id; events = []; attrs } in
-
-      let finally () =
-        let span, _ =
-          (* TODO: should the attrs passed to with_ go on the Span
-             (in Span.create) or on the ResourceSpan (in emit)?
-             (question also applies to Opentelemetry_lwt.Trace.with) *)
-          Span.create ~trace_id ?parent ?kind ~attrs:scope.attrs ~id:span_id
-            ~start_time
-            ~end_time:(Timestamp_ns.now_unix_ns ())
-            name
-        in
-        AList.add self_spans span
-      in
-      let@ () = Scope.with_ambient_scope scope in
-      Fun.protect ~finally (fun () -> f scope)
-    ) else (
+  let with_ ?kind ?attrs name f =
+    if Atomic.get enabled then
+      Opentelemetry.Trace.with_ ?kind ?attrs name f
+    else (
       (* do nothing *)
       let scope =
         {
@@ -344,16 +316,8 @@ end = struct
     in
 
     let send_traces () =
-      let traces = Batch.pop_all batches.traces in
-      let self_spans = AList.pop_all self_spans in
-      let traces =
-        if self_spans != [] then (
-          let resource = Opentelemetry.Trace.make_resource_spans self_spans in
-          [ resource ] :: traces
-        ) else
-          traces
-      in
-      B_queue.push self.send_q (To_send.Send_trace traces)
+      B_queue.push self.send_q
+        (To_send.Send_trace (Batch.pop_all batches.traces))
     in
 
     try
