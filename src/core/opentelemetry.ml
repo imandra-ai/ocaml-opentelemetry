@@ -1164,7 +1164,6 @@ end = struct
       | None -> ()
       | Some (module C) -> C.signal_emit_gc_metrics ()
     in
-
     Collector.on_tick on_tick
 
   let bytes_per_word = Sys.word_size / 8
