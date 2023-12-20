@@ -147,11 +147,18 @@ end = struct
       ("Content-Type", "application/x-protobuf") :: config.headers
     in
     match
+      let@ _sc =
+        Trace'.with_ ~kind:Span.Span_kind_internal "curl.post"
+          ~attrs:[ "sz", `Int (String.length data) ]
+      in
       Ezcurl.post ~headers ~client ~params:[] ~url ~content:(`String data) ()
     with
     | Ok { code; _ } when code >= 200 && code < 300 -> ()
     | Ok { code; body; headers = _; info = _ } ->
       Atomic.incr n_errors;
+      Trace'.add_event _sc (fun () ->
+          Opentelemetry.Event.make "error" ~attrs:[ "code", `Int code ]);
+
       if !debug_ || config.debug then (
         let dec = Pbrt.Decoder.of_string body in
         let body =
