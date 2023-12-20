@@ -25,7 +25,7 @@ type t = private {
       Default 500.
       @since NEXT_RELEASE *)
   self_trace: bool;
-      (** If true, the OTEL library will also emit its own spans.
+      (** If true, the OTEL library will also emit its own spans. Default [false].
           @since NEXT_RELEASE *)
 }
 (** Configuration.
