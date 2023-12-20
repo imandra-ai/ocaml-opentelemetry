@@ -6,6 +6,10 @@ module Lock = Lock
 module Rand_bytes = Rand_bytes
 (** Generation of random identifiers. *)
 
+module AList = AList
+(** Atomic list, for internal usage
+    @since NEXT_RELEASE *)
+
 open struct
   let[@inline] result_bind x f =
     match x with
