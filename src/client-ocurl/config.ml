@@ -35,7 +35,7 @@ let pp out self =
 let make ?(debug = !debug_) ?(url = get_url ()) ?(headers = get_headers ())
     ?(batch_timeout_ms = 2_000) ?(bg_threads = 4) ?(ticker_thread = true)
     ?(ticker_interval_ms = 500) ?(self_trace = false) () : t =
-  let bg_threads = max 2 (min bg_threads 32) in
+  let bg_threads = max 1 (min bg_threads 32) in
   {
     debug;
     url;
