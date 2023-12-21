@@ -12,12 +12,24 @@ type t = private {
       (** Number of milliseconds after which we will emit a batch, even
       incomplete.
       Note that the batch might take longer than that, because this is
-      only checked when a new event occurs. Default 500. *)
+      only checked when a new event occurs or when a tick
+      is emitted. Default 2_000. *)
   bg_threads: int;
-      (** Are there background threads, and how many? Default [4] *)
+      (** Are there background threads, and how many? Default [4].
+            This will be adjusted to be at least [1] and at most [32]. *)
   ticker_thread: bool;
       (** If true, start a thread that regularly checks if signals should
           be sent to the collector. Default [true] *)
+  ticker_interval_ms: int;
+      (** Interval for ticker thread, in milliseconds. This is
+          only useful if [ticker_thread] is [true].
+          This will be clamped between [2 ms] and some longer
+          interval (maximum [60s] currently).
+      Default 500.
+      @since NEXT_RELEASE *)
+  self_trace: bool;
+      (** If true, the OTEL library will also emit its own spans. Default [false].
+          @since NEXT_RELEASE *)
 }
 (** Configuration.
 
@@ -31,6 +43,8 @@ val make :
   ?batch_timeout_ms:int ->
   ?bg_threads:int ->
   ?ticker_thread:bool ->
+  ?ticker_interval_ms:int ->
+  ?self_trace:bool ->
   unit ->
   t
 (** Make a configuration.

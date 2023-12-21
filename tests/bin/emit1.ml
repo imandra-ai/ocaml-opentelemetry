@@ -124,7 +124,7 @@ let () =
   Arg.parse opts (fun _ -> ()) "emit1 [opt]*";
 
   let config =
-    Opentelemetry_client_ocurl.Config.make ~debug:!debug
+    Opentelemetry_client_ocurl.Config.make ~debug:!debug ~self_trace:true
       ?bg_threads:
         (let n = !n_bg_threads in
          if n = 0 then

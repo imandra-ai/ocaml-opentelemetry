@@ -4,6 +4,8 @@ type 'a t = 'a list Atomic.t
 
 let make () = Atomic.make []
 
+let get = Atomic.get
+
 let add self x =
   while
     let old = Atomic.get self in

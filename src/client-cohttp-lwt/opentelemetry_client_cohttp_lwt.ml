@@ -257,7 +257,7 @@ module type EMITTER = sig
 
   val push_logs : Logs.resource_logs list -> unit
 
-  val set_on_tick_callbacks : (unit -> unit) list ref -> unit
+  val set_on_tick_callbacks : (unit -> unit) AList.t -> unit
 
   val tick : unit -> unit
 
@@ -288,7 +288,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
     let batch_logs : Logs.resource_logs list Batch.t =
       Batch.make ?batch:config.batch_logs ?timeout ()
 
-    let on_tick_cbs_ = Atomic.make (ref [])
+    let on_tick_cbs_ = Atomic.make (AList.make ())
 
     let set_on_tick_callbacks = Atomic.set on_tick_cbs_
 
@@ -384,7 +384,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
           with e ->
             Printf.eprintf "on tick callback raised: %s\n"
               (Printexc.to_string e))
-        !(Atomic.get on_tick_cbs_);
+        (AList.get @@ Atomic.get on_tick_cbs_);
       ()
 
     (* thread that calls [tick()] regularly, to help enforce timeouts *)
