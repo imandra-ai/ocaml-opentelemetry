@@ -429,7 +429,8 @@ module Globals = struct
   let service_instance_id = ref None
 
   let instrumentation_library =
-    default_instrumentation_scope ~version:"0.2" ~name:"ocaml-otel" ()
+    default_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel"
+      ()
 
   (** Global attributes, initially set
       via OTEL_RESOURCE_ATTRIBUTES and modifiable
