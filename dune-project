@@ -43,7 +43,7 @@
   (trace
    (or
     (< 0.4)
-    (>= 0.6))))
+    (>= 0.7))))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
