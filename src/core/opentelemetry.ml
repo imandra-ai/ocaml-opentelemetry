@@ -750,7 +750,7 @@ module Trace = struct
 
   let add_attrs = Scope.add_attrs [@@deprecated "use Scope.add_attrs"]
 
-  let with_' ?(force_new_trace_id = false) ?trace_state ?service_name
+  let with_ ?(force_new_trace_id = false) ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
       ?links name cb =
     let scope =
@@ -781,7 +781,13 @@ module Trace = struct
       let status =
         match res with
         | Ok () -> default_status ~code:Status_code_ok ()
-        | Error e -> default_status ~code:Status_code_error ~message:e ()
+        | Error (e, bt) ->
+          (* add backtrace *)
+          add_event scope (fun () ->
+              Event.make "error"
+                ~attrs:
+                  [ "backtrace", `String (Printexc.raw_backtrace_to_string bt) ]);
+          default_status ~code:Status_code_error ~message:e ()
       in
       let span, _ =
         (* TODO: should the attrs passed to with_ go on the Span
@@ -819,7 +825,7 @@ module Trace = struct
   let with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
       ?trace_id ?parent ?scope ?links name (cb : Scope.t -> 'a) : 'a =
     let thunk, finally =
-      with_' ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
+      with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
         ?trace_id ?parent ?scope ?links name cb
     in
 
@@ -828,7 +834,8 @@ module Trace = struct
       finally (Ok ());
       rv
     with e ->
-      finally (Error (Printexc.to_string e));
+      let bt = Printexc.get_raw_backtrace () in
+      finally (Error (Printexc.to_string e, bt));
       raise e
 end
 
