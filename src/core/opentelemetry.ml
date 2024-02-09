@@ -750,7 +750,7 @@ module Trace = struct
 
   let add_attrs = Scope.add_attrs [@@deprecated "use Scope.add_attrs"]
 
-  let with_ ?(force_new_trace_id = false) ?trace_state ?service_name
+  let with_' ?(force_new_trace_id = false) ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
       ?links name cb =
     let scope =
@@ -825,7 +825,7 @@ module Trace = struct
   let with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
       ?trace_id ?parent ?scope ?links name (cb : Scope.t -> 'a) : 'a =
     let thunk, finally =
-      with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
+      with_' ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
         ?trace_id ?parent ?scope ?links name cb
     in
 
