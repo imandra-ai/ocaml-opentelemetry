@@ -130,7 +130,7 @@ module Internal = struct
 
     otrace_id, sb
 
-  let exit_span' otrace_id
+  let exit_span_
       {
         id = otel_id;
         start_time;
@@ -145,11 +145,7 @@ module Internal = struct
         parent_scope = _;
       } =
     let open Otel in
-    let active_spans = Active_spans.get () in
-    Active_span_tbl.remove active_spans.tbl otrace_id;
-
     let end_time = Timestamp_ns.now_unix_ns () in
-
     let kind, attrs = otel_attrs_of_otrace_data data in
 
     let attrs =
@@ -176,6 +172,19 @@ module Internal = struct
       ~end_time ~attrs name
     |> fst
 
+  let exit_span' otrace_id otel_span_begin =
+    let active_spans = Active_spans.get () in
+    Active_span_tbl.remove active_spans.tbl otrace_id;
+    exit_span_ otel_span_begin
+
+  let exit_span_from_id otrace_id =
+    let active_spans = Active_spans.get () in
+    match Active_span_tbl.find_opt active_spans.tbl otrace_id with
+    | None -> None
+    | Some otel_span_begin ->
+      Active_span_tbl.remove active_spans.tbl otrace_id;
+      Some (exit_span_ otel_span_begin)
+
   module M = struct
     let with_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name cb =
       let otrace_id, sb =
@@ -187,8 +196,22 @@ module Internal = struct
 
       let otel_span = exit_span' otrace_id sb in
       Otel.Trace.emit [ otel_span ];
-
       rv
+
+    let enter_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name :
+        Trace_core.span =
+      let otrace_id, _sb =
+        enter_span' ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
+      in
+      (* NOTE: we cannot enter ambient scope in a disjoint way
+         with the exit, because we only have [Ambient_context.with_binding],
+         no [set_binding] *)
+      otrace_id
+
+    let exit_span otrace_id =
+      match exit_span_from_id otrace_id with
+      | None -> ()
+      | Some otel_span -> Otel.Trace.emit [ otel_span ]
 
     let enter_manual_span ~(parent : Otrace.explicit_span option) ~flavor:_
         ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name : Otrace.explicit_span =
