@@ -672,6 +672,10 @@ module Scope = struct
     mutable attrs: key_value list;
   }
 
+  (** Turn the scope into a span context *)
+  let[@inline] to_span_ctx (self : t) : Span_ctx.t =
+    Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
+
   (** Add an event to the scope. It will be aggregated into the span.
 
       Note that this takes a function that produces an event, and will only
