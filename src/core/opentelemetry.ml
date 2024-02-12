@@ -10,13 +10,6 @@ module AList = AList
 (** Atomic list, for internal usage
     @since NEXT_RELEASE *)
 
-open struct
-  let[@inline] result_bind x f =
-    match x with
-    | Error e -> Error e
-    | Ok x -> f x
-end
-
 (** {2 Wire format} *)
 
 module Proto = Opentelemetry_proto
@@ -358,17 +351,109 @@ end = struct
     Bytes.set b 0 (Char.unsafe_chr (Char.code (Bytes.get b 0) lor 1));
     b
 
+  let is_valid = Util_.bytes_non_zero
+
   let of_bytes b =
     if Bytes.length b = 8 then
       b
     else
       raise (Invalid_argument "span IDs must be 8 bytes in length")
 
-  let to_hex self = Util_.bytes_to_hex self
+  let to_hex = Util_.bytes_to_hex
 
-  let of_hex s = of_bytes (Util_.bytes_of_hex s)
+  let to_hex_into = Util_.bytes_to_hex_into
+
+  let[@inline] of_hex s = of_bytes (Util_.bytes_of_hex s)
+
+  let[@inline] of_hex_substring s off =
+    of_bytes (Util_.bytes_of_hex_substring s off 16)
 
   let pp fmt t = Format.fprintf fmt "%s" (to_hex t)
+end
+
+(** Span context. This bundles up a trace ID and parent ID.
+
+    https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext *)
+module Span_ctx : sig
+  type t
+
+  val make : trace_id:Trace_id.t -> parent_id:Span_id.t -> unit -> t
+
+  val is_valid : t -> bool
+
+  val trace_id : t -> Trace_id.t
+
+  val parent_id : t -> Span_id.t
+
+  val is_remote : t -> bool
+
+  val to_w3c_trace_context : t -> bytes
+
+  val of_w3c_trace_context : bytes -> (t, string) result
+
+  val of_w3c_trace_context_exn : bytes -> t
+  (** @raise Invalid_argument if parsing failed *)
+end = struct
+  (* TODO: trace flags *)
+  (* TODO: trace state *)
+
+  type t = {
+    trace_id: Trace_id.t;
+    parent_id: Span_id.t;
+    is_remote: bool;
+  }
+
+  let make ~trace_id ~parent_id () : t =
+    { trace_id; parent_id; is_remote = false }
+
+  let[@inline] is_valid self =
+    Trace_id.is_valid self.trace_id && Span_id.is_valid self.parent_id
+
+  let[@inline] is_remote self = self.is_remote
+
+  let[@inline] trace_id self = self.trace_id
+
+  let[@inline] parent_id self = self.parent_id
+
+  let to_w3c_trace_context (self : t) : bytes =
+    let bs = Bytes.create 55 in
+    Bytes.set bs 0 '0';
+    Bytes.set bs 1 '0';
+    Bytes.set bs 2 '-';
+    Trace_id.to_hex_into self.trace_id bs 3;
+    (* +32 *)
+    Bytes.set bs (3 + 32) '-';
+    Span_id.to_hex_into self.parent_id bs 36;
+    (* +16 *)
+    Bytes.set bs 52 '-';
+    Bytes.set bs 53 '0';
+    Bytes.set bs 54 '0';
+    bs
+
+  let spf = Printf.sprintf
+
+  let of_w3c_trace_context bs : _ result =
+    try
+      if Bytes.length bs <> 55 then invalid_arg "trace context must be 55 bytes";
+      (match int_of_string_opt (Bytes.sub_string bs 0 2) with
+      | Some 0 -> ()
+      | Some n -> invalid_arg @@ spf "version is %d, expected 0" n
+      | None -> invalid_arg "expected 2-digit version");
+      if Bytes.get bs 2 <> '-' then invalid_arg "expected '-' before trace_id";
+      let trace_id = Trace_id.of_hex_substring (Bytes.unsafe_to_string bs) 3 in
+      if Bytes.get bs (3 + 32) <> '-' then
+        invalid_arg "expected '-' before parent_id";
+      let parent_id = Span_id.of_hex_substring (Bytes.unsafe_to_string bs) 36 in
+      if Bytes.get bs 52 <> '-' then invalid_arg "expected '-' after parent_id";
+
+      (* ignore flags *)
+      Ok { trace_id; parent_id; is_remote = true }
+    with Invalid_argument msg -> Error msg
+
+  let of_w3c_trace_context_exn bs =
+    match of_w3c_trace_context bs with
+    | Ok t -> t
+    | Error msg -> invalid_arg @@ spf "invalid w3c trace context: %s" msg
 end
 
 (** {2 Attributes and conventions} *)
@@ -1127,53 +1212,13 @@ module Trace_context = struct
         [{flags}] are currently ignored.
     *)
     let of_value str : (Trace_id.t * Span_id.t, string) result =
-      let ( let* ) = result_bind in
-      let blit ~offset ~len ~or_ =
-        let buf = Bytes.create len in
-        let* str =
-          match Bytes.blit_string str offset buf 0 len with
-          | () -> Ok (Bytes.unsafe_to_string buf)
-          | exception Invalid_argument _ -> Error or_
-        in
-        Ok (str, offset + len)
-      in
-      let consume expected ~offset ~or_ =
-        let len = String.length expected in
-        let* str, offset = blit ~offset ~len ~or_ in
-        if str = expected then
-          Ok offset
-        else
-          Error or_
-      in
-      let offset = 0 in
-      let* offset = consume "00" ~offset ~or_:"Expected version 00" in
-      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
-      let* trace_id, offset =
-        blit ~offset ~len:32 ~or_:"Expected 32-digit trace-id"
-      in
-      let* trace_id =
-        match Trace_id.of_hex trace_id with
-        | trace_id -> Ok trace_id
-        | exception Invalid_argument _ -> Error "Expected hex-encoded trace-id"
-      in
-      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
-      let* parent_id, offset =
-        blit ~offset ~len:16 ~or_:"Expected 16-digit parent-id"
-      in
-      let* parent_id =
-        match Span_id.of_hex parent_id with
-        | parent_id -> Ok parent_id
-        | exception Invalid_argument _ -> Error "Expected hex-encoded parent-id"
-      in
-      let* offset = consume "-" ~offset ~or_:"Expected delimiter" in
-      let* _flags, _offset =
-        blit ~offset ~len:2 ~or_:"Expected 2-digit flags"
-      in
-      Ok (trace_id, parent_id)
+      match Span_ctx.of_w3c_trace_context (Bytes.unsafe_of_string str) with
+      | Ok sp -> Ok (Span_ctx.trace_id sp, Span_ctx.parent_id sp)
+      | Error _ as e -> e
 
     let to_value ~(trace_id : Trace_id.t) ~(parent_id : Span_id.t) () : string =
-      Printf.sprintf "00-%s-%s-00" (Trace_id.to_hex trace_id)
-        (Span_id.to_hex parent_id)
+      let span_ctx = Span_ctx.make ~trace_id ~parent_id () in
+      Bytes.unsafe_to_string @@ Span_ctx.to_w3c_trace_context span_ctx
   end
 end
 
