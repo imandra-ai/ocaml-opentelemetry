@@ -36,6 +36,12 @@ let () = test_of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
 
 let () = test_of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 
+let () = test_of_value "03-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+
+let () = test_of_value "00-ohnonohex7b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+
+let () = test_of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aazzzzzzb7-01"
+
 let () = print_endline ""
 
 let test_to_value trace_id parent_id =

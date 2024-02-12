@@ -1,5 +1,9 @@
 (** Opentelemetry types and instrumentation *)
 
+open struct
+  let spf = Printf.sprintf
+end
+
 module Lock = Lock
 (** Global lock. *)
 
@@ -233,7 +237,7 @@ module Util_ = struct
   let int_of_hex = function
     | '0' .. '9' as c -> Char.code c - Char.code '0'
     | 'a' .. 'f' as c -> 10 + Char.code c - Char.code 'a'
-    | _ -> raise (Invalid_argument "invalid hex char")
+    | c -> raise (Invalid_argument (spf "invalid hex char: %C" c))
 
   let bytes_of_hex_substring (s : string) off len =
     if len mod 2 <> 0 then
@@ -445,8 +449,6 @@ end = struct
     Bytes.set bs 54 '0';
     bs
 
-  let spf = Printf.sprintf
-
   let of_w3c_trace_context bs : _ result =
     try
       if Bytes.length bs <> 55 then invalid_arg "trace context must be 55 bytes";
@@ -455,10 +457,16 @@ end = struct
       | Some n -> invalid_arg @@ spf "version is %d, expected 0" n
       | None -> invalid_arg "expected 2-digit version");
       if Bytes.get bs 2 <> '-' then invalid_arg "expected '-' before trace_id";
-      let trace_id = Trace_id.of_hex_substring (Bytes.unsafe_to_string bs) 3 in
+      let trace_id =
+        try Trace_id.of_hex_substring (Bytes.unsafe_to_string bs) 3
+        with Invalid_argument msg -> invalid_arg (spf "in trace id: %s" msg)
+      in
       if Bytes.get bs (3 + 32) <> '-' then
         invalid_arg "expected '-' before parent_id";
-      let parent_id = Span_id.of_hex_substring (Bytes.unsafe_to_string bs) 36 in
+      let parent_id =
+        try Span_id.of_hex_substring (Bytes.unsafe_to_string bs) 36
+        with Invalid_argument msg -> invalid_arg (spf "in span id: %s" msg)
+      in
       if Bytes.get bs 52 <> '-' then invalid_arg "expected '-' after parent_id";
 
       (* ignore flags *)
