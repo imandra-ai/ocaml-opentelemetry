@@ -216,40 +216,57 @@ module Collector = struct
       f ()
 end
 
-module Util_ = struct
-  let bytes_to_hex (b : bytes) : string =
-    let i_to_hex (i : int) =
-      if i < 10 then
-        Char.chr (i + Char.code '0')
-      else
-        Char.chr (i - 10 + Char.code 'a')
-    in
+(**/**)
 
-    let res = Bytes.create (2 * Bytes.length b) in
+module Util_ = struct
+  let int_to_hex (i : int) =
+    if i < 10 then
+      Char.chr (i + Char.code '0')
+    else
+      Char.chr (i - 10 + Char.code 'a')
+
+  let bytes_to_hex_into b res off : unit =
     for i = 0 to Bytes.length b - 1 do
       let n = Char.code (Bytes.get b i) in
-      Bytes.set res (2 * i) (i_to_hex ((n land 0xf0) lsr 4));
-      Bytes.set res ((2 * i) + 1) (i_to_hex (n land 0x0f))
-    done;
+      Bytes.set res ((2 * i) + off) (int_to_hex ((n land 0xf0) lsr 4));
+      Bytes.set res ((2 * i) + 1 + off) (int_to_hex (n land 0x0f))
+    done
+
+  let bytes_to_hex (b : bytes) : string =
+    let res = Bytes.create (2 * Bytes.length b) in
+    bytes_to_hex_into b res 0;
     Bytes.unsafe_to_string res
 
-  let bytes_of_hex (s : string) : bytes =
-    let n_of_c = function
-      | '0' .. '9' as c -> Char.code c - Char.code '0'
-      | 'a' .. 'f' as c -> 10 + Char.code c - Char.code 'a'
-      | _ -> raise (Invalid_argument "invalid hex char")
-    in
-    if String.length s mod 2 <> 0 then
+  let int_of_hex = function
+    | '0' .. '9' as c -> Char.code c - Char.code '0'
+    | 'a' .. 'f' as c -> 10 + Char.code c - Char.code 'a'
+    | _ -> raise (Invalid_argument "invalid hex char")
+
+  let bytes_of_hex_substring (s : string) off len =
+    if len mod 2 <> 0 then
       raise (Invalid_argument "hex sequence must be of even length");
-    let res = Bytes.make (String.length s / 2) '\x00' in
-    for i = 0 to (String.length s / 2) - 1 do
-      let n1 = n_of_c (String.get s (2 * i)) in
-      let n2 = n_of_c (String.get s ((2 * i) + 1)) in
+    let res = Bytes.make (len / 2) '\x00' in
+    for i = 0 to (len / 2) - 1 do
+      let n1 = int_of_hex (String.get s (off + (2 * i))) in
+      let n2 = int_of_hex (String.get s (off + (2 * i) + 1)) in
       let n = (n1 lsl 4) lor n2 in
       Bytes.set res i (Char.chr n)
     done;
     res
+
+  let bytes_of_hex (s : string) : bytes =
+    bytes_of_hex_substring s 0 (String.length s)
+
+  let bytes_non_zero (self : bytes) : bool =
+    try
+      for i = 0 to Bytes.length self - 1 do
+        if Char.code (Bytes.unsafe_get self i) <> 0 then raise_notrace Exit
+      done;
+      false
+    with Exit -> true
 end
+
+(**/**)
 
 (** {2 Identifiers} *)
 
@@ -263,13 +280,19 @@ module Trace_id : sig
 
   val pp : Format.formatter -> t -> unit
 
+  val is_valid : t -> bool
+
   val to_bytes : t -> bytes
 
   val of_bytes : bytes -> t
 
   val to_hex : t -> string
 
+  val to_hex_into : t -> bytes -> int -> unit
+
   val of_hex : string -> t
+
+  val of_hex_substring : string -> int -> t
 end = struct
   type t = bytes
 
@@ -286,11 +309,18 @@ end = struct
     if Bytes.length b = 16 then
       b
     else
-      raise (Invalid_argument "trace IDs must be 16 bytes in length")
+      raise (Invalid_argument "trace ID must be 16 bytes in length")
 
-  let to_hex self = Util_.bytes_to_hex self
+  let is_valid = Util_.bytes_non_zero
 
-  let of_hex s = of_bytes (Util_.bytes_of_hex s)
+  let to_hex = Util_.bytes_to_hex
+
+  let to_hex_into = Util_.bytes_to_hex_into
+
+  let[@inline] of_hex s = of_bytes (Util_.bytes_of_hex s)
+
+  let[@inline] of_hex_substring s off =
+    of_bytes (Util_.bytes_of_hex_substring s off 32)
 
   let pp fmt t = Format.fprintf fmt "%s" (to_hex t)
 end
@@ -303,13 +333,19 @@ module Span_id : sig
 
   val pp : Format.formatter -> t -> unit
 
+  val is_valid : t -> bool
+
   val to_bytes : t -> bytes
 
   val of_bytes : bytes -> t
 
   val to_hex : t -> string
 
+  val to_hex_into : t -> bytes -> int -> unit
+
   val of_hex : string -> t
+
+  val of_hex_substring : string -> int -> t
 end = struct
   type t = bytes
 
