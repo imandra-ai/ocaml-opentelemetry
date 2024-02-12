@@ -429,7 +429,8 @@ module Globals = struct
   let service_instance_id = ref None
 
   let instrumentation_library =
-    default_instrumentation_scope ~version:"0.2" ~name:"ocaml-otel" ()
+    default_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel"
+      ()
 
   (** Global attributes, initially set
       via OTEL_RESOURCE_ATTRIBUTES and modifiable
@@ -780,7 +781,13 @@ module Trace = struct
       let status =
         match res with
         | Ok () -> default_status ~code:Status_code_ok ()
-        | Error e -> default_status ~code:Status_code_error ~message:e ()
+        | Error (e, bt) ->
+          (* add backtrace *)
+          add_event scope (fun () ->
+              Event.make "error"
+                ~attrs:
+                  [ "backtrace", `String (Printexc.raw_backtrace_to_string bt) ]);
+          default_status ~code:Status_code_error ~message:e ()
       in
       let span, _ =
         (* TODO: should the attrs passed to with_ go on the Span
@@ -827,7 +834,8 @@ module Trace = struct
       finally (Ok ());
       rv
     with e ->
-      finally (Error (Printexc.to_string e));
+      let bt = Printexc.get_raw_backtrace () in
+      finally (Error (Printexc.to_string e, bt));
       raise e
 end
 
