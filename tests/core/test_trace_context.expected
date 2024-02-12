@@ -1,21 +1,21 @@
 Trace_context.Traceparent.of_value "xx":
-  Error "Expected version 00"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00":
-  Error "Expected delimiter"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-xxxx":
-  Error "Expected 32-digit trace-id"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx":
-  Error "Expected hex-encoded trace-id"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef":
-  Error "Expected delimiter"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-xxxx":
-  Error "Expected 16-digit parent-id"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-xxxxxxxxxxxxxxxx":
-  Error "Expected hex-encoded parent-id"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef":
-  Error "Expected delimiter"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef-":
-  Error "Expected 2-digit flags"
+  Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00":
   Ok trace_id:"0123456789abcdef0123456789abcdef" parent_id:"0123456789abcdef"
 Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01":
