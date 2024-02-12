@@ -271,6 +271,8 @@ module Trace_id : sig
 
   val create : unit -> t
 
+  val dummy : t
+
   val pp : Format.formatter -> t -> unit
 
   val is_valid : t -> bool
@@ -290,6 +292,8 @@ end = struct
   type t = bytes
 
   let to_bytes self = self
+
+  let dummy : t = Bytes.make 16 '\x00'
 
   let create () : t =
     let b = Collector.rand_bytes_16 () in
@@ -324,6 +328,8 @@ module Span_id : sig
 
   val create : unit -> t
 
+  val dummy : t
+
   val pp : Format.formatter -> t -> unit
 
   val is_valid : t -> bool
@@ -343,6 +349,8 @@ end = struct
   type t = bytes
 
   let to_bytes self = self
+
+  let dummy : t = Bytes.make 8 '\x00'
 
   let create () : t =
     let b = Collector.rand_bytes_8 () in
@@ -373,11 +381,15 @@ end
 
 (** Span context. This bundles up a trace ID and parent ID.
 
-    https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext *)
+    https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext
+    @since NEXT_RELEASE *)
 module Span_ctx : sig
   type t
 
   val make : trace_id:Trace_id.t -> parent_id:Span_id.t -> unit -> t
+
+  val dummy : t
+  (** Invalid span context, to be used as a placeholder *)
 
   val is_valid : t -> bool
 
@@ -402,6 +414,9 @@ end = struct
     parent_id: Span_id.t;
     is_remote: bool;
   }
+
+  let dummy =
+    { trace_id = Trace_id.dummy; parent_id = Span_id.dummy; is_remote = false }
 
   let make ~trace_id ~parent_id () : t =
     { trace_id; parent_id; is_remote = false }
