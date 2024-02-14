@@ -1,4 +1,16 @@
-## next version
+## 0.7
+
+- add Span_link.of_span_ctx, Scope.to_span_ctx, dummy values
+- feat: add Span_context, as required by OTEL API guidelines
+- feat: record backtraces in error spans
+- compat with trace 0.6
+- ocurl: add ticker_interval_ms config
+- ocurl: do some self-tracing optionally
+- move protobuf code to opentelemetry.proto
+
+- perf: rewrite parsing+printing for span ctx as w3c trace ctx
+- perf: when we get multiple messages, check batches only once
+- perf: use ocaml-protoc 3.0.1 for codegen, with faster pbrt
 
 ## 0.6
 

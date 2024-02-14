@@ -12,7 +12,7 @@ module Rand_bytes = Rand_bytes
 
 module AList = AList
 (** Atomic list, for internal usage
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 
 (** {2 Wire format} *)
 
@@ -386,7 +386,7 @@ end
 (** Span context. This bundles up a trace ID and parent ID.
 
     https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext
-    @since NEXT_RELEASE *)
+    @since 0.7 *)
 module Span_ctx : sig
   type t
 

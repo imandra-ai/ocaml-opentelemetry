@@ -26,10 +26,10 @@ type t = private {
           This will be clamped between [2 ms] and some longer
           interval (maximum [60s] currently).
       Default 500.
-      @since NEXT_RELEASE *)
+      @since 0.7 *)
   self_trace: bool;
       (** If true, the OTEL library will also emit its own spans. Default [false].
-          @since NEXT_RELEASE *)
+          @since 0.7 *)
 }
 (** Configuration.
 
