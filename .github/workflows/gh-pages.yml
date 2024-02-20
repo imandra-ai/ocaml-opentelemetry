@@ -3,37 +3,29 @@ name: github pages
 on:
   push:
     branches:
-      - master  # Set a branch name to trigger deployment
+      - main
 
 jobs:
   deploy:
-    name: Deploy doc
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@main
+
+      - uses: ocaml/setup-ocaml@v2
         with:
-          submodules: recursive
+          ocaml-compiler: '5.1.x'
+          dune-cache: true
+          allow-prerelease-opam: true
 
-      # needed for depext to work
-      - run: sudo apt-get update && echo 1
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-
-      - name: Use OCaml
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: 4.13.x
-          opam-depext-flags: --with-test
-
-      - run: opam install . --with-doc --deps-only --with-test
+      - name: Deps
+        run: opam install odig opentelemetry opentelemetry-lwt opentelemetry-client-ocurl opentelemetry-cohttp-lwt
 
       - name: Build
-        run: opam exec -- dune build @doc -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt
+        run: opam exec -- odig odoc --cache-dir=_doc/ opentelemetry opentelemetry-lwt opentelemetry-client-ocurl opentelemetry-cohttp-lwt
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_build/default/_doc/_html/
-          destination_dir: dev
-          enable_jekyll: true
+          publish_dir: ./_doc/html
+          enable_jekyll: false
