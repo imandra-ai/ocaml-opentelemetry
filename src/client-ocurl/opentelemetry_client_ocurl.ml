@@ -206,8 +206,9 @@ end = struct
       (* TODO: log error _via_ otel? *)
       Atomic.incr n_errors;
 
-      Printf.eprintf "opentelemetry: export failed:\n  %s\n  curl code: %s\n%!"
-        msg (Curl.strerror code);
+      Printf.eprintf
+        "opentelemetry: export failed:\n  %s\n  curl code: %s\nurl: %s\n%!" msg
+        (Curl.strerror code) url;
 
       (* avoid crazy error loop *)
       Thread.delay 3.
