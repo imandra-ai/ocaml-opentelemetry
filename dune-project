@@ -27,6 +27,7 @@
   (ocaml
    (>= "4.08"))
   ptime
+  hmap
   ambient-context
   (odoc :with-doc)
   (alcotest :with-test)

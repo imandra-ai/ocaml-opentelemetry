@@ -326,6 +326,11 @@ end = struct
   let pp fmt t = Format.fprintf fmt "%s" (to_hex t)
 end
 
+(** Hmap key to carry around a {!Trace_id.t}, to remember what the current
+    trace is.
+    @since NEXT_RELEASE *)
+let k_trace_id : Trace_id.t Hmap.key = Hmap.Key.create ()
+
 (** Unique ID of a span. *)
 module Span_id : sig
   type t
@@ -478,6 +483,11 @@ end = struct
     | Ok t -> t
     | Error msg -> invalid_arg @@ spf "invalid w3c trace context: %s" msg
 end
+
+(** Hmap key to carry around a {!Span_ctx.t}, e.g. to remember what the current
+    parent span is.
+    @since NEXT_RELEASE *)
+let k_span_ctx : Span_ctx.t Hmap.key = Hmap.Key.create ()
 
 (** {2 Attributes and conventions} *)
 
