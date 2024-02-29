@@ -66,6 +66,8 @@ module Well_known : sig
     Otel.Span.kind * Otel.Span.key_value list
 end
 
+(**/**)
+
 (** Internal implementation details; do not consider these stable. *)
 module Internal : sig
   module M : sig
@@ -195,3 +197,5 @@ module Internal : sig
 
   val exit_span' : Otrace.span -> span_begin -> Otel.Span.t
 end
+
+(**/**)
