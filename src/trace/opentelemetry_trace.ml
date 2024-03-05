@@ -2,6 +2,10 @@ module Otel = Opentelemetry
 module Otrace = Trace_core (* ocaml-trace *)
 module TLS = Ambient_context_tls.TLS
 
+open struct
+  let spf = Printf.sprintf
+end
+
 module Well_known = struct
   let spankind_key = "otrace.spankind"
 
@@ -41,19 +45,18 @@ end
 
 open Well_known
 
+let on_internal_error =
+  ref (fun msg -> Printf.eprintf "error in Opentelemetry_trace: %s\n%!" msg)
+
 module Internal = struct
   type span_begin = {
-    id: Otel.Span_id.t;
     start_time: int64;
     name: string;
-    data: (string * Otrace.user_data) list;
     __FILE__: string;
     __LINE__: int;
     __FUNCTION__: string option;
-    trace_id: Otel.Trace_id.t;
     scope: Otel.Scope.t;
-    parent_id: Otel.Span_id.t option;
-    parent_scope: Otel.Scope.t option;
+    parent: Otel.Span_ctx.t option;
   }
 
   module Active_span_tbl = Hashtbl.Make (struct
@@ -61,6 +64,10 @@ module Internal = struct
 
     let hash : t -> int = Hashtbl.hash
   end)
+
+  (** key to access a OTEL scope from an explicit span *)
+  let k_explicit_scope : Otel.Scope.t Otrace.Meta_map.Key.t =
+    Otrace.Meta_map.Key.create ()
 
   (** Per-thread set of active spans. *)
   module Active_spans = struct
@@ -96,32 +103,28 @@ module Internal = struct
       | Some sc -> sc.trace_id
       | None -> Trace_id.create ()
     in
-    let parent_id =
+    let parent =
       match explicit_parent, parent_scope with
-      | Some p, _ -> Some (otel_of_otrace p)
-      | None, Some parent -> Some parent.span_id
+      | Some p, _ ->
+        Some (Otel.Span_ctx.make ~trace_id ~parent_id:(otel_of_otrace p) ())
+      | None, Some parent -> Some (Otel.Scope.to_span_ctx parent)
       | None, None -> None
     in
 
     let new_scope =
-      { Scope.span_id = otel_id; trace_id; events = []; attrs = [] }
+      { Scope.span_id = otel_id; trace_id; events = []; attrs = data }
     in
 
     let start_time = Timestamp_ns.now_unix_ns () in
-
     let sb =
       {
-        id = otel_id;
         start_time;
         name;
-        data;
         __FILE__;
         __LINE__;
         __FUNCTION__;
-        trace_id;
         scope = new_scope;
-        parent_id;
-        parent_scope;
+        parent;
       }
     in
 
@@ -131,22 +134,10 @@ module Internal = struct
     otrace_id, sb
 
   let exit_span_
-      {
-        id = otel_id;
-        start_time;
-        name;
-        data;
-        __FILE__;
-        __LINE__;
-        __FUNCTION__;
-        trace_id;
-        scope = _;
-        parent_id;
-        parent_scope = _;
-      } =
+      { start_time; name; __FILE__; __LINE__; __FUNCTION__; scope; parent } =
     let open Otel in
     let end_time = Timestamp_ns.now_unix_ns () in
-    let kind, attrs = otel_attrs_of_otrace_data data in
+    let kind, attrs = otel_attrs_of_otrace_data scope.attrs in
 
     let attrs =
       match __FUNCTION__ with
@@ -168,8 +159,10 @@ module Internal = struct
         ]
         @ attrs
     in
-    Span.create ~kind ~trace_id ?parent:parent_id ~id:otel_id ~start_time
-      ~end_time ~attrs name
+
+    let parent_id = Option.map Otel.Span_ctx.parent_id parent in
+    Span.create ~kind ~trace_id:scope.trace_id ?parent:parent_id
+      ~id:scope.span_id ~start_time ~end_time ~attrs name
     |> fst
 
   let exit_span' otrace_id otel_span_begin =
@@ -231,9 +224,7 @@ module Internal = struct
     let exit_manual_span Otrace.{ span = otrace_id; _ } =
       let active_spans = Active_spans.get () in
       match Active_span_tbl.find_opt active_spans.tbl otrace_id with
-      | None ->
-        (* FIXME: some kind of error/debug logging *)
-        ()
+      | None -> !on_internal_error (spf "no active span with ID %Ld" otrace_id)
       | Some sb ->
         let otel_span = exit_span' otrace_id sb in
         Otel.Trace.emit [ otel_span ]
@@ -241,15 +232,14 @@ module Internal = struct
     let add_data_to_span otrace_id data =
       let active_spans = Active_spans.get () in
       match Active_span_tbl.find_opt active_spans.tbl otrace_id with
-      | None ->
-        (* FIXME: some kind of error/debug logging *)
-        ()
-      | Some sb ->
-        Active_span_tbl.replace active_spans.tbl otrace_id
-          { sb with data = sb.data @ data }
+      | None -> !on_internal_error (spf "no active span with ID %Ld" otrace_id)
+      | Some sb -> sb.scope.attrs <- List.rev_append data sb.scope.attrs
 
-    let add_data_to_manual_span Otrace.{ span = otrace_id; _ } data =
-      add_data_to_span otrace_id data
+    let add_data_to_manual_span (span : Otrace.explicit_span) data : unit =
+      match Otrace.Meta_map.find_exn k_explicit_scope span.meta with
+      | exception _ ->
+        !on_internal_error (spf "manual span does not a contain an OTEL scope")
+      | scope -> scope.attrs <- List.rev_append data scope.attrs
 
     let message ?span ~data:_ msg : unit =
       (* gather information from context *)

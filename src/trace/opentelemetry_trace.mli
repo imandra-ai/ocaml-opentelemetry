@@ -36,6 +36,9 @@ module TLS := Ambient_context_tls.TLS
       ]}
     *)
 
+val on_internal_error : (string -> unit) ref
+(** Callback to print errors in the library itself (ie bugs) *)
+
 val setup : unit -> unit
 (** Install the OTEL backend as a Trace collector *)
 
@@ -156,17 +159,13 @@ module Internal : sig
   end
 
   type span_begin = {
-    id: Otel.Span_id.t;
     start_time: int64;
     name: string;
-    data: (string * Otrace.user_data) list;
     __FILE__: string;
     __LINE__: int;
     __FUNCTION__: string option;
-    trace_id: Otel.Trace_id.t;
     scope: Otel.Scope.t;
-    parent_id: Otel.Span_id.t option;
-    parent_scope: Otel.Scope.t option;
+    parent: Otel.Span_ctx.t option;
   }
 
   module Active_span_tbl : Hashtbl.S with type key = Otrace.span
