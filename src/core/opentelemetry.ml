@@ -503,6 +503,23 @@ module Conventions = struct
       end
     end
 
+    (** https://opentelemetry.io/docs/specs/semconv/attributes-registry/code/ *)
+    module Code = struct
+      (** Int *)
+      let column = "code.column"
+
+      let filepath = "code.filepath"
+
+      let function_ = "code.function"
+
+      (** int *)
+      let line = "code.lineno"
+
+      let namespace = "code.namespace"
+
+      let stacktrace = "code.stacktrace"
+    end
+
     module Service = struct
       let name = "service.name"
 
