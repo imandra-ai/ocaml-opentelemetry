@@ -181,7 +181,9 @@ end = struct
       in
       Ezcurl.post ~headers ~client ~params:[] ~url ~content:(`String data) ()
     with
-    | Ok { code; _ } when code >= 200 && code < 300 -> ()
+    | Ok { code; _ } when code >= 200 && code < 300 ->
+      if !debug_ || config.debug then
+        Printf.eprintf "opentelemetry: got response code=%d\n%!" code
     | Ok { code; body; headers = _; info = _ } ->
       Atomic.incr n_errors;
       Self_trace.add_event _sc
@@ -196,7 +198,8 @@ end = struct
           with _ ->
             spf "(could not decode status)\nraw bytes: %s" (str_to_hex body)
         in
-        Printf.eprintf "error while sending:\n  code=%d\n  %s\n%!" code body
+        Printf.eprintf
+          "opentelemetry: error while sending:\n  code=%d\n  %s\n%!" code body
       );
       ()
     | exception Sys.Break ->
