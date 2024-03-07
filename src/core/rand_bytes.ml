@@ -1,7 +1,7 @@
 (* generate random IDs *)
 let rand_ = Random.State.make_self_init ()
 
-let[@inline] ( let@ ) f x = f x
+let ( let@ ) = ( @@ )
 
 let default_rand_bytes_8 () : bytes =
   let@ () = Lock.with_lock in
