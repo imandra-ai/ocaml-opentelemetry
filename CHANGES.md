@@ -1,3 +1,12 @@
+
+## 0.8
+
+- feat: add dep on `hmap`, add standard keys to carry around a span context or trace id
+- add semantic conventions for code and HTTP
+
+- better debug message in curl backend
+- make otel-trace a bit more lightweight
+
 ## 0.7
 
 - add Span_link.of_span_ctx, Scope.to_span_ctx, dummy values

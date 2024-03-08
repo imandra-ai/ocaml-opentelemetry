@@ -328,7 +328,7 @@ end
 
 (** Hmap key to carry around a {!Trace_id.t}, to remember what the current
     trace is.
-    @since NEXT_RELEASE *)
+    @since 0.8 *)
 let k_trace_id : Trace_id.t Hmap.key = Hmap.Key.create ()
 
 (** Unique ID of a span. *)
@@ -486,7 +486,7 @@ end
 
 (** Hmap key to carry around a {!Span_ctx.t}, e.g. to remember what the current
     parent span is.
-    @since NEXT_RELEASE *)
+    @since 0.8 *)
 let k_span_ctx : Span_ctx.t Hmap.key = Hmap.Key.create ()
 
 (** {2 Attributes and conventions} *)
