@@ -390,7 +390,7 @@ end
 
 (** Span context. This bundles up a trace ID and parent ID.
 
-    https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext
+    {{: https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext} https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext}
     @since 0.7 *)
 module Span_ctx : sig
   type t
@@ -491,6 +491,9 @@ let k_span_ctx : Span_ctx.t Hmap.key = Hmap.Key.create ()
 
 (** {2 Attributes and conventions} *)
 
+(** Semantic conventions
+
+    {{: https://opentelemetry.io/docs/specs/semconv/} https://opentelemetry.io/docs/specs/semconv/} *)
 module Conventions = struct
   module Attributes = struct
     module Process = struct
@@ -604,30 +607,25 @@ type value =
   | `Float of float
   | `None
   ]
+(** A value in a key/value attribute *)
 
 type key_value = string * value
 
-(**/**)
+open struct
+  let _conv_value =
+    let open Proto.Common in
+    function
+    | `Int i -> Some (Int_value (Int64.of_int i))
+    | `String s -> Some (String_value s)
+    | `Bool b -> Some (Bool_value b)
+    | `Float f -> Some (Double_value f)
+    | `None -> None
 
-let _conv_value =
-  let open Proto.Common in
-  function
-  | `Int i -> Some (Int_value (Int64.of_int i))
-  | `String s -> Some (String_value s)
-  | `Bool b -> Some (Bool_value b)
-  | `Float f -> Some (Double_value f)
-  | `None -> None
-
-(**/**)
-
-(**/**)
-
-let _conv_key_value (k, v) =
-  let open Proto.Common in
-  let value = _conv_value v in
-  default_key_value ~key:k ~value ()
-
-(**/**)
+  let _conv_key_value (k, v) =
+    let open Proto.Common in
+    let value = _conv_value v in
+    default_key_value ~key:k ~value ()
+end
 
 (** {2 Global settings} *)
 
@@ -781,6 +779,8 @@ module Scope = struct
   let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
     Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
 end
+
+(** {2 Traces} *)
 
 (** Span Link
 
@@ -1170,6 +1170,33 @@ module Metrics = struct
     Collector.send_metrics [ rm ] ~ret:ignore
 end
 
+(** A set of callbacks that produce metrics when called.
+    The metrics are automatically called regularly.
+
+    This allows applications to register metrics callbacks from various points
+    in the program (or even in libraries), and not worry about setting
+    alarms/intervals to emit them. *)
+module Metrics_callbacks = struct
+  open struct
+    let cbs_ : (unit -> Metrics.t list) list ref = ref []
+  end
+
+  (** [register f] adds the callback [f] to the list.
+
+      [f] will be called at unspecified times and is expected to return
+      a list of metrics. It might be called regularly by the backend,
+      in particular (but not only) when {!Collector.tick} is called. *)
+  let register f : unit =
+    if !cbs_ = [] then
+      (* make sure we call [f] (and others) at each tick *)
+      Collector.on_tick (fun () ->
+          let m = List.map (fun f -> f ()) !cbs_ |> List.flatten in
+          Metrics.emit m);
+    cbs_ := f :: !cbs_
+end
+
+(** {2 Logs} *)
+
 (** Logs.
 
     See {{: https://opentelemetry.io/docs/reference/specification/overview/#log-signal} the spec} *)
@@ -1262,31 +1289,6 @@ module Logs = struct
       default_resource_logs ~resource:(Some resource) ~scope_logs:[ ll ] ()
     in
     Collector.send_logs [ rl ] ~ret:ignore
-end
-
-(** A set of callbacks that produce metrics when called.
-    The metrics are automatically called regularly.
-
-    This allows applications to register metrics callbacks from various points
-    in the program (or even in libraries), and not worry about setting
-    alarms/intervals to emit them. *)
-module Metrics_callbacks = struct
-  open struct
-    let cbs_ : (unit -> Metrics.t list) list ref = ref []
-  end
-
-  (** [register f] adds the callback [f] to the list.
-
-      [f] will be called at unspecified times and is expected to return
-      a list of metrics. It might be called regularly by the backend,
-      in particular (but not only) when {!Collector.tick} is called. *)
-  let register f : unit =
-    if !cbs_ = [] then
-      (* make sure we call [f] (and others) at each tick *)
-      Collector.on_tick (fun () ->
-          let m = List.map (fun f -> f ()) !cbs_ |> List.flatten in
-          Metrics.emit m);
-    cbs_ := f :: !cbs_
 end
 
 (** {2 Utils} *)
