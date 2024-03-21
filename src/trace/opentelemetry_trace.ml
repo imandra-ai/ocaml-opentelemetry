@@ -66,7 +66,7 @@ module Internal = struct
   end)
 
   (** key to access a OTEL scope from an explicit span *)
-  let k_explicit_scope : Otel.Scope.t Otrace.Meta_map.Key.t =
+  let k_explicit_scope : Otel.Scope.t Otrace.Meta_map.key =
     Otrace.Meta_map.Key.create ()
 
   (** Per-thread set of active spans. *)

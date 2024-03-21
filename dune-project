@@ -41,10 +41,7 @@
     (< 0.25))))
  (depopts trace)
  (conflicts
-  (trace
-   (or
-    (< 0.4)
-    (>= 0.7))))
+  (trace (< 0.7)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
