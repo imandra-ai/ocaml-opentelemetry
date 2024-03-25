@@ -1,4 +1,8 @@
 
+## 0.9
+
+- compat with trace 0.7
+
 ## 0.8
 
 - feat: add dep on `hmap`, add standard keys to carry around a span context or trace id
