@@ -289,8 +289,8 @@ end = struct
 
   let batch_max_size_ = 200
 
-  let should_send_batch_ ~config ~now (b : _ Batch.t) : bool =
-    Batch.len b > 0
+  let should_send_batch_ ?(side = []) ~config ~now (b : _ Batch.t) : bool =
+    (Batch.len b > 0 || side != [])
     && (Batch.len b >= batch_max_size_
        ||
        let timeout = Mtime.Span.(config.Config.batch_timeout_ms * ms) in
@@ -355,7 +355,10 @@ end = struct
           if Batch.len batches.traces > 0 then send_traces ()
         ) else (
           let now = Mtime_clock.now () in
-          if should_send_batch_ ~config ~now batches.metrics then
+          if
+            should_send_batch_ ~config ~now batches.metrics
+              ~side:(AList.get gc_metrics)
+          then
             send_metrics ();
 
           if should_send_batch_ ~config ~now batches.traces then send_traces ();
