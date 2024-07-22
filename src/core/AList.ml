@@ -4,6 +4,11 @@ type 'a t = 'a list Atomic.t
 
 let make () = Atomic.make []
 
+let[@inline] is_empty self : bool =
+  match Atomic.get self with
+  | [] -> true
+  | _ :: _ -> false
+
 let get = Atomic.get
 
 let add self x =
