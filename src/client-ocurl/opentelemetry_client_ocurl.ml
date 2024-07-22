@@ -348,7 +348,9 @@ end = struct
         Queue.clear local_q;
 
         if !must_flush_all then (
-          if Batch.len batches.metrics > 0 then send_metrics ();
+          if Batch.len batches.metrics > 0 || not (AList.is_empty gc_metrics)
+          then
+            send_metrics ();
           if Batch.len batches.logs > 0 then send_logs ();
           if Batch.len batches.traces > 0 then send_traces ()
         ) else (
