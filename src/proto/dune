@@ -10,6 +10,7 @@
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets status.ml status.mli)
  (deps
   (:file status.proto)
@@ -20,95 +21,167 @@
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets common.ml common.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/common/v1/common.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/common/v1/common.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
 
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets resource.ml resource.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
 
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets trace.ml trace.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/trace/v1/trace.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/trace/v1/trace.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
 
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets metrics.ml metrics.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/metrics/v1/metrics.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/metrics/v1/metrics.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
 
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets logs.ml logs.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
 
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets metrics_service.ml metrics_service.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/metrics/v1/metrics_service.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/metrics/v1/metrics_service.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
 
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets trace_service.ml trace_service.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/trace/v1/trace_service.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/trace/v1/trace_service.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
 
 (rule
  (alias lint)
  (mode promote)
+ (enabled_if %{env:FORCE_GENPROTO=false})
  (targets logs_service.ml logs_service.mli)
  (deps
   (:file
-    %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/logs/v1/logs_service.proto)
+   %{project_root}/vendor/opentelemetry-proto/opentelemetry/proto/collector/logs/v1/logs_service.proto)
   (source_tree %{project_root}/vendor/opentelemetry-proto/))
  (action
-  (run ocaml-protoc %{file} -I %{project_root}/vendor/opentelemetry-proto/
-    --ml_out . --pp --make --binary)))
+  (run
+   ocaml-protoc
+   %{file}
+   -I
+   %{project_root}/vendor/opentelemetry-proto/
+   --ml_out
+   .
+   --pp
+   --make
+   --binary)))
