@@ -14,12 +14,30 @@ let debug_ =
 
 let default_url = "http://localhost:4318"
 
-let url =
-  ref (try Sys.getenv "OTEL_EXPORTER_OTLP_ENDPOINT" with _ -> default_url)
+let make_get_from_env env_name =
+  let value = ref None in
+  fun () ->
+    match !value with
+    | None ->
+      value := Sys.getenv_opt env_name;
+      !value
+    | Some value -> Some value
 
-let get_url () = !url
+let get_url_from_env = make_get_from_env "OTEL_EXPORTER_OTLP_ENDPOINT"
 
-let set_url s = url := s
+let get_url_traces_from_env =
+  make_get_from_env "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+
+let get_url_metrics_from_env =
+  make_get_from_env "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"
+
+let get_url_logs_from_env = make_get_from_env "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"
+
+let remove_trailing_slash url =
+  if url <> "" && String.get url (String.length url - 1) = '/' then
+    String.sub url 0 (String.length url - 1)
+  else
+    url
 
 let parse_headers s =
   let parse_header s =

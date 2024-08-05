@@ -13,8 +13,6 @@ let mk_client ~scope =
   Opentelemetry_cohttp_lwt.client ~scope (module Cohttp_lwt_unix.Client)
 
 let run () =
-  Printf.printf "collector is on %S\n%!"
-    (Opentelemetry_client_cohttp_lwt.get_url ());
   let open Lwt.Syntax in
   let rec go () =
     let@ scope =

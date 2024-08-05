@@ -2,7 +2,9 @@ open Common_
 
 type t = {
   debug: bool;
-  url: string;
+  url_traces: string;
+  url_metrics: string;
+  url_logs: string;
   headers: (string * string) list;
   batch_traces: int option;
   batch_metrics: int option;
@@ -16,7 +18,9 @@ let pp out self : unit =
   let ppheaders = Format.pp_print_list pp_header in
   let {
     debug;
-    url;
+    url_traces;
+    url_metrics;
+    url_logs;
     headers;
     batch_traces;
     batch_metrics;
@@ -26,17 +30,52 @@ let pp out self : unit =
     self
   in
   Format.fprintf out
-    "{@[ debug=%B;@ url=%S;@ headers=%a;@ batch_traces=%a;@ batch_metrics=%a;@ \
-     batch_logs=%a;@ batch_timeout_ms=%d; @]}"
-    debug url ppheaders headers ppiopt batch_traces ppiopt batch_metrics ppiopt
-    batch_logs batch_timeout_ms
+    "{@[ debug=%B;@ url_traces=%S;@ url_metrics=%S;@ url_logs=%S;@ \
+     headers=%a;@ batch_traces=%a;@ batch_metrics=%a;@ batch_logs=%a;@ \
+     batch_timeout_ms=%d; @]}"
+    debug url_traces url_metrics url_logs ppheaders headers ppiopt batch_traces
+    ppiopt batch_metrics ppiopt batch_logs batch_timeout_ms
 
-let make ?(debug = !debug_) ?(url = get_url ()) ?(headers = get_headers ())
-    ?(batch_traces = Some 400) ?(batch_metrics = Some 20)
-    ?(batch_logs = Some 400) ?(batch_timeout_ms = 500) () : t =
+let make ?(debug = !debug_) ?url ?url_traces ?url_metrics ?url_logs
+    ?(headers = get_headers ()) ?(batch_traces = Some 400)
+    ?(batch_metrics = Some 20) ?(batch_logs = Some 400)
+    ?(batch_timeout_ms = 500) () : t =
+  let url_traces, url_metrics, url_logs =
+    let base_url =
+      match url with
+      | None -> Option.value (get_url_from_env ()) ~default:default_url
+      | Some url -> remove_trailing_slash url
+    in
+    let url_traces =
+      match url_traces with
+      | None ->
+        Option.value
+          (get_url_traces_from_env ())
+          ~default:(base_url ^ "/v1/traces")
+      | Some url -> url
+    in
+    let url_metrics =
+      match url_metrics with
+      | None ->
+        Option.value
+          (get_url_metrics_from_env ())
+          ~default:(base_url ^ "/v1/metrics")
+      | Some url -> url
+    in
+    let url_logs =
+      match url_logs with
+      | None ->
+        Option.value (get_url_logs_from_env ()) ~default:(base_url ^ "/v1/logs")
+      | Some url -> url
+    in
+    url_traces, url_metrics, url_logs
+  in
+
   {
     debug;
-    url;
+    url_traces;
+    url_metrics;
+    url_logs;
     headers;
     batch_traces;
     batch_metrics;
