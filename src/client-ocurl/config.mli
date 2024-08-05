@@ -55,7 +55,7 @@ val make :
     @param url base url used to construct per-signal urls. Per-signal url options take precedence over this base url.
     Default is "http://localhost:4318", or "OTEL_EXPORTER_OTLP_ENDPOINT" if set.
 
-    Example of constrcuted per-singal urls with the base url http://localhost:4318
+    Example of constructed per-signal urls with the base url http://localhost:4318
     - Traces: http://localhost:4318/v1/traces
     - Metrics: http://localhost:4318/v1/metrics
     - Logs: http://localhost:4318/v1/logs
