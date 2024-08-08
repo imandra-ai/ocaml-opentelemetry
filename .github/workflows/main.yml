@@ -29,7 +29,7 @@ jobs:
           submodules: recursive
 
       # needed for depext to work
-      - run: sudo apt-get update
+      - run: sudo apt-get update && sudo apt-get install mccs
         if: ${{ matrix.os == 'ubuntu-latest' }}
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
@@ -45,7 +45,7 @@ jobs:
           opam pin pbrt 3.0.1 -y -n
           opam install pbrt -y
 
-      - run: opam install . --deps-only --with-test
+      - run: opam install . --deps-only --with-test --solver=mccs
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt,opentelemetry-client-cohttp-lwt
 
