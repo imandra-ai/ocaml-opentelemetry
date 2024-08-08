@@ -552,6 +552,27 @@ module Conventions = struct
       (** http or https *)
       let url_scheme = "url.scheme"
     end
+
+    (** https://github.com/open-telemetry/semantic-conventions/blob/main/docs/resource/host.md *)
+    module Host = struct
+      let id = "host.id"
+
+      let name = "host.name"
+
+      let type_ = "host.type"
+
+      let arch = "host.arch"
+
+      let ip = "host.ip"
+
+      let mac = "host.mac"
+
+      let image_id = "host.image.id"
+
+      let image_name = "host.image.name"
+
+      let image_version = "host.image.version"
+    end
   end
 
   module Metrics = struct
