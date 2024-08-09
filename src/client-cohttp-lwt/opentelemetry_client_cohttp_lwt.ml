@@ -72,7 +72,6 @@ module Httpc : sig
 
   val send :
     t ->
-    config:Config.t ->
     url:string ->
     decode:[ `Dec of Pbrt.Decoder.t -> 'a | `Ret of 'a ] ->
     string ->
@@ -91,8 +90,7 @@ end = struct
   let cleanup _self = ()
 
   (* send the content to the remote endpoint/path *)
-  let send (_self : t) ~(config : Config.t) ~url ~decode (bod : string) :
-      ('a, error) result Lwt.t =
+  let send (_self : t) ~url ~decode (bod : string) : ('a, error) result Lwt.t =
     let uri = Uri.of_string url in
 
     let open Cohttp in
@@ -288,7 +286,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       Pbrt.Encoder.reset encoder;
       encode x encoder;
       let data = Pbrt.Encoder.to_string encoder in
-      let* r = Httpc.send httpc ~config ~url ~decode:(`Ret ()) data in
+      let* r = Httpc.send httpc ~url ~decode:(`Ret ()) data in
       match r with
       | Ok () -> Lwt.return ()
       | Error `Sysbreak ->
