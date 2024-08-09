@@ -17,25 +17,25 @@ url_logs = http://localhost:5000/v1/logs
 ------
 
 --- base_url_from_both_config_and_env ---
-url_traces = http://localhost:3000/v1/traces
-url_metrics = http://localhost:3000/v1/metrics
-url_logs = http://localhost:3000/v1/logs
+url_traces = http://localhost:5000/v1/traces
+url_metrics = http://localhost:5000/v1/metrics
+url_logs = http://localhost:5000/v1/logs
 ------
 
 --- override_trace_url_from_config ---
 url_traces = http://localhost:3001/send/traces
-url_metrics = http://localhost:3000/v1/metrics
-url_logs = http://localhost:3000/v1/logs
+url_metrics = http://localhost:5000/v1/metrics
+url_logs = http://localhost:5000/v1/logs
 ------
 
---- override_trace_url_from_config ---
+--- override_trace_url_from_env ---
 url_traces = http://localhost:3001/send/traces
 url_metrics = http://localhost:5000/v1/metrics
 url_logs = http://localhost:5000/v1/logs
 ------
 
 --- override_trace_url_from_both_config_and_env ---
-url_traces = http://localhost:3001/send/traces/config
+url_traces = http://localhost:3001/send/traces
 url_metrics = http://localhost:5000/v1/metrics
 url_logs = http://localhost:5000/v1/logs
 ------
@@ -46,7 +46,7 @@ url_metrics = http://localhost:3002/send/metrics
 url_logs = http://localhost:3003/send/logs
 ------
 
---- set_all_in_config ---
+--- set_all_in_env ---
 url_traces = http://localhost:3001/send/traces
 url_metrics = http://localhost:3002/send/metrics
 url_logs = http://localhost:3003/send/logs
@@ -58,7 +58,7 @@ url_metrics = http://localhost:3002/send/metrics
 url_logs = http://localhost:3003/send/logs
 ------
 
---- remove_trailing_slash_config ---
+--- remove_trailing_slash_env ---
 url_traces = http://localhost:3001/send/traces
 url_metrics = http://localhost:3002/send/metrics
 url_logs = http://localhost:3003/send/logs

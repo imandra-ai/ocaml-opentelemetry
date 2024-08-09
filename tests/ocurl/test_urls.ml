@@ -21,7 +21,7 @@ let base_url_from_env () =
   test_urls ~name:"base_url_from_env" config
 
 let base_url_from_both_config_and_env () =
-  (* url from config should take precedence *)
+  (* url from env should take precedence *)
   Unix.putenv "OTEL_EXPORTER_OTLP_ENDPOINT" "http://localhost:5000";
   let config = Config.make ~url:"http://localhost:3000" () in
   test_urls ~name:"base_url_from_both_config_and_env" config
@@ -37,7 +37,7 @@ let override_trace_url_from_env () =
   Unix.putenv "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
     "http://localhost:3001/send/traces";
   let config = Config.make () in
-  test_urls ~name:"override_trace_url_from_config" config
+  test_urls ~name:"override_trace_url_from_env" config
 
 let override_trace_url_from_both_config_and_env () =
   Unix.putenv "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
@@ -63,7 +63,7 @@ let set_all_in_env () =
   Unix.putenv "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"
     "http://localhost:3003/send/logs";
   let config = Config.make () in
-  test_urls ~name:"set_all_in_config" config
+  test_urls ~name:"set_all_in_env" config
 
 let remove_trailing_slash_config () =
   let config = Config.make ~url:"http://localhost:3000/" () in
@@ -72,7 +72,7 @@ let remove_trailing_slash_config () =
 let remove_trailing_slash_env () =
   Unix.putenv "OTEL_EXPORTER_OTLP_ENDPOINT" "http://localhost:3000/";
   let config = Config.make () in
-  test_urls ~name:"remove_trailing_slash_config" config
+  test_urls ~name:"remove_trailing_slash_env" config
 
 let () = default_url ()
 

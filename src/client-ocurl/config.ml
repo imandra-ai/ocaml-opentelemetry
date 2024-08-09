@@ -45,30 +45,26 @@ let make ?(debug = !debug_) ?url ?url_traces ?url_metrics ?url_logs
 
   let url_traces, url_metrics, url_logs =
     let base_url =
-      match url with
-      | None -> Option.value (get_url_from_env ()) ~default:default_url
-      | Some url -> remove_trailing_slash url
+      let base_url =
+        match get_url_from_env () with
+        | None -> Option.value url ~default:default_url
+        | Some url -> remove_trailing_slash url
+      in
+      remove_trailing_slash base_url
     in
     let url_traces =
-      match url_traces with
-      | None ->
-        Option.value
-          (get_url_traces_from_env ())
-          ~default:(base_url ^ "/v1/traces")
+      match get_url_traces_from_env () with
+      | None -> Option.value url_traces ~default:(base_url ^ "/v1/traces")
       | Some url -> url
     in
     let url_metrics =
-      match url_metrics with
-      | None ->
-        Option.value
-          (get_url_metrics_from_env ())
-          ~default:(base_url ^ "/v1/metrics")
+      match get_url_metrics_from_env () with
+      | None -> Option.value url_metrics ~default:(base_url ^ "/v1/metrics")
       | Some url -> url
     in
     let url_logs =
-      match url_logs with
-      | None ->
-        Option.value (get_url_logs_from_env ()) ~default:(base_url ^ "/v1/logs")
+      match get_url_logs_from_env () with
+      | None -> Option.value url_logs ~default:(base_url ^ "/v1/logs")
       | Some url -> url
     in
     url_traces, url_metrics, url_logs
