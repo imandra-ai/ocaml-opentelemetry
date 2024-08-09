@@ -145,8 +145,7 @@ end = struct
     mutable send_threads: Thread.t array;  (** Threads that send data via http *)
   }
 
-  let send_http_ ~stop ~config (client : Curl.t) encoder ~path ~encode x : unit
-      =
+  let send_http_ ~stop ~config (client : Curl.t) encoder ~url ~encode x : unit =
     let@ _sc =
       Self_trace.with_ ~kind:Span.Span_kind_producer "otel-ocurl.send-http"
     in
@@ -160,15 +159,7 @@ end = struct
       Pbrt.Encoder.to_string encoder
     in
 
-    let url =
-      let url = config.Config.url in
-      if url <> "" && String.get url (String.length url - 1) = '/' then
-        String.sub url 0 (String.length url - 1)
-      else
-        url
-    in
-    let url = url ^ path in
-    if !debug_ || config.debug then
+    if !debug_ || config.Config.debug then
       Printf.eprintf "opentelemetry: send http POST to %s (%dB)\n%!" url
         (String.length data);
     let headers =
@@ -227,7 +218,7 @@ end = struct
     let x =
       Logs_service.default_export_logs_service_request ~resource_logs:l ()
     in
-    send_http_ ~stop ~config client encoder ~path:"/v1/logs"
+    send_http_ ~stop ~config client encoder ~url:config.Config.url_logs
       ~encode:Logs_service.encode_pb_export_logs_service_request x
 
   let send_metrics_http ~stop ~config curl encoder
@@ -242,7 +233,7 @@ end = struct
       Metrics_service.default_export_metrics_service_request ~resource_metrics:l
         ()
     in
-    send_http_ ~stop ~config curl encoder ~path:"/v1/metrics"
+    send_http_ ~stop ~config curl encoder ~url:config.Config.url_metrics
       ~encode:Metrics_service.encode_pb_export_metrics_service_request x
 
   let send_traces_http ~stop ~config curl encoder
@@ -256,7 +247,7 @@ end = struct
     let x =
       Trace_service.default_export_trace_service_request ~resource_spans:l ()
     in
-    send_http_ ~stop ~config curl encoder ~path:"/v1/traces"
+    send_http_ ~stop ~config curl encoder ~url:config.Config.url_traces
       ~encode:Trace_service.encode_pb_export_trace_service_request x
 
   let[@inline] send_event (self : t) ev : unit = B_queue.push self.q ev
@@ -514,7 +505,6 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
   let ((module B) as backend) = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
-  if config.url <> get_url () then set_url config.url;
   Atomic.set Self_trace.enabled config.self_trace;
 
   if config.ticker_thread then (

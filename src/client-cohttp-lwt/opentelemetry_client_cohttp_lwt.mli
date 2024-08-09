@@ -5,12 +5,6 @@
 
 open Common_
 
-val get_url : unit -> string
-
-val set_url : string -> unit
-(** Url of the endpoint. Default is "http://localhost:4318",
-    or "OTEL_EXPORTER_OTLP_ENDPOINT" if set. *)
-
 val get_headers : unit -> (string * string) list
 
 val set_headers : (string * string) list -> unit

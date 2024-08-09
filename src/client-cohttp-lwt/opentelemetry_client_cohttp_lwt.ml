@@ -72,8 +72,7 @@ module Httpc : sig
 
   val send :
     t ->
-    config:Config.t ->
-    path:string ->
+    url:string ->
     decode:[ `Dec of Pbrt.Decoder.t -> 'a | `Ret of 'a ] ->
     string ->
     ('a, error) result Lwt.t
@@ -91,17 +90,8 @@ end = struct
   let cleanup _self = ()
 
   (* send the content to the remote endpoint/path *)
-  let send (_self : t) ~(config : Config.t) ~path ~decode (bod : string) :
-      ('a, error) result Lwt.t =
-    let url =
-      let url = config.url in
-      if url <> "" && String.get url (String.length url - 1) = '/' then
-        String.sub url 0 (String.length url - 1)
-      else
-        url
-    in
-    let full_url = url ^ path in
-    let uri = Uri.of_string full_url in
+  let send (_self : t) ~url ~decode (bod : string) : ('a, error) result Lwt.t =
+    let uri = Uri.of_string url in
 
     let open Cohttp in
     let headers = Header.(add_list (init ()) !headers) in
@@ -121,7 +111,7 @@ end = struct
     | Error e ->
       let err =
         `Failure
-          (spf "sending signals via http POST to %S\nfailed with:\n%s" full_url
+          (spf "sending signals via http POST to %S\nfailed with:\n%s" url
              (Printexc.to_string e))
       in
       Lwt.return @@ Error err
@@ -158,7 +148,7 @@ end = struct
                     %s\n\
                     status: %S\n\
                     %s"
-                   full_url code (Printexc.to_string e) body bt))
+                   url code (Printexc.to_string e) body bt))
         in
         Lwt.return r
       )
@@ -292,11 +282,11 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
 
     let set_on_tick_callbacks = Atomic.set on_tick_cbs_
 
-    let send_http_ (httpc : Httpc.t) encoder ~path ~encode x : unit Lwt.t =
+    let send_http_ (httpc : Httpc.t) encoder ~url ~encode x : unit Lwt.t =
       Pbrt.Encoder.reset encoder;
       encode x encoder;
       let data = Pbrt.Encoder.to_string encoder in
-      let* r = Httpc.send httpc ~config ~path ~decode:(`Ret ()) data in
+      let* r = Httpc.send httpc ~url ~decode:(`Ret ()) data in
       match r with
       | Ok () -> Lwt.return ()
       | Error `Sysbreak ->
@@ -317,7 +307,8 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         Metrics_service.default_export_metrics_service_request
           ~resource_metrics:l ()
       in
-      send_http_ curl encoder ~path:"/v1/metrics"
+      let url = config.Config.url_metrics in
+      send_http_ curl encoder ~url
         ~encode:Metrics_service.encode_pb_export_metrics_service_request x
 
     let send_traces_http curl encoder (l : Trace.resource_spans list list) =
@@ -325,7 +316,8 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let x =
         Trace_service.default_export_trace_service_request ~resource_spans:l ()
       in
-      send_http_ curl encoder ~path:"/v1/traces"
+      let url = config.Config.url_traces in
+      send_http_ curl encoder ~url
         ~encode:Trace_service.encode_pb_export_trace_service_request x
 
     let send_logs_http curl encoder (l : Logs.resource_logs list list) =
@@ -333,7 +325,8 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let x =
         Logs_service.default_export_logs_service_request ~resource_logs:l ()
       in
-      send_http_ curl encoder ~path:"/v1/logs"
+      let url = config.Config.url_logs in
+      send_http_ curl encoder ~url
         ~encode:Logs_service.encode_pb_export_logs_service_request x
 
     (* emit metrics, if the batch is full or timeout lapsed *)
@@ -459,12 +452,13 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
   end in
   (module M)
 
-module Backend (Arg : sig
-  val stop : bool Atomic.t
+module Backend
+    (Arg : sig
+      val stop : bool Atomic.t
 
-  val config : Config.t
-end)
-() : Opentelemetry.Collector.BACKEND = struct
+      val config : Config.t
+    end)
+    () : Opentelemetry.Collector.BACKEND = struct
   include (val mk_emitter ~stop:Arg.stop ~config:Arg.config ())
 
   open Opentelemetry.Proto
@@ -475,10 +469,10 @@ end)
       send =
         (fun l ~ret ->
           (if !debug_ then
-            let@ () = Lock.with_lock in
-            Format.eprintf "send spans %a@."
-              (Format.pp_print_list Trace.pp_resource_spans)
-              l);
+             let@ () = Lock.with_lock in
+             Format.eprintf "send spans %a@."
+               (Format.pp_print_list Trace.pp_resource_spans)
+               l);
           push_trace l;
           ret ());
     }
@@ -532,10 +526,10 @@ end)
       send =
         (fun m ~ret ->
           (if !debug_ then
-            let@ () = Lock.with_lock in
-            Format.eprintf "send metrics %a@."
-              (Format.pp_print_list Metrics.pp_resource_metrics)
-              m);
+             let@ () = Lock.with_lock in
+             Format.eprintf "send metrics %a@."
+               (Format.pp_print_list Metrics.pp_resource_metrics)
+               m);
 
           let m = List.rev_append (additional_metrics ()) m in
           push_metrics m;
@@ -547,10 +541,10 @@ end)
       send =
         (fun m ~ret ->
           (if !debug_ then
-            let@ () = Lock.with_lock in
-            Format.eprintf "send logs %a@."
-              (Format.pp_print_list Logs.pp_resource_logs)
-              m);
+             let@ () = Lock.with_lock in
+             Format.eprintf "send logs %a@."
+               (Format.pp_print_list Logs.pp_resource_logs)
+               m);
 
           push_logs m;
           ret ());
@@ -559,8 +553,6 @@ end
 
 let create_backend ?(stop = Atomic.make false) ?(config = Config.make ()) () =
   debug_ := config.debug;
-
-  if config.url <> get_url () then set_url config.url;
 
   let module B =
     Backend

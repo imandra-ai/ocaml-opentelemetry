@@ -74,8 +74,6 @@ let run_job () : unit Lwt.t =
   done
 
 let run () : unit Lwt.t =
-  Printf.printf "collector is on %S\n%!"
-    (Opentelemetry_client_cohttp_lwt.get_url ());
   T.GC_metrics.basic_setup ();
 
   T.Metrics_callbacks.register (fun () ->

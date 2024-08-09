@@ -1,4 +1,4 @@
 (tests
- (names test_get_url)
+ (names test_urls)
  (package opentelemetry-client-cohttp-lwt)
  (libraries opentelemetry opentelemetry-client-cohttp-lwt))
