@@ -78,7 +78,6 @@ let run_job () =
   done
 
 let run () =
-  Printf.printf "collector is on %S\n%!" (Opentelemetry_client_ocurl.get_url ());
   T.GC_metrics.basic_setup ();
 
   T.Metrics_callbacks.register (fun () ->
