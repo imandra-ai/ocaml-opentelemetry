@@ -1,4 +1,10 @@
 
+## 0.10
+
+- feat: add support for per-signal urls (by @tatchi)
+- build: disable protobuf regeneration during normal library use
+- fix: emit GC metrics even in the absence of custom metrics
+
 ## 0.9
 
 - compat with trace 0.7
