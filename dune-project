@@ -28,7 +28,8 @@
    (>= "4.08"))
   ptime
   hmap
-  ambient-context
+  atomic
+  (thread-local-storage (and (>= 0.2) (< 0.3)))
   (odoc :with-doc)
   (alcotest :with-test)
   (pbrt
