@@ -29,20 +29,26 @@
   ptime
   hmap
   atomic
-  (thread-local-storage (and (>= 0.2) (< 0.3)))
+  (thread-local-storage
+   (and
+    (>= 0.2)
+    (< 0.3)))
   (odoc :with-doc)
   (alcotest :with-test)
   (pbrt
-   (and (>= 3.0) (< 4.0)))
+   (and
+    (>= 3.0)
+    (< 4.0)))
   (ocaml-lsp-server :with-dev-setup)
   (ocamlformat
    (and
     :with-dev-setup
     (>= 0.24)
     (< 0.25))))
- (depopts trace)
+ (depopts trace lwt eio)
  (conflicts
-  (trace (< 0.7)))
+  (trace
+   (< 0.7)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
