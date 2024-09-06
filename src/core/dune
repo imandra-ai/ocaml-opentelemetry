@@ -2,6 +2,6 @@
  (name opentelemetry)
  (synopsis "API for opentelemetry instrumentation")
  (flags :standard -warn-error -a+8)
- (libraries opentelemetry.proto ambient-context ptime ptime.clock.os pbrt threads
+ (libraries opentelemetry.proto opentelemetry.ambient-context ptime ptime.clock.os pbrt threads
    opentelemetry.atomic hmap)
  (public_name opentelemetry))

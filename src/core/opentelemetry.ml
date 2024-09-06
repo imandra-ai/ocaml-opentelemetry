@@ -2,6 +2,8 @@
 
 open struct
   let spf = Printf.sprintf
+
+  module Ambient_context = Opentelemetry_ambient_context
 end
 
 module Lock = Lock
