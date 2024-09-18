@@ -190,7 +190,8 @@ end = struct
             spf "(could not decode status)\nraw bytes: %s" (str_to_hex body)
         in
         Printf.eprintf
-          "opentelemetry: error while sending:\n  code=%d\n  %s\n%!" code body
+          "opentelemetry: error while sending data to %s:\n  code=%d\n  %s\n%!"
+          url code body
       );
       ()
     | exception Sys.Break ->
