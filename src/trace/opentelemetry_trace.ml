@@ -162,7 +162,7 @@ module Internal = struct
 
     let parent_id = Option.map Otel.Span_ctx.parent_id parent in
     Span.create ~kind ~trace_id:scope.trace_id ?parent:parent_id
-      ~id:scope.span_id ~start_time ~end_time ~attrs name
+      ~id:scope.span_id ~start_time ~end_time ~attrs ~events:scope.events name
     |> fst
 
   let exit_span' otrace_id otel_span_begin =
