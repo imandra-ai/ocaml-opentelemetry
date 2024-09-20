@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
+      # needed for depext to work
+      - run: sudo apt-get update && sudo apt-get install mccs
+
       - uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: '5.1.x'
