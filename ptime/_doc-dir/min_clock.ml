@@ -2,13 +2,13 @@
    Compile with:
 
    ocamlfind ocamlopt \
-     -package ptime.clock.os -linkpkg -o min_clock.native min_clock.ml
+     -package ptime.clock -linkpkg -o min_clock.native min_clock.ml
 
    ocamlfind ocamlc \
-     -package ptime.clock.os -linkpkg -o min_clock.byte min_clock.ml
+     -package ptime.clock -linkpkg -o min_clock.byte min_clock.ml
 
    js_of_ocaml \
-     $(ocamlfind query -format "%+(jsoo_runtime)" -r ptime.clock.os) \
+     $(ocamlfind query -format "%+(jsoo_runtime)" -r ptime.clock) \
      min_clock.byte
 *)
 

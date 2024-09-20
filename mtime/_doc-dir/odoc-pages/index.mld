@@ -1,4 +1,4 @@
-{0 Mtime {%html: <span class="version">v2.0.0</span>%}}
+{0 Mtime {%html: <span class="version">v2.1.0</span>%}}
 
 Mtime has platform independent support for monotonic wall-clock time.
 This time increases monotonically and is not subject to operating
@@ -16,4 +16,5 @@ monotonic system clock} and its resolution (if available).
 
 {!modules: Mtime_clock}
 
-Also use this library for compiling to JavaScript.
+This library also works with JavaScript, see the
+{{!Mtime_clock.platform_support}platform support}.

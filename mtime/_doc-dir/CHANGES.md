@@ -1,3 +1,14 @@
+v2.1.0 2024-09-10 Zagreb
+------------------------
+
+- Add `Mtime.Span.{is_shorter,is_longer}` to make duration
+  comparisons more obivous. Thanks to Pau Ruiz Safont for
+  the suggestion and the patch.
+- Regularize naming structure. The `mtime.clock.os` library
+  is deprecated. Use `mtime.clock` instead.
+- Make the library `mtime.clock` export `mtime`.
+
+
 v2.0.0 2022-12-02 Zagreb
 ------------------------
 

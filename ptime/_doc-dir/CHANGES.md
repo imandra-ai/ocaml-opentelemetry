@@ -1,3 +1,16 @@
+v1.2.0 2024-09-10 Zagreb
+------------------------
+
+- Fix fractional renderings of `Ptime.Span.pp` with leading zeros. For
+  example 1.036s would render as 1.36s. This is a *rendering* bug in a
+  function for human display, not a bug in the computations or
+  conversion functions of `Ptime`.
+- Add `Ptime.weekday` type for naming the result of the `Ptime.weekday`
+  function.
+- Regularize naming structure. The `ptime.clock.os` library is deprecated. 
+  Use `ptime.clock` instead.
+- Make the library `ptime.clock` export `ptime`.
+
 v1.1.0 2022-12-02 Zagreb
 ------------------------
 
