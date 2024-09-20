@@ -1,5 +1,4 @@
-
 (tests
- (names test_trace_context )
+ (names test_trace_context)
  (package opentelemetry)
  (libraries opentelemetry))

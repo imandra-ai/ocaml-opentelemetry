@@ -4,8 +4,13 @@
  (synopsis
   "Abstraction over thread-local storage and fiber-local storage mechanisms")
  (private_modules hmap_key_)
- (libraries thread-local-storage threads atomic
+ (libraries
+  thread-local-storage
+  threads
+  atomic
   opentelemetry.ambient-context.types
-  (select hmap_key_.ml from
-          (rcontext hmap -> hmap_key_.rcontext.ml)
-          (-> hmap_key_.new.ml))))
+  (select
+   hmap_key_.ml
+   from
+   (rcontext hmap -> hmap_key_.rcontext.ml)
+   (-> hmap_key_.new.ml))))
