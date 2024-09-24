@@ -29,8 +29,8 @@ module Trace = struct
       Lwt.return rv
     with e ->
       let bt = Printexc.get_raw_backtrace () in
-      let () = finally (Error (Printexc.to_string e, bt)) in
-      Lwt.fail e
+      let () = finally (Error (e, bt)) in
+      raise e
 end
 
 module Metrics = struct

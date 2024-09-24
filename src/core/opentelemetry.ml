@@ -776,6 +776,21 @@ module Scope = struct
   let[@inline] add_event (scope : t) (ev : unit -> Event.t) : unit =
     if Collector.has_backend () then scope.events <- ev () :: scope.events
 
+  let[@inline] record_exception (scope : t) (exn : exn)
+      (bt : Printexc.raw_backtrace) : unit =
+    if Collector.has_backend () then (
+      let ev =
+        Event.make "exception"
+          ~attrs:
+            [
+              "message", `String (Printexc.to_string exn);
+              "type", `String (Printexc.exn_slot_name exn);
+              "stacktrace", `String (Printexc.raw_backtrace_to_string bt);
+            ]
+      in
+      scope.events <- ev :: scope.events
+    )
+
   (** Add an attr to the scope. It will be aggregated into the span.
 
       Note that this takes a function that produces attributes, and will only
@@ -1032,11 +1047,9 @@ module Trace = struct
         | Ok () -> default_status ~code:Status_code_ok ()
         | Error (e, bt) ->
           (* add backtrace *)
-          add_event scope (fun () ->
-              Event.make "error"
-                ~attrs:
-                  [ "backtrace", `String (Printexc.raw_backtrace_to_string bt) ]);
-          default_status ~code:Status_code_error ~message:e ()
+          Scope.record_exception scope e bt;
+          default_status ~code:Status_code_error ~message:(Printexc.to_string e)
+            ()
       in
       let span, _ =
         (* TODO: should the attrs passed to with_ go on the Span
@@ -1084,7 +1097,7 @@ module Trace = struct
       rv
     with e ->
       let bt = Printexc.get_raw_backtrace () in
-      finally (Error (Printexc.to_string e, bt));
+      finally (Error (e, bt));
       raise e
 end
 
