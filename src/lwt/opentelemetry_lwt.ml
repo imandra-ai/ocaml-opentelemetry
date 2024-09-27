@@ -11,6 +11,10 @@ module GC_metrics = GC_metrics
 module Metrics_callbacks = Metrics_callbacks
 module Trace_context = Trace_context
 
+external reraise : exn -> 'a = "%reraise"
+(** This is equivalent to [Lwt.reraise]. We inline it here so we don't force
+    to use Lwt's latest version *)
+
 module Trace = struct
   include Trace
 
@@ -29,8 +33,8 @@ module Trace = struct
       Lwt.return rv
     with e ->
       let bt = Printexc.get_raw_backtrace () in
-      let () = finally (Error (Printexc.to_string e, bt)) in
-      Lwt.fail e
+      let () = finally (Error (e, bt)) in
+      reraise e
 end
 
 module Metrics = struct
