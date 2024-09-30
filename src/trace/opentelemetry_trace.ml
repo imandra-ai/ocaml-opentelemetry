@@ -144,6 +144,12 @@ module Internal = struct
     let end_time = Timestamp_ns.now_unix_ns () in
     let kind, attrs = otel_attrs_of_otrace_data scope.attrs in
 
+    let status : Span.status =
+      match List.assoc_opt "exception.message" scope.attrs with
+      | Some (`String message) -> { message; code = Span.Status_code_error }
+      | _ -> { message = ""; code = Span.Status_code_ok }
+    in
+
     let attrs =
       match __FUNCTION__ with
       | None ->
@@ -166,7 +172,7 @@ module Internal = struct
     in
 
     let parent_id = Option.map Otel.Span_ctx.parent_id parent in
-    Span.create ~kind ~trace_id:scope.trace_id ?parent:parent_id
+    Span.create ~kind ~trace_id:scope.trace_id ?parent:parent_id ~status
       ~id:scope.span_id ~start_time ~end_time ~attrs ~events:scope.events name
     |> fst
 
