@@ -41,6 +41,11 @@ module Well_known = struct
         data
     in
     !kind, data
+
+  (** Key to store an error [Otel.Span.status] with the message.
+      Set ["otrace.error" = "mymsg"] in a span data to set the span's status
+      to [{message="mymsg"; code=Error}]. *)
+  let status_error_key = "otrace.error"
 end
 
 open Well_known
@@ -145,7 +150,7 @@ module Internal = struct
     let kind, attrs = otel_attrs_of_otrace_data scope.attrs in
 
     let status : Span.status =
-      match List.assoc_opt "exception.message" scope.attrs with
+      match List.assoc_opt Well_known.status_error_key scope.attrs with
       | Some (`String message) -> { message; code = Span.Status_code_error }
       | _ -> { message = ""; code = Span.Status_code_ok }
     in
