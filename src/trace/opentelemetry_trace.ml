@@ -1,6 +1,6 @@
 module Otel = Opentelemetry
 module Otrace = Trace_core (* ocaml-trace *)
-module TLS = Ambient_context_tls.TLS
+module TLS = Thread_local_storage
 
 open struct
   let spf = Printf.sprintf
@@ -75,9 +75,14 @@ module Internal = struct
 
     let create () : t = { tbl = Active_span_tbl.create 32 }
 
-    let tls : t TLS.t = TLS.create ()
+    let k_tls : t TLS.t = TLS.create ()
 
-    let[@inline] get () : t = TLS.get_or_create tls ~create
+    let[@inline] get () : t =
+      try TLS.get_exn k_tls
+      with TLS.Not_set ->
+        let self = create () in
+        TLS.set k_tls self;
+        self
   end
 
   let otrace_of_otel (id : Otel.Span_id.t) : int64 =

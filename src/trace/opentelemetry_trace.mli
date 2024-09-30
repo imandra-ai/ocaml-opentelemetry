@@ -1,6 +1,6 @@
 module Otel := Opentelemetry
 module Otrace := Trace_core
-module TLS := Ambient_context_tls.TLS
+module TLS := Thread_local_storage
 
 (** [opentelemetry.trace] implements a {!Trace_core.Collector} for
     {{:https://v3.ocaml.org/p/trace} ocaml-trace}.
@@ -176,7 +176,7 @@ module Internal : sig
 
     val create : unit -> t
 
-    val tls : t TLS.t
+    val k_tls : t TLS.t
 
     val get : unit -> t
   end
