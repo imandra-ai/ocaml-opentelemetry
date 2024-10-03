@@ -15,7 +15,6 @@ bug-reports: "https://github.com/imandra-ai/ocaml-opentelemetry/issues"
 depends: [
   "dune" {>= "2.9"}
   "ocaml" {>= "4.08"}
-  "ambient-context"
   "opentelemetry" {= version}
   "cohttp-lwt-unix" {with-test}
   "odoc" {with-doc}

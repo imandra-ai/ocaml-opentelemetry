@@ -58,7 +58,6 @@
  (depends
   (ocaml
    (>= "4.08"))
-  ambient-context
   (opentelemetry
    (= :version))
   (cohttp-lwt-unix :with-test)
