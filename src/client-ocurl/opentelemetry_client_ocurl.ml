@@ -38,6 +38,7 @@ module Self_trace = struct
           span_id = dummy_span_id;
           attrs = [];
           events = [];
+          links = [];
         }
       in
       f scope

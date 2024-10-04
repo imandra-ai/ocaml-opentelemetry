@@ -751,75 +751,6 @@ end = struct
     default_span_event ~time_unix_nano ~name ~attributes:attrs ()
 end
 
-(** {2 Scopes} *)
-
-(** Scopes.
-
-    A scope is a trace ID and the span ID of the currently active span.
-*)
-module Scope = struct
-  type t = {
-    trace_id: Trace_id.t;
-    span_id: Span_id.t;
-    mutable events: Event.t list;
-    mutable attrs: key_value list;
-  }
-
-  (** Turn the scope into a span context *)
-  let[@inline] to_span_ctx (self : t) : Span_ctx.t =
-    Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
-
-  (** Add an event to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces an event, and will only
-      call it if there is an instrumentation backend. *)
-  let[@inline] add_event (scope : t) (ev : unit -> Event.t) : unit =
-    if Collector.has_backend () then scope.events <- ev () :: scope.events
-
-  let[@inline] record_exception (scope : t) (exn : exn)
-      (bt : Printexc.raw_backtrace) : unit =
-    if Collector.has_backend () then (
-      let ev =
-        Event.make "exception"
-          ~attrs:
-            [
-              "message", `String (Printexc.to_string exn);
-              "type", `String (Printexc.exn_slot_name exn);
-              "stacktrace", `String (Printexc.raw_backtrace_to_string bt);
-            ]
-      in
-      scope.events <- ev :: scope.events
-    )
-
-  (** Add an attr to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces attributes, and will only
-      call it if there is an instrumentation backend. *)
-  let[@inline] add_attrs (scope : t) (attrs : unit -> key_value list) : unit =
-    if Collector.has_backend () then
-      scope.attrs <- List.rev_append (attrs ()) scope.attrs
-
-  (** The opaque key necessary to access/set the ambient scope with
-      {!Ambient_context}. *)
-  let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
-
-  (** Obtain current scope from {!Ambient_context}, if available. *)
-  let get_ambient_scope ?scope () : t option =
-    match scope with
-    | Some _ -> scope
-    | None -> Ambient_context.get ambient_scope_key
-
-  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
-      the (thread|continuation)-local scope, then reverts to the previous local
-      scope, if any.
-
-      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
-  let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
-    Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
-end
-
-(** {2 Traces} *)
-
 (** Span Link
 
    A pointer from the current span to another span in the same trace or in a
@@ -858,10 +789,88 @@ end = struct
       ~span_id:(Span_id.to_bytes span_id) ?trace_state ~attributes
       ?dropped_attributes_count ()
 
-  let[@inline] of_span_ctx ?attrs ctx : t =
+  let[@inline] of_span_ctx ?attrs (ctx : Span_ctx.t) : t =
     make ~trace_id:(Span_ctx.trace_id ctx) ~span_id:(Span_ctx.parent_id ctx)
       ?attrs ()
 end
+
+(** {2 Scopes} *)
+
+(** Scopes.
+
+    A scope is a trace ID and the span ID of the currently active span.
+*)
+module Scope = struct
+  type t = {
+    trace_id: Trace_id.t;
+    span_id: Span_id.t;
+    mutable events: Event.t list;
+    mutable attrs: key_value list;
+    mutable links: Span_link.t list;
+  }
+
+  (** Turn the scope into a span context *)
+  let[@inline] to_span_ctx (self : t) : Span_ctx.t =
+    Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
+
+  (** Add an event to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces an event, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_event (scope : t) (ev : unit -> Event.t) : unit =
+    if Collector.has_backend () then scope.events <- ev () :: scope.events
+
+  let[@inline] record_exception (scope : t) (exn : exn)
+      (bt : Printexc.raw_backtrace) : unit =
+    if Collector.has_backend () then (
+      let ev =
+        Event.make "exception"
+          ~attrs:
+            [
+              "message", `String (Printexc.to_string exn);
+              "type", `String (Printexc.exn_slot_name exn);
+              "stacktrace", `String (Printexc.raw_backtrace_to_string bt);
+            ]
+      in
+      scope.events <- ev :: scope.events
+    )
+
+  (** Add attributes to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces attributes, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_attrs (scope : t) (attrs : unit -> key_value list) : unit =
+    if Collector.has_backend () then
+      scope.attrs <- List.rev_append (attrs ()) scope.attrs
+
+  (** Add links to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces links, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_links (scope : t) (links : unit -> Span_link.t list) : unit =
+    if Collector.has_backend () then
+      scope.links <- List.rev_append (links ()) scope.links
+
+  (** The opaque key necessary to access/set the ambient scope with
+      {!Ambient_context}. *)
+  let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
+
+  (** Obtain current scope from {!Ambient_context}, if available. *)
+  let get_ambient_scope ?scope () : t option =
+    match scope with
+    | Some _ -> scope
+    | None -> Ambient_context.get ambient_scope_key
+
+  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
+      the (thread|continuation)-local scope, then reverts to the previous local
+      scope, if any.
+
+      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
+  let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
+    Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
+end
+
+(** {2 Traces} *)
 
 (** Spans.
 
@@ -1007,6 +1016,7 @@ module Trace = struct
     span_id: Span_id.t;
     mutable events: Event.t list;
     mutable attrs: Span.key_value list;
+    mutable links: Span_link.t list;
   }
   [@@deprecated "use Scope.t"]
 
@@ -1016,7 +1026,7 @@ module Trace = struct
 
   let with_' ?(force_new_trace_id = false) ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
-      ?links name cb =
+      ?(links = []) name cb =
     let scope =
       if force_new_trace_id then
         None
@@ -1039,7 +1049,7 @@ module Trace = struct
     in
     let start_time = Timestamp_ns.now_unix_ns () in
     let span_id = Span_id.create () in
-    let scope = { trace_id; span_id; events = []; attrs } in
+    let scope = { trace_id; span_id; events = []; attrs; links } in
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
@@ -1055,8 +1065,8 @@ module Trace = struct
         (* TODO: should the attrs passed to with_ go on the Span
            (in Span.create) or on the ResourceSpan (in emit)?
            (question also applies to Opentelemetry_lwt.Trace.with) *)
-        Span.create ?kind ~trace_id ?parent ?links ~id:span_id ?trace_state
-          ~attrs:scope.attrs ~events:scope.events ~start_time
+        Span.create ?kind ~trace_id ?parent ~links:scope.links ~id:span_id
+          ?trace_state ~attrs:scope.attrs ~events:scope.events ~start_time
           ~end_time:(Timestamp_ns.now_unix_ns ())
           ~status name
       in
