@@ -12,5 +12,4 @@
   (select
    hmap_key_.ml
    from
-   (rcontext hmap -> hmap_key_.rcontext.ml)
    (-> hmap_key_.new.ml))))
