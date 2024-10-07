@@ -111,8 +111,7 @@ end = struct
     | Some v ->
       (match Traceparent.of_value v with
       | Ok (trace_id, parent_id) ->
-        Some
-          Otel.Trace.{ trace_id; span_id = parent_id; events = []; attrs = [] }
+        Some (Otel.Scope.make ~trace_id ~span_id:parent_id ())
       | Error _ -> None)
 
   let remove_trace_context req =
