@@ -121,15 +121,7 @@ module Internal = struct
       | None, None -> None
     in
 
-    let new_scope =
-      {
-        Scope.span_id = otel_id;
-        trace_id;
-        events = [];
-        attrs = data;
-        links = [];
-      }
-    in
+    let new_scope = Otel.Scope.make ~trace_id ~span_id:otel_id ~attrs:data () in
 
     let start_time = Timestamp_ns.now_unix_ns () in
     let sb =

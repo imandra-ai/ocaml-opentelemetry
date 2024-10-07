@@ -809,6 +809,10 @@ module Scope = struct
     mutable links: Span_link.t list;
   }
 
+  let make ~trace_id ~span_id ?(events = []) ?(attrs = []) ?(links = []) () : t
+      =
+    { trace_id; span_id; events; attrs; links }
+
   (** Turn the scope into a span context *)
   let[@inline] to_span_ctx (self : t) : Span_ctx.t =
     Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
@@ -1049,7 +1053,7 @@ module Trace = struct
     in
     let start_time = Timestamp_ns.now_unix_ns () in
     let span_id = Span_id.create () in
-    let scope = { trace_id; span_id; events = []; attrs; links } in
+    let scope = Scope.make ~trace_id ~span_id ~attrs ~links () in
     (* called once we're done, to emit a span *)
     let finally res =
       let status =

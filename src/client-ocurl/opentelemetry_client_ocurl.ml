@@ -33,13 +33,7 @@ module Self_trace = struct
     else (
       (* do nothing *)
       let scope =
-        {
-          Scope.trace_id = dummy_trace_id_;
-          span_id = dummy_span_id;
-          attrs = [];
-          events = [];
-          links = [];
-        }
+        Scope.make ~trace_id:dummy_trace_id_ ~span_id:dummy_span_id ()
       in
       f scope
     )
