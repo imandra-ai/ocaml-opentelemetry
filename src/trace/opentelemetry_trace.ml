@@ -145,10 +145,10 @@ module Internal = struct
       { start_time; name; __FILE__; __LINE__; __FUNCTION__; scope; parent } =
     let open Otel in
     let end_time = Timestamp_ns.now_unix_ns () in
-    let kind, attrs = otel_attrs_of_otrace_data scope.attrs in
+    let kind, attrs = otel_attrs_of_otrace_data (Scope.attrs scope) in
 
     let status : Span.status =
-      match List.assoc_opt Well_known.status_error_key scope.attrs with
+      match List.assoc_opt Well_known.status_error_key attrs with
       | Some (`String message) -> { message; code = Span.Status_code_error }
       | _ -> { message = ""; code = Span.Status_code_ok }
     in
@@ -176,7 +176,8 @@ module Internal = struct
 
     let parent_id = Option.map Otel.Span_ctx.parent_id parent in
     Span.create ~kind ~trace_id:scope.trace_id ?parent:parent_id ~status
-      ~id:scope.span_id ~start_time ~end_time ~attrs ~events:scope.events name
+      ~id:scope.span_id ~start_time ~end_time ~attrs
+      ~events:(Scope.events scope) name
     |> fst
 
   let exit_span' otrace_id otel_span_begin =
@@ -247,13 +248,13 @@ module Internal = struct
       let active_spans = Active_spans.get () in
       match Active_span_tbl.find_opt active_spans.tbl otrace_id with
       | None -> !on_internal_error (spf "no active span with ID %Ld" otrace_id)
-      | Some sb -> sb.scope.attrs <- List.rev_append data sb.scope.attrs
+      | Some sb -> Otel.Scope.add_attrs sb.scope (fun () -> data)
 
     let add_data_to_manual_span (span : Otrace.explicit_span) data : unit =
       match Otrace.Meta_map.find_exn k_explicit_scope span.meta with
       | exception _ ->
         !on_internal_error (spf "manual span does not a contain an OTEL scope")
-      | scope -> scope.attrs <- List.rev_append data scope.attrs
+      | scope -> Otel.Scope.add_attrs scope (fun () -> data)
 
     let message ?span ~data:_ msg : unit =
       (* gather information from context *)
