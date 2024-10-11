@@ -21,7 +21,7 @@ let gc_metrics = AList.make ()
 module Self_trace = struct
   let enabled = Atomic.make true
 
-  let add_event (scope : Scope.t) ev = scope.events <- ev :: scope.events
+  let add_event (scope : Scope.t) ev = Scope.add_event scope (fun () -> ev)
 
   let dummy_trace_id_ = Trace_id.create ()
 
