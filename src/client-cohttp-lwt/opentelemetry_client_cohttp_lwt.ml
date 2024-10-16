@@ -567,7 +567,6 @@ let create_backend ?(stop = Atomic.make false) ?(config = Config.make ()) () =
 
 let setup_ ?stop ?config () =
   let backend = create_backend ?stop ?config () in
-  let (module B : OT.Collector.BACKEND) = backend in
   OT.Collector.set_backend backend;
   OT.Collector.remove_backend
 
