@@ -508,12 +508,7 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
     let sleep_ms = min 60_000 (max 2 config.ticker_interval_ms) in
     ignore (setup_ticker_thread ~stop ~sleep_ms backend () : Thread.t)
   );
-
-  let cleanup () =
-    B.tick ();
-    B.cleanup ()
-  in
-  cleanup
+  OT.Collector.remove_backend
 
 let setup ?stop ?config ?(enable = true) () =
   if enable then (
