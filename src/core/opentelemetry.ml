@@ -3,6 +3,7 @@
 open struct
   let spf = Printf.sprintf
 
+  module Atomic = Opentelemetry_atomic.Atomic
   module Ambient_context = Opentelemetry_ambient_context
 end
 
@@ -163,33 +164,37 @@ module Collector = struct
   open struct
     let on_tick_cbs_ = AList.make ()
 
-    let backend : backend option ref = ref None
+    let backend : backend option Atomic.t = Atomic.make None
   end
 
   (** Set collector backend *)
   let set_backend (b : backend) : unit =
     let (module B) = b in
     B.set_on_tick_callbacks on_tick_cbs_;
-    backend := Some b
+    Atomic.set backend (Some b)
+
+  (** Remove current backend, if any.
+      @since NEXT_RELEASE *)
+  let remove_backend () : unit = Atomic.set backend None
 
   (** Is there a configured backend? *)
-  let[@inline] has_backend () : bool = !backend != None
+  let[@inline] has_backend () : bool = Atomic.get backend != None
 
   (** Current backend, if any *)
-  let[@inline] get_backend () : backend option = !backend
+  let[@inline] get_backend () : backend option = Atomic.get backend
 
   let send_trace (l : Trace.resource_spans list) ~ret =
-    match !backend with
+    match Atomic.get backend with
     | None -> ret ()
     | Some (module B) -> B.send_trace.send l ~ret
 
   let send_metrics (l : Metrics.resource_metrics list) ~ret =
-    match !backend with
+    match Atomic.get backend with
     | None -> ret ()
     | Some (module B) -> B.send_metrics.send l ~ret
 
   let send_logs (l : Logs.resource_logs list) ~ret =
-    match !backend with
+    match Atomic.get backend with
     | None -> ret ()
     | Some (module B) -> B.send_logs.send l ~ret
 
@@ -202,7 +207,7 @@ module Collector = struct
   (** Do background work. Call this regularly if the collector doesn't
       already have a ticker thread or internal timer. *)
   let tick () =
-    match !backend with
+    match Atomic.get backend with
     | None -> ()
     | Some (module B) -> B.tick ()
 
