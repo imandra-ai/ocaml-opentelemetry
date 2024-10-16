@@ -7,9 +7,11 @@ connectors to talk to opentelemetry software such as [jaeger](https://www.jaeger
 
 - library `opentelemetry` should be used to instrument your code
   and possibly libraries. It doesn't communicate with anything except
-  a backend (default: dummy backend)
+  a backend (default: dummy backend);
 - library `opentelemetry-client-ocurl` is a backend that communicates
-  via http+protobuf with some collector (otelcol, datadog-agent, etc.)
+  via http+protobuf with some collector (otelcol, datadog-agent, etc.) using cURL bindings;
+- library `opentelemetry-client-cohttp-lwt` is a backend that communicates
+  via http+protobuf with some collector using cohttp.
 
 ## License
 
@@ -53,7 +55,7 @@ let foo () =
 If you're writing a top-level application, you need to perform some initial configuration.
 
 1. Set the [`service_name`][];
-2. configure our [ambient-context][] dependency with the appropriate storage for your environment — TLS, Lwt, Eio ... (see [their docs][install-ambient-storage] for more details);
+2. optionally configure [ambient-context][] with the appropriate storage for your environment — TLS, Lwt, Eio…;
 3. and install a [`Collector`][] (usually by calling your collector's `with_setup` function.)
 
 For example, if your application is using Lwt, and you're using `ocurl` as your collector, you might do something like this:
@@ -63,7 +65,7 @@ let main () =
   Otel.Globals.service_name := "my_service";
   Otel.GC_metrics.basic_setup();
 
-  Ambient_context.with_storage_provider (Ambient_context_lwt.storage ()) @@ fun () ->
+  Opentelemetry_ambient_context.set_storage_provider (Opentelemetry_ambient_context_lwt.storage ());
   Opentelemetry_client_ocurl.with_setup () @@ fun () ->
   (* … *)
   foo ();
@@ -72,8 +74,7 @@ let main () =
 
   [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Globals/index.html#val-service_name>
   [`Collector`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Collector/index.html>
-  [ambient-context]: <https://v3.ocaml.org/p/ambient-context>
-  [install-ambient-storage]: <https://github.com/ELLIOTTCABLE/ocaml-ambient-context#-as-a-top-level-application>
+  [ambient-context]: now vendored as `opentelemetry.ambient-context`, formerly <https://v3.ocaml.org/p/ambient-context>
 
 ## Configuration
 
@@ -89,6 +90,10 @@ opentelemetry env variables, or with some custom environment variables.
 This is a synchronous collector that uses the http+protobuf format
 to send signals (metrics, traces, logs) to some other collector (eg. `otelcol`
 or the datadog agent).
+
+Do note that this backend uses a thread pool and is incompatible
+with uses of `fork` on some Unixy systems.
+See [#68](https://github.com/imandra-ai/ocaml-opentelemetry/issues/68) for a possible workaround.
 
 ## Collector opentelemetry-client-cohttp-lwt
 
