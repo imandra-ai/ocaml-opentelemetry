@@ -569,7 +569,11 @@ let setup_ ?stop ?config () =
   let backend = create_backend ?stop ?config () in
   let (module B : OT.Collector.BACKEND) = backend in
   OT.Collector.set_backend backend;
-  B.cleanup
+  let cleanup () =
+    B.tick ();
+    B.cleanup ()
+  in
+  cleanup
 
 let setup ?stop ?config ?(enable = true) () =
   if enable then (
