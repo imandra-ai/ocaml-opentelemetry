@@ -498,7 +498,7 @@ let setup_ticker_thread ~stop ~sleep_ms (module B : Collector.BACKEND) () =
 
 let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
     =
-  let ((module B) as backend) = create_backend ~stop ~config () in
+  let backend = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
   Atomic.set Self_trace.enabled config.self_trace;
