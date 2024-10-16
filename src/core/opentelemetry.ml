@@ -175,7 +175,12 @@ module Collector = struct
 
   (** Remove current backend, if any.
       @since NEXT_RELEASE *)
-  let remove_backend () : unit = Atomic.set backend None
+  let remove_backend () : unit =
+    match Atomic.exchange backend None with
+    | None -> ()
+    | Some (module B) ->
+      B.tick ();
+      B.cleanup ()
 
   (** Is there a configured backend? *)
   let[@inline] has_backend () : bool = Atomic.get backend != None
