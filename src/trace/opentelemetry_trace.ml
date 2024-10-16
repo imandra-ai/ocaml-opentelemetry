@@ -200,11 +200,19 @@ module Internal = struct
       in
 
       Otel.Scope.with_ambient_scope sb.scope @@ fun () ->
-      let rv = cb otrace_id in
+      match cb otrace_id with
+      | res ->
+        let otel_span = exit_span' otrace_id sb in
+        Otel.Trace.emit [ otel_span ];
+        res
+      | exception e ->
+        let bt = Printexc.get_raw_backtrace () in
 
-      let otel_span = exit_span' otrace_id sb in
-      Otel.Trace.emit [ otel_span ];
-      rv
+        Otel.Scope.record_exception sb.scope e bt;
+        let otel_span = exit_span' otrace_id sb in
+        Otel.Trace.emit [ otel_span ];
+
+        Printexc.raise_with_backtrace e bt
 
     let enter_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name :
         Trace_core.span =
