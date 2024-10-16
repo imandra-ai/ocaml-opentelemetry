@@ -509,7 +509,11 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
     ignore (setup_ticker_thread ~stop ~sleep_ms backend () : Thread.t)
   );
 
-  B.cleanup
+  let cleanup () =
+    B.tick ();
+    B.cleanup ()
+  in
+  cleanup
 
 let setup ?stop ?config ?(enable = true) () =
   if enable then (
