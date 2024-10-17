@@ -258,7 +258,8 @@ end
 
    exceptions inside should be caught, see
    https://opentelemetry.io/docs/reference/specification/error-handling/ *)
-let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
+let mk_emitter ~(after_cleanup : unit Lwt.u option) ~stop ~(config : Config.t)
+    () : (module EMITTER) =
   let open Proto in
   let open Lwt.Syntax in
   (* local helpers *)
@@ -448,6 +449,8 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       Lwt.async (fun () ->
           let* () = emit_all_force httpc encoder in
           Httpc.cleanup httpc;
+          (* resolve [after_cleanup], if provided *)
+          Option.iter (fun prom -> Lwt.wakeup_later prom ()) after_cleanup;
           Lwt.return ())
   end in
   (module M)
@@ -457,9 +460,13 @@ module Backend
       val stop : bool Atomic.t
 
       val config : Config.t
+
+      val after_cleanup : unit Lwt.u option
     end)
     () : Opentelemetry.Collector.BACKEND = struct
-  include (val mk_emitter ~stop:Arg.stop ~config:Arg.config ())
+  include
+    (val mk_emitter ~after_cleanup:Arg.after_cleanup ~stop:Arg.stop
+           ~config:Arg.config ())
 
   open Opentelemetry.Proto
   open Opentelemetry.Collector
@@ -551,7 +558,8 @@ module Backend
     }
 end
 
-let create_backend ?(stop = Atomic.make false) ?(config = Config.make ()) () =
+let create_backend ?after_cleanup ?(stop = Atomic.make false)
+    ?(config = Config.make ()) () =
   debug_ := config.debug;
 
   let module B =
@@ -560,25 +568,43 @@ let create_backend ?(stop = Atomic.make false) ?(config = Config.make ()) () =
         let stop = stop
 
         let config = config
+
+        let after_cleanup = after_cleanup
       end)
       ()
   in
   (module B : OT.Collector.BACKEND)
 
-let setup_ ?stop ?config () =
-  let backend = create_backend ?stop ?config () in
+let setup_ ?stop ?config () : (unit -> unit) * unit Lwt.t =
+  let cleanup_done, cleanup_done_prom = Lwt.wait () in
+  let backend =
+    create_backend ~after_cleanup:cleanup_done_prom ?stop ?config ()
+  in
   OT.Collector.set_backend backend;
-  OT.Collector.remove_backend
+
+  OT.Collector.remove_backend, cleanup_done
 
 let setup ?stop ?config ?(enable = true) () =
   if enable then (
-    let cleanup = setup_ ?stop ?config () in
+    let cleanup, _lwt = setup_ ?stop ?config () in
     at_exit cleanup
   )
 
-let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f =
-  if enable then (
-    let cleanup = setup_ ?stop ~config () in
-    Fun.protect ~finally:cleanup f
-  ) else
+let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t
+    =
+  if enable then
+    let open Lwt.Syntax in
+    let cleanup, cleanup_done = setup_ ?stop ~config () in
+
+    Lwt.catch
+      (fun () ->
+        let* res = f () in
+        cleanup ();
+        let+ () = cleanup_done in
+        res)
+      (fun exn ->
+        cleanup ();
+        let* () = cleanup_done in
+        Lwt.reraise exn)
+  else
     f ()
