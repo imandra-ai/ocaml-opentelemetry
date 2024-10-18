@@ -846,22 +846,47 @@ module Scope : sig
     t
 
   val to_span_ctx : t -> Span_ctx.t
+  (** Turn the scope into a span context *)
 
   val add_event : t -> (unit -> Event.t) -> unit
+  (** Add an event to the scope. It will be aggregated into the span.
+
+  Note that this takes a function that produces an event, and will only
+  call it if there is an instrumentation backend. *)
 
   val record_exception : t -> exn -> Printexc.raw_backtrace -> unit
 
   val add_attrs : t -> (unit -> key_value list) -> unit
+  (** Add attributes to the scope. It will be aggregated into the span.
+
+  Note that this takes a function that produces attributes, and will only
+  call it if there is an instrumentation backend. *)
 
   val add_links : t -> (unit -> Span_link.t list) -> unit
+  (** Add links to the scope. It will be aggregated into the span.
+
+  Note that this takes a function that produces links, and will only
+  call it if there is an instrumentation backend. *)
 
   val set_status : t -> Span_status.t -> unit
+  (** set the span status.
+
+  Note that this function will be
+  called only if there is an instrumentation backend. *)
 
   val ambient_scope_key : t Ambient_context.key
+  (** The opaque key necessary to access/set the ambient scope with
+  {!Ambient_context}. *)
 
   val get_ambient_scope : ?scope:t -> unit -> t option
+  (** Obtain current scope from {!Ambient_context}, if available. *)
 
   val with_ambient_scope : t -> (unit -> 'a) -> 'a
+  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
+  the (thread|continuation)-local scope, then reverts to the previous local
+  scope, if any.
+
+  @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
 end = struct
   type item_list =
     | Nil
@@ -924,14 +949,9 @@ end = struct
     in
     { trace_id; span_id; items }
 
-  (** Turn the scope into a span context *)
   let[@inline] to_span_ctx (self : t) : Span_ctx.t =
     Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
 
-  (** Add an event to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces an event, and will only
-      call it if there is an instrumentation backend. *)
   let[@inline] add_event (scope : t) (ev : unit -> Event.t) : unit =
     if Collector.has_backend () then scope.items <- Ev (ev (), scope.items)
 
@@ -950,19 +970,11 @@ end = struct
       scope.items <- Ev (ev, scope.items)
     )
 
-  (** Add attributes to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces attributes, and will only
-      call it if there is an instrumentation backend. *)
   let[@inline] add_attrs (scope : t) (attrs : unit -> key_value list) : unit =
     if Collector.has_backend () then
       scope.items <-
         List.fold_left (fun acc attr -> Attr (attr, acc)) scope.items (attrs ())
 
-  (** Add links to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces links, and will only
-      call it if there is an instrumentation backend. *)
   let[@inline] add_links (scope : t) (links : unit -> Span_link.t list) : unit =
     if Collector.has_backend () then
       scope.items <-
@@ -970,10 +982,6 @@ end = struct
           (fun acc link -> Span_link (link, acc))
           scope.items (links ())
 
-  (** set the span status.
-
-      Note that this function will be
-      called only if there is an instrumentation backend. *)
   let set_status (scope : t) (status : Span_status.t) : unit =
     if Collector.has_backend () then (
       let rec loop acc = function
@@ -986,21 +994,13 @@ end = struct
       scope.items <- loop (Span_status (status, Nil)) scope.items
     )
 
-  (** The opaque key necessary to access/set the ambient scope with
-      {!Ambient_context}. *)
   let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
 
-  (** Obtain current scope from {!Ambient_context}, if available. *)
   let get_ambient_scope ?scope () : t option =
     match scope with
     | Some _ -> scope
     | None -> Ambient_context.get ambient_scope_key
 
-  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
-      the (thread|continuation)-local scope, then reverts to the previous local
-      scope, if any.
-
-      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
   let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
     Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
 end
