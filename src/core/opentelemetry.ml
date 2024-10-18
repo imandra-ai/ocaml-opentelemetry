@@ -794,6 +794,217 @@ end = struct
       ?attrs ()
 end
 
+module Span_status : sig
+  open Proto.Trace
+
+  type t = status
+
+  type code = status_status_code
+
+  val make : message:string -> code:code -> t
+end = struct
+  open Proto.Trace
+
+  type t = status
+
+  type code = status_status_code
+
+  let make ~message ~code = { message; code }
+end
+
+(** {2 Scopes} *)
+
+(** Scopes.
+
+    A scope is a trace ID and the span ID of the currently active span.
+*)
+module Scope : sig
+  type item_list
+
+  type t = {
+    trace_id: Trace_id.t;
+    span_id: Span_id.t;
+    mutable items: item_list;
+  }
+
+  val attrs : t -> key_value list
+
+  val events : t -> Event.t list
+
+  val links : t -> Span_link.t list
+
+  val status : t -> Span_status.t option
+
+  val make :
+    trace_id:Trace_id.t ->
+    span_id:Span_id.t ->
+    ?events:Event.t list ->
+    ?attrs:key_value list ->
+    ?links:Span_link.t list ->
+    ?status:Span_status.t ->
+    unit ->
+    t
+
+  val to_span_ctx : t -> Span_ctx.t
+
+  val add_event : t -> (unit -> Event.t) -> unit
+
+  val record_exception : t -> exn -> Printexc.raw_backtrace -> unit
+
+  val add_attrs : t -> (unit -> key_value list) -> unit
+
+  val add_links : t -> (unit -> Span_link.t list) -> unit
+
+  val set_status : t -> Span_status.t -> unit
+
+  val ambient_scope_key : t Ambient_context.key
+
+  val get_ambient_scope : ?scope:t -> unit -> t option
+
+  val with_ambient_scope : t -> (unit -> 'a) -> 'a
+end = struct
+  type item_list =
+    | Nil
+    | Ev of Event.t * item_list
+    | Attr of key_value * item_list
+    | Span_link of Span_link.t * item_list
+    | Span_status of Span_status.t * item_list
+
+  type t = {
+    trace_id: Trace_id.t;
+    span_id: Span_id.t;
+    mutable items: item_list;
+  }
+
+  let attrs scope =
+    let rec loop acc = function
+      | Nil -> acc
+      | Attr (attr, l) -> loop (attr :: acc) l
+      | Ev (_, l) | Span_link (_, l) | Span_status (_, l) -> loop acc l
+    in
+    loop [] scope.items
+
+  let events scope =
+    let rec loop acc = function
+      | Nil -> acc
+      | Ev (event, l) -> loop (event :: acc) l
+      | Attr (_, l) | Span_link (_, l) | Span_status (_, l) -> loop acc l
+    in
+    loop [] scope.items
+
+  let links scope =
+    let rec loop acc = function
+      | Nil -> acc
+      | Span_link (span_link, l) -> loop (span_link :: acc) l
+      | Ev (_, l) | Attr (_, l) | Span_status (_, l) -> loop acc l
+    in
+    loop [] scope.items
+
+  let status scope =
+    let rec loop acc = function
+      | Nil -> acc
+      | Span_status (status, _) -> Some status
+      | Ev (_, l) | Attr (_, l) | Span_link (_, l) -> loop acc l
+    in
+    loop None scope.items
+
+  let make ~trace_id ~span_id ?(events = []) ?(attrs = []) ?(links = []) ?status
+      () : t =
+    let items =
+      let items =
+        match status with
+        | None -> Nil
+        | Some status -> Span_status (status, Nil)
+      in
+      let items = List.fold_left (fun acc ev -> Ev (ev, acc)) items events in
+      let items =
+        List.fold_left (fun acc attr -> Attr (attr, acc)) items attrs
+      in
+      List.fold_left (fun acc link -> Span_link (link, acc)) items links
+    in
+    { trace_id; span_id; items }
+
+  (** Turn the scope into a span context *)
+  let[@inline] to_span_ctx (self : t) : Span_ctx.t =
+    Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
+
+  (** Add an event to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces an event, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_event (scope : t) (ev : unit -> Event.t) : unit =
+    if Collector.has_backend () then scope.items <- Ev (ev (), scope.items)
+
+  let[@inline] record_exception (scope : t) (exn : exn)
+      (bt : Printexc.raw_backtrace) : unit =
+    if Collector.has_backend () then (
+      let ev =
+        Event.make "exception"
+          ~attrs:
+            [
+              "message", `String (Printexc.to_string exn);
+              "type", `String (Printexc.exn_slot_name exn);
+              "stacktrace", `String (Printexc.raw_backtrace_to_string bt);
+            ]
+      in
+      scope.items <- Ev (ev, scope.items)
+    )
+
+  (** Add attributes to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces attributes, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_attrs (scope : t) (attrs : unit -> key_value list) : unit =
+    if Collector.has_backend () then
+      scope.items <-
+        List.fold_left (fun acc attr -> Attr (attr, acc)) scope.items (attrs ())
+
+  (** Add links to the scope. It will be aggregated into the span.
+
+      Note that this takes a function that produces links, and will only
+      call it if there is an instrumentation backend. *)
+  let[@inline] add_links (scope : t) (links : unit -> Span_link.t list) : unit =
+    if Collector.has_backend () then
+      scope.items <-
+        List.fold_left
+          (fun acc link -> Span_link (link, acc))
+          scope.items (links ())
+
+  (** set the span status.
+
+      Note that this function will be
+      called only if there is an instrumentation backend. *)
+  let set_status (scope : t) (status : Span_status.t) : unit =
+    if Collector.has_backend () then (
+      let rec loop acc = function
+        | Nil -> acc
+        | Span_status (_, l) -> loop acc l
+        | Ev (ev, l) -> loop (Ev (ev, acc)) l
+        | Attr (attr, l) -> loop (Attr (attr, acc)) l
+        | Span_link (link, l) -> loop (Span_link (link, acc)) l
+      in
+      scope.items <- loop (Span_status (status, Nil)) scope.items
+    )
+
+  (** The opaque key necessary to access/set the ambient scope with
+      {!Ambient_context}. *)
+  let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
+
+  (** Obtain current scope from {!Ambient_context}, if available. *)
+  let get_ambient_scope ?scope () : t option =
+    match scope with
+    | Some _ -> scope
+    | None -> Ambient_context.get ambient_scope_key
+
+  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
+      the (thread|continuation)-local scope, then reverts to the previous local
+      scope, if any.
+
+      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
+  let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
+    Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
+end
+
 (** {2 Traces} *)
 
 (** Spans.
@@ -816,16 +1027,6 @@ module Span : sig
     | Span_kind_client
     | Span_kind_producer
     | Span_kind_consumer
-
-  type nonrec status_code = status_status_code =
-    | Status_code_unset
-    | Status_code_ok
-    | Status_code_error
-
-  type nonrec status = status = {
-    message: string;
-    code: status_code;
-  }
 
   val id : t -> Span_id.t
 
@@ -881,16 +1082,6 @@ end = struct
       | `None
       ]
 
-  type nonrec status_code = status_status_code =
-    | Status_code_unset
-    | Status_code_ok
-    | Status_code_error
-
-  type nonrec status = status = {
-    message: string;
-    code: status_code;
-  }
-
   let id self = Span_id.of_bytes self.span_id
 
   let create ?(kind = !Globals.default_span_kind) ?(id = Span_id.create ())
@@ -905,169 +1096,6 @@ end = struct
         ~start_time_unix_nano:start_time ~end_time_unix_nano:end_time ()
     in
     span, id
-end
-
-(** Scopes.
-
-    A scope is a trace ID and the span ID of the currently active span.
-*)
-module Scope : sig
-  type item_list
-
-  type t = {
-    trace_id: Trace_id.t;
-    span_id: Span_id.t;
-    mutable items: item_list;
-    mutable span_status: Span.status option;
-  }
-
-  val attrs : t -> key_value list
-
-  val events : t -> Event.t list
-
-  val links : t -> Span_link.t list
-
-  val set_span_status : t -> Span.status -> unit
-
-  val make :
-    trace_id:Trace_id.t ->
-    span_id:Span_id.t ->
-    ?events:Event.t list ->
-    ?attrs:key_value list ->
-    ?links:Span_link.t list ->
-    ?span_status:Span.status ->
-    unit ->
-    t
-
-  val to_span_ctx : t -> Span_ctx.t
-
-  val add_event : t -> (unit -> Event.t) -> unit
-
-  val record_exception : t -> exn -> Printexc.raw_backtrace -> unit
-
-  val add_attrs : t -> (unit -> key_value list) -> unit
-
-  val add_links : t -> (unit -> Span_link.t list) -> unit
-
-  val ambient_scope_key : t Ambient_context.key
-
-  val get_ambient_scope : ?scope:t -> unit -> t option
-
-  val with_ambient_scope : t -> (unit -> 'a) -> 'a
-end = struct
-  type item_list =
-    | Nil
-    | Ev of Event.t * item_list
-    | Attr of key_value * item_list
-    | Span_link of Span_link.t * item_list
-
-  type t = {
-    trace_id: Trace_id.t;
-    span_id: Span_id.t;
-    mutable items: item_list;
-    mutable span_status: Span.status option;
-  }
-
-  let attrs scope =
-    let rec loop acc = function
-      | Nil -> acc
-      | Attr (attr, l) -> loop (attr :: acc) l
-      | Ev (_, l) | Span_link (_, l) -> loop acc l
-    in
-    loop [] scope.items
-
-  let events scope =
-    let rec loop acc = function
-      | Nil -> acc
-      | Ev (event, l) -> loop (event :: acc) l
-      | Attr (_, l) | Span_link (_, l) -> loop acc l
-    in
-    loop [] scope.items
-
-  let links scope =
-    let rec loop acc = function
-      | Nil -> acc
-      | Span_link (span_link, l) -> loop (span_link :: acc) l
-      | Ev (_, l) | Attr (_, l) -> loop acc l
-    in
-    loop [] scope.items
-
-  let set_span_status scope status = scope.span_status <- Some status
-
-  let make ~trace_id ~span_id ?(events = []) ?(attrs = []) ?(links = [])
-      ?span_status () : t =
-    let items =
-      let items = List.fold_left (fun acc ev -> Ev (ev, acc)) Nil events in
-      let items =
-        List.fold_left (fun acc attr -> Attr (attr, acc)) items attrs
-      in
-      List.fold_left (fun acc link -> Span_link (link, acc)) items links
-    in
-    { trace_id; span_id; items; span_status }
-
-  (** Turn the scope into a span context *)
-  let[@inline] to_span_ctx (self : t) : Span_ctx.t =
-    Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
-
-  (** Add an event to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces an event, and will only
-      call it if there is an instrumentation backend. *)
-  let[@inline] add_event (scope : t) (ev : unit -> Event.t) : unit =
-    if Collector.has_backend () then scope.items <- Ev (ev (), scope.items)
-
-  let[@inline] record_exception (scope : t) (exn : exn)
-      (bt : Printexc.raw_backtrace) : unit =
-    if Collector.has_backend () then (
-      let ev =
-        Event.make "exception"
-          ~attrs:
-            [
-              "message", `String (Printexc.to_string exn);
-              "type", `String (Printexc.exn_slot_name exn);
-              "stacktrace", `String (Printexc.raw_backtrace_to_string bt);
-            ]
-      in
-      scope.items <- Ev (ev, scope.items)
-    )
-
-  (** Add attributes to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces attributes, and will only
-      call it if there is an instrumentation backend. *)
-  let[@inline] add_attrs (scope : t) (attrs : unit -> key_value list) : unit =
-    if Collector.has_backend () then
-      scope.items <-
-        List.fold_left (fun acc attr -> Attr (attr, acc)) scope.items (attrs ())
-
-  (** Add links to the scope. It will be aggregated into the span.
-
-      Note that this takes a function that produces links, and will only
-      call it if there is an instrumentation backend. *)
-  let[@inline] add_links (scope : t) (links : unit -> Span_link.t list) : unit =
-    if Collector.has_backend () then
-      scope.items <-
-        List.fold_left
-          (fun acc link -> Span_link (link, acc))
-          scope.items (links ())
-
-  (** The opaque key necessary to access/set the ambient scope with
-      {!Ambient_context}. *)
-  let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
-
-  (** Obtain current scope from {!Ambient_context}, if available. *)
-  let get_ambient_scope ?scope () : t option =
-    match scope with
-    | Some _ -> scope
-    | None -> Ambient_context.get ambient_scope_key
-
-  (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
-      the (thread|continuation)-local scope, then reverts to the previous local
-      scope, if any.
-
-      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
-  let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
-    Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
 end
 
 (** Traces.
@@ -1102,7 +1130,6 @@ module Trace = struct
     trace_id: Trace_id.t;
     span_id: Span_id.t;
     mutable items: Scope.item_list;
-    mutable span_status: Span.status option;
   }
   [@@deprecated "use Scope.t"]
 
@@ -1139,16 +1166,13 @@ module Trace = struct
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
-        match scope.span_status with
-        | Some status -> status
-        | None ->
-          (match res with
-          | Ok () -> default_status ~code:Status_code_ok ()
-          | Error (e, bt) ->
-            (* add backtrace *)
-            Scope.record_exception scope e bt;
-            default_status ~code:Status_code_error
-              ~message:(Printexc.to_string e) ())
+        match res with
+        | Ok () -> default_status ~code:Status_code_ok ()
+        | Error (e, bt) ->
+          (* add backtrace *)
+          Scope.record_exception scope e bt;
+          default_status ~code:Status_code_error ~message:(Printexc.to_string e)
+            ()
       in
       let span, _ =
         (* TODO: should the attrs passed to with_ go on the Span
