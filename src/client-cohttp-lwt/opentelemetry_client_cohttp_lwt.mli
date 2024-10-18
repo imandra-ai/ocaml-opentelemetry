@@ -13,10 +13,13 @@ val set_headers : (string * string) list -> unit
 module Config = Config
 
 val create_backend :
+  ?after_cleanup:unit Lwt.u ->
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
   unit ->
   (module Opentelemetry.Collector.BACKEND)
+(** Create a new backend using lwt and cohttp
+  @param after_cleanup if provided, this is resolved into [()] after cleanup is done (since NEXT_RELEASE)  *)
 
 val setup :
   ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit
@@ -34,8 +37,8 @@ val with_setup :
   ?config:Config.t ->
   ?enable:bool ->
   unit ->
-  (unit -> 'a) ->
-  'a
+  (unit -> 'a Lwt.t) ->
+  'a Lwt.t
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up
     after [f()] returns
     See {!setup} for more details. *)

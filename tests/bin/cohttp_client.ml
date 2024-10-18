@@ -70,5 +70,4 @@ let () =
     "Check HTTP requests at \
      https://requestbin.com/r/enec1hql02hz/26qShWryt5vJc1JfrOwalhr5vQt@.";
 
-  Opentelemetry_client_cohttp_lwt.with_setup ~config () (fun () ->
-      Lwt_main.run (run ()))
+  Opentelemetry_client_cohttp_lwt.with_setup ~config () run |> Lwt_main.run
