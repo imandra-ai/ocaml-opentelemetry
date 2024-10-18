@@ -147,10 +147,10 @@ module Internal = struct
     let end_time = Timestamp_ns.now_unix_ns () in
     let kind, attrs = otel_attrs_of_otrace_data (Scope.attrs scope) in
 
-    let status : Span.status =
+    let status : Span_status.t =
       match List.assoc_opt Well_known.status_error_key attrs with
-      | Some (`String message) -> { message; code = Span.Status_code_error }
-      | _ -> { message = ""; code = Span.Status_code_ok }
+      | Some (`String message) -> { message; code = Status_code_error }
+      | _ -> { message = ""; code = Status_code_ok }
     in
 
     let attrs =

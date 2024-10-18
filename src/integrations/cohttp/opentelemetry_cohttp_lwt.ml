@@ -130,7 +130,7 @@ end = struct
         let open Lwt.Syntax in
         let req = set_trace_context scope req in
         let* res, body = callback conn req body in
-        Otel.Trace.add_attrs scope (fun () -> attrs_of_response res);
+        Otel.Scope.add_attrs scope (fun () -> attrs_of_response res);
         Lwt.return (res, body))
 
   let with_ ?trace_state ?service_name ?attrs
@@ -190,7 +190,7 @@ let client ?(scope : Otel.Scope.t option) (module C : Cohttp_lwt.S.Client) =
         ~attrs (fun scope ->
           let headers = add_traceparent scope headers in
           let* res, body = C.call ?ctx ~headers ?body ?chunked meth uri in
-          Otel.Trace.add_attrs scope (fun () ->
+          Otel.Scope.add_attrs scope (fun () ->
               let code = Response.status res in
               let code = Code.code_of_status code in
               [ "http.status_code", `Int code ]);
@@ -220,7 +220,7 @@ let client ?(scope : Otel.Scope.t option) (module C : Cohttp_lwt.S.Client) =
         ~attrs (fun scope ->
           let headers = add_traceparent scope headers in
           let* res, body = C.post_form ?ctx ~headers ~params uri in
-          Otel.Trace.add_attrs scope (fun () ->
+          Otel.Scope.add_attrs scope (fun () ->
               let code = Response.status res in
               let code = Code.code_of_status code in
               [ "http.status_code", `Int code ]);
