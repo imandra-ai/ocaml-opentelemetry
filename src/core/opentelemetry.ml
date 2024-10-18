@@ -1166,13 +1166,22 @@ module Trace = struct
     (* called once we're done, to emit a span *)
     let finally res =
       let status =
-        match res with
-        | Ok () -> default_status ~code:Status_code_ok ()
-        | Error (e, bt) ->
-          (* add backtrace *)
-          Scope.record_exception scope e bt;
-          default_status ~code:Status_code_error ~message:(Printexc.to_string e)
-            ()
+        match Scope.status scope with
+        | Some status -> Some status
+        | None ->
+          (match res with
+          | Ok () ->
+            (* By default, all spans are Unset, which means a span completed without error.
+               The Ok status is reserved for when you need to explicitly mark a span as successful
+               rather than stick with the default of Unset (i.e., “without error”).
+
+                https://opentelemetry.io/docs/languages/go/instrumentation/#set-span-status *)
+            None
+          | Error (e, bt) ->
+            Scope.record_exception scope e bt;
+            Some
+              (default_status ~code:Status_code_error
+                 ~message:(Printexc.to_string e) ()))
       in
       let span, _ =
         (* TODO: should the attrs passed to with_ go on the Span
@@ -1182,7 +1191,7 @@ module Trace = struct
           ~id:span_id ?trace_state ~attrs:(Scope.attrs scope)
           ~events:(Scope.events scope) ~start_time
           ~end_time:(Timestamp_ns.now_unix_ns ())
-          ~status name
+          ?status name
       in
       emit ?service_name [ span ]
     in
