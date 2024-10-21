@@ -72,7 +72,8 @@ let run_job () =
         if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
         (* simulate a failure *)
-        T.Trace.add_event scope (fun () -> T.Event.make "done with alloc")
+        Opentelemetry.Scope.add_event scope (fun () ->
+            T.Event.make "done with alloc")
       with Failure _ -> ()
     done
   done
