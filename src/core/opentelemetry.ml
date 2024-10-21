@@ -984,14 +984,7 @@ end = struct
 
   let set_status (scope : t) (status : Span_status.t) : unit =
     if Collector.has_backend () then (
-      let rec loop acc = function
-        | Nil -> acc
-        | Span_status (_, l) -> loop acc l
-        | Ev (ev, l) -> loop (Ev (ev, acc)) l
-        | Attr (attr, l) -> loop (Attr (attr, acc)) l
-        | Span_link (link, l) -> loop (Span_link (link, acc)) l
-      in
-      scope.items <- loop (Span_status (status, Nil)) scope.items
+      scope.items <- Span_status (status, scope.items)
     )
 
   let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
