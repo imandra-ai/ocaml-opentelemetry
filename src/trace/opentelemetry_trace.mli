@@ -48,6 +48,19 @@ val setup_with_otel_backend : Opentelemetry.Collector.backend -> unit
 val collector : unit -> Trace_core.collector
 (** Make a Trace collector that uses the OTEL backend to send spans and logs *)
 
+val link_spans : Otrace.explicit_span -> Otrace.explicit_span -> unit
+(** [link_spans sp1 sp2] modifies [sp1] by adding a span link to [sp2].
+  @since NEXT_RELEASE *)
+
+val set_span_kind : Otrace.explicit_span -> Otel.Span.kind -> unit
+(** [set_span_kind sp k] sets the span's kind.
+  @since NEXT_RELEASE *)
+
+val record_exception :
+  Otrace.explicit_span -> exn -> Printexc.raw_backtrace -> unit
+(** Record exception in the current span.
+  @since NEXT_RELEASE *)
+
 (** Static references for well-known identifiers; see {!label-wellknown}. *)
 module Well_known : sig
   val spankind_key : string
@@ -68,6 +81,7 @@ module Well_known : sig
     (string * Otrace.user_data) list ->
     Otel.Span.kind * Otel.Span.key_value list
 end
+[@@deprecated "use the regular functions for this"]
 
 (**/**)
 
