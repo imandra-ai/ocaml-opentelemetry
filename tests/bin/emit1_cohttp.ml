@@ -140,5 +140,5 @@ let () =
         Printf.printf "\ndone. %d spans in %.4fs (%.4f/s)\n%!"
           (Atomic.get num_tr) elapsed n_per_sec)
   in
-  Opentelemetry_client_cohttp_lwt.with_setup ~stop ~config () @@ fun () ->
-  Lwt_main.run @@ run ()
+  Opentelemetry_client_cohttp_lwt.with_setup ~stop ~config () run
+  |> Lwt_main.run
