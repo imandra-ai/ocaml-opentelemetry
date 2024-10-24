@@ -807,17 +807,29 @@ end
 module Span_status : sig
   open Proto.Trace
 
-  type t = status
+  type t = status = {
+    message: string;
+    code: status_status_code;
+  }
 
-  type code = status_status_code
+  type code = status_status_code =
+    | Status_code_unset
+    | Status_code_ok
+    | Status_code_error
 
   val make : message:string -> code:code -> t
 end = struct
   open Proto.Trace
 
-  type t = status
+  type t = status = {
+    message: string;
+    code: status_status_code;
+  }
 
-  type code = status_status_code
+  type code = status_status_code =
+    | Status_code_unset
+    | Status_code_ok
+    | Status_code_error
 
   let make ~message ~code = { message; code }
 end
@@ -993,9 +1005,8 @@ end = struct
           scope.items (links ())
 
   let set_status (scope : t) (status : Span_status.t) : unit =
-    if Collector.has_backend () then (
+    if Collector.has_backend () then
       scope.items <- Span_status (status, scope.items)
-    )
 
   let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
 
