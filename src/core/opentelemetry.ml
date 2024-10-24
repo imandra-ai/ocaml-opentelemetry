@@ -782,7 +782,12 @@ module Span_link : sig
     unit ->
     t
 
-  val of_span_ctx : ?attrs:key_value list -> Span_ctx.t -> t
+  val of_span_ctx :
+    ?trace_state:string ->
+    ?attrs:key_value list ->
+    ?dropped_attributes_count:int ->
+    Span_ctx.t ->
+    t
 end = struct
   open Proto.Trace
 
@@ -799,9 +804,10 @@ end = struct
       ~span_id:(Span_id.to_bytes span_id) ?trace_state ~attributes
       ?dropped_attributes_count ()
 
-  let[@inline] of_span_ctx ?attrs (ctx : Span_ctx.t) : t =
+  let[@inline] of_span_ctx ?trace_state ?attrs ?dropped_attributes_count
+      (ctx : Span_ctx.t) : t =
     make ~trace_id:(Span_ctx.trace_id ctx) ~span_id:(Span_ctx.parent_id ctx)
-      ?attrs ()
+      ?trace_state ?attrs ?dropped_attributes_count ()
 end
 
 module Span_status : sig
