@@ -242,7 +242,11 @@ module Internal = struct
       let active_spans = Active_spans.get () in
       Active_span_tbl.add active_spans.tbl otrace_id sb;
 
-      Otrace.{ span = otrace_id; meta = Meta_map.empty }
+      Otrace.
+        {
+          span = otrace_id;
+          meta = Meta_map.(empty |> add k_explicit_scope sb.scope);
+        }
 
     let exit_manual_span Otrace.{ span = otrace_id; _ } =
       let active_spans = Active_spans.get () in
