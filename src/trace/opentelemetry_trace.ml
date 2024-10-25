@@ -53,6 +53,11 @@ open Well_known
 let on_internal_error =
   ref (fun msg -> Printf.eprintf "error in Opentelemetry_trace: %s\n%!" msg)
 
+type Otrace.extension_event +=
+  | Ev_link_span of Otrace.explicit_span * Otrace.explicit_span
+  | Ev_set_span_kind of Otrace.explicit_span * Otel.Span_kind.t
+  | Ev_record_exn of Otrace.explicit_span * exn * Printexc.raw_backtrace
+
 module Internal = struct
   type span_begin = {
     start_time: int64;
@@ -193,6 +198,9 @@ module Internal = struct
       Active_span_tbl.remove active_spans.tbl otrace_id;
       Some (exit_span_ otel_span_begin)
 
+  let[@inline] get_scope (span : Otrace.explicit_span) : Otel.Scope.t option =
+    Otrace.Meta_map.find k_explicit_scope span.meta
+
   module M = struct
     let with_span ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name cb =
       let otrace_id, sb =
@@ -263,10 +271,10 @@ module Internal = struct
       | Some sb -> Otel.Scope.add_attrs sb.scope (fun () -> data)
 
     let add_data_to_manual_span (span : Otrace.explicit_span) data : unit =
-      match Otrace.Meta_map.find_exn k_explicit_scope span.meta with
-      | exception _ ->
+      match get_scope span with
+      | None ->
         !on_internal_error (spf "manual span does not a contain an OTEL scope")
-      | scope -> Otel.Scope.add_attrs scope (fun () -> data)
+      | Some scope -> Otel.Scope.add_attrs scope (fun () -> data)
 
     let message ?span ~data:_ msg : unit =
       (* gather information from context *)
@@ -297,8 +305,34 @@ module Internal = struct
       let _kind, attrs = otel_attrs_of_otrace_data data in
       let m = Otel.Metrics.(gauge ~name [ float ~attrs cur_val ]) in
       Otel.Metrics.emit [ m ]
+
+    let extension_event = function
+      | Ev_link_span (sp1, sp2) ->
+        (match get_scope sp1, get_scope sp2 with
+        | Some sc1, Some sc2 ->
+          Otel.Scope.add_links sc1 (fun () -> [ Otel.Scope.to_span_link sc2 ])
+        | _ -> !on_internal_error "could not find scope for OTEL span")
+      | Ev_set_span_kind (sp, k) ->
+        (match get_scope sp with
+        | None -> !on_internal_error "could not find scope for OTEL span"
+        | Some sc -> Otel.Scope.set_kind sc k)
+      | Ev_record_exn (sp, exn, bt) ->
+        (match get_scope sp with
+        | None -> !on_internal_error "could not find scope for OTEL span"
+        | Some sc -> Otel.Scope.record_exception sc exn bt)
+      | _ -> ()
   end
 end
+
+let link_spans (sp1 : Otrace.explicit_span) (sp2 : Otrace.explicit_span) : unit
+    =
+  if Otrace.enabled () then Otrace.extension_event @@ Ev_link_span (sp1, sp2)
+
+let set_span_kind sp k : unit =
+  if Otrace.enabled () then Otrace.extension_event @@ Ev_set_span_kind (sp, k)
+
+let record_exception sp exn bt : unit =
+  if Otrace.enabled () then Otrace.extension_event @@ Ev_record_exn (sp, exn, bt)
 
 let collector () : Otrace.collector = (module Internal.M)
 

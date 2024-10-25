@@ -782,7 +782,12 @@ module Span_link : sig
     unit ->
     t
 
-  val of_span_ctx : ?attrs:key_value list -> Span_ctx.t -> t
+  val of_span_ctx :
+    ?trace_state:string ->
+    ?attrs:key_value list ->
+    ?dropped_attributes_count:int ->
+    Span_ctx.t ->
+    t
 end = struct
   open Proto.Trace
 
@@ -799,9 +804,10 @@ end = struct
       ~span_id:(Span_id.to_bytes span_id) ?trace_state ~attributes
       ?dropped_attributes_count ()
 
-  let[@inline] of_span_ctx ?attrs (ctx : Span_ctx.t) : t =
+  let[@inline] of_span_ctx ?trace_state ?attrs ?dropped_attributes_count
+      (ctx : Span_ctx.t) : t =
     make ~trace_id:(Span_ctx.trace_id ctx) ~span_id:(Span_ctx.parent_id ctx)
-      ?attrs ()
+      ?trace_state ?attrs ?dropped_attributes_count ()
 end
 
 module Span_status : sig
@@ -834,6 +840,29 @@ end = struct
   let make ~message ~code = { message; code }
 end
 
+(** @since NEXT_RELEASE *)
+module Span_kind : sig
+  open Proto.Trace
+
+  type t = span_span_kind =
+    | Span_kind_unspecified
+    | Span_kind_internal
+    | Span_kind_server
+    | Span_kind_client
+    | Span_kind_producer
+    | Span_kind_consumer
+end = struct
+  open Proto.Trace
+
+  type t = span_span_kind =
+    | Span_kind_unspecified
+    | Span_kind_internal
+    | Span_kind_server
+    | Span_kind_client
+    | Span_kind_producer
+    | Span_kind_consumer
+end
+
 (** {2 Scopes} *)
 
 (** Scopes.
@@ -857,6 +886,8 @@ module Scope : sig
 
   val status : t -> Span_status.t option
 
+  val kind : t -> Span_kind.t option
+
   val make :
     trace_id:Trace_id.t ->
     span_id:Span_id.t ->
@@ -866,6 +897,14 @@ module Scope : sig
     ?status:Span_status.t ->
     unit ->
     t
+
+  val to_span_link :
+    ?trace_state:string ->
+    ?attrs:key_value list ->
+    ?dropped_attributes_count:int ->
+    t ->
+    Span_link.t
+  (** Turn the scope into a span link *)
 
   val to_span_ctx : t -> Span_ctx.t
   (** Turn the scope into a span context *)
@@ -896,6 +935,10 @@ module Scope : sig
   Note that this function will be
   called only if there is an instrumentation backend. *)
 
+  val set_kind : t -> Span_kind.t -> unit
+  (** Set the span's kind.
+      @since NEXT_RELEASE *)
+
   val ambient_scope_key : t Ambient_context.key
   (** The opaque key necessary to access/set the ambient scope with
   {!Ambient_context}. *)
@@ -916,6 +959,7 @@ end = struct
     | Attr of key_value * item_list
     | Span_link of Span_link.t * item_list
     | Span_status of Span_status.t * item_list
+    | Span_kind of Span_kind.t * item_list
 
   type t = {
     trace_id: Trace_id.t;
@@ -927,7 +971,8 @@ end = struct
     let rec loop acc = function
       | Nil -> acc
       | Attr (attr, l) -> loop (attr :: acc) l
-      | Ev (_, l) | Span_link (_, l) | Span_status (_, l) -> loop acc l
+      | Ev (_, l) | Span_kind (_, l) | Span_link (_, l) | Span_status (_, l) ->
+        loop acc l
     in
     loop [] scope.items
 
@@ -935,7 +980,9 @@ end = struct
     let rec loop acc = function
       | Nil -> acc
       | Ev (event, l) -> loop (event :: acc) l
-      | Attr (_, l) | Span_link (_, l) | Span_status (_, l) -> loop acc l
+      | Attr (_, l) | Span_kind (_, l) | Span_link (_, l) | Span_status (_, l)
+        ->
+        loop acc l
     in
     loop [] scope.items
 
@@ -943,17 +990,27 @@ end = struct
     let rec loop acc = function
       | Nil -> acc
       | Span_link (span_link, l) -> loop (span_link :: acc) l
-      | Ev (_, l) | Attr (_, l) | Span_status (_, l) -> loop acc l
+      | Ev (_, l) | Span_kind (_, l) | Attr (_, l) | Span_status (_, l) ->
+        loop acc l
     in
     loop [] scope.items
 
   let status scope =
-    let rec loop acc = function
-      | Nil -> acc
+    let rec loop = function
+      | Nil -> None
       | Span_status (status, _) -> Some status
-      | Ev (_, l) | Attr (_, l) | Span_link (_, l) -> loop acc l
+      | Ev (_, l) | Attr (_, l) | Span_kind (_, l) | Span_link (_, l) -> loop l
     in
-    loop None scope.items
+    loop scope.items
+
+  let kind scope =
+    let rec loop = function
+      | Nil -> None
+      | Span_kind (k, _) -> Some k
+      | Ev (_, l) | Span_status (_, l) | Attr (_, l) | Span_link (_, l) ->
+        loop l
+    in
+    loop scope.items
 
   let make ~trace_id ~span_id ?(events = []) ?(attrs = []) ?(links = []) ?status
       () : t =
@@ -970,6 +1027,11 @@ end = struct
       List.fold_left (fun acc link -> Span_link (link, acc)) items links
     in
     { trace_id; span_id; items }
+
+  let[@inline] to_span_link ?trace_state ?attrs ?dropped_attributes_count
+      (self : t) : Span_link.t =
+    Span_link.make ?trace_state ?attrs ?dropped_attributes_count
+      ~trace_id:self.trace_id ~span_id:self.span_id ()
 
   let[@inline] to_span_ctx (self : t) : Span_ctx.t =
     Span_ctx.make ~trace_id:self.trace_id ~parent_id:self.span_id ()
@@ -1008,6 +1070,9 @@ end = struct
     if Collector.has_backend () then
       scope.items <- Span_status (status, scope.items)
 
+  let set_kind (scope : t) (k : Span_kind.t) : unit =
+    if Collector.has_backend () then scope.items <- Span_kind (k, scope.items)
+
   let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
 
   let get_ambient_scope ?scope () : t option =
@@ -1034,7 +1099,7 @@ module Span : sig
 
   type id = Span_id.t
 
-  type nonrec kind = span_span_kind =
+  type kind = Span_kind.t =
     | Span_kind_unspecified
     | Span_kind_internal
     | Span_kind_server
@@ -1079,7 +1144,7 @@ end = struct
 
   type id = Span_id.t
 
-  type nonrec kind = span_span_kind =
+  type kind = Span_kind.t =
     | Span_kind_unspecified
     | Span_kind_internal
     | Span_kind_server
