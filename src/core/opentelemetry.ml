@@ -407,7 +407,8 @@ end
 module Span_ctx : sig
   type t
 
-  val make : trace_id:Trace_id.t -> parent_id:Span_id.t -> unit -> t
+  val make :
+    ?sampled:bool -> trace_id:Trace_id.t -> parent_id:Span_id.t -> unit -> t
 
   val dummy : t
   (** Invalid span context, to be used as a placeholder *)
@@ -418,7 +419,7 @@ module Span_ctx : sig
 
   val parent_id : t -> Span_id.t
 
-  val is_remote : t -> bool
+  val sampled : t -> bool
 
   val to_w3c_trace_context : t -> bytes
 
@@ -427,25 +428,24 @@ module Span_ctx : sig
   val of_w3c_trace_context_exn : bytes -> t
   (** @raise Invalid_argument if parsing failed *)
 end = struct
-  (* TODO: trace flags *)
   (* TODO: trace state *)
 
   type t = {
     trace_id: Trace_id.t;
     parent_id: Span_id.t;
-    is_remote: bool;
+    sampled: bool;
   }
 
   let dummy =
-    { trace_id = Trace_id.dummy; parent_id = Span_id.dummy; is_remote = false }
+    { trace_id = Trace_id.dummy; parent_id = Span_id.dummy; sampled = false }
 
-  let make ~trace_id ~parent_id () : t =
-    { trace_id; parent_id; is_remote = false }
+  let make ?(sampled = false) ~trace_id ~parent_id () : t =
+    { trace_id; parent_id; sampled }
 
   let[@inline] is_valid self =
     Trace_id.is_valid self.trace_id && Span_id.is_valid self.parent_id
 
-  let[@inline] is_remote self = self.is_remote
+  let[@inline] sampled self = self.sampled
 
   let[@inline] trace_id self = self.trace_id
 
@@ -463,7 +463,11 @@ end = struct
     (* +16 *)
     Bytes.set bs 52 '-';
     Bytes.set bs 53 '0';
-    Bytes.set bs 54 '0';
+    Bytes.set bs 54
+      (if self.sampled then
+         '1'
+       else
+         '0');
     bs
 
   let of_w3c_trace_context bs : _ result =
@@ -485,9 +489,10 @@ end = struct
         with Invalid_argument msg -> invalid_arg (spf "in span id: %s" msg)
       in
       if Bytes.get bs 52 <> '-' then invalid_arg "expected '-' after parent_id";
+      let sampled = int_of_string_opt (Bytes.sub_string bs 53 55) = Some 1 in
 
       (* ignore flags *)
-      Ok { trace_id; parent_id; is_remote = true }
+      Ok { trace_id; parent_id; sampled }
     with Invalid_argument msg -> Error msg
 
   let of_w3c_trace_context_exn bs =
