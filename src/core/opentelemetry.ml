@@ -489,7 +489,7 @@ end = struct
         with Invalid_argument msg -> invalid_arg (spf "in span id: %s" msg)
       in
       if Bytes.get bs 52 <> '-' then invalid_arg "expected '-' after parent_id";
-      let sampled = int_of_string_opt (Bytes.sub_string bs 53 55) = Some 1 in
+      let sampled = int_of_string_opt (Bytes.sub_string bs 53 2) = Some 1 in
 
       (* ignore flags *)
       Ok { trace_id; parent_id; sampled }
