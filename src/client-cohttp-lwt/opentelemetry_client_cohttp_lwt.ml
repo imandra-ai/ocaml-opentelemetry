@@ -8,6 +8,10 @@ module Config = Config
 open Opentelemetry
 include Common_
 
+external reraise : exn -> 'a = "%reraise"
+(** This is equivalent to [Lwt.reraise]. We inline it here so we don't force
+    to use Lwt's latest version *)
+
 let needs_gc_metrics = Atomic.make false
 
 let last_gc_metrics = Atomic.make (Mtime_clock.now ())
@@ -605,6 +609,6 @@ let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t
       (fun exn ->
         cleanup ();
         let* () = cleanup_done in
-        Lwt.reraise exn)
+        reraise exn)
   else
     f ()
