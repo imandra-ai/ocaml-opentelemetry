@@ -7,7 +7,7 @@
 (source
  (github imandra-ai/ocaml-opentelemetry))
 
-(version 0.10)
+(version 0.11)
 
 (authors "the Imandra team and contributors")
 
@@ -48,7 +48,7 @@
  (depopts trace lwt eio)
  (conflicts
   (trace
-   (< 0.7)))
+   (< 0.9)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
