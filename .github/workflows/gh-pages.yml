@@ -14,7 +14,7 @@ jobs:
       # needed for depext to work
       - run: sudo apt-get update && sudo apt-get install mccs
 
-      - uses: ocaml/setup-ocaml@v2
+      - uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: '5.1.x'
           dune-cache: true
