@@ -1,4 +1,19 @@
 
+## 0.11
+
+- add `Span_kind.t`, add {kind,set_kind} to `Scope`
+- expose `Span_status` types
+- add `Scope.set_span_status`
+- add `record_exception`
+- otel.trace: extension points for links, record_exn, kind
+- otel.trace: set status of a span based on `exception.message`
+
+- add cohttp upper bound version constraint
+- in backends, call `tick()` before cleaning up
+- reduce memory usage of `Scope.t` (@tatchi)
+
+- remove dependency on ambient-context, vendor/inline/specialize it
+
 ## 0.10
 
 - feat: add support for per-signal urls (by @tatchi)
