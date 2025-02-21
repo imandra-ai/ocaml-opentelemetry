@@ -1576,8 +1576,9 @@ module Trace_context = struct
       | Ok sp -> Ok (Span_ctx.trace_id sp, Span_ctx.parent_id sp)
       | Error _ as e -> e
 
-    let to_value ~(trace_id : Trace_id.t) ~(parent_id : Span_id.t) () : string =
-      let span_ctx = Span_ctx.make ~trace_id ~parent_id () in
+    let to_value ?(sampled : bool option) ~(trace_id : Trace_id.t)
+        ~(parent_id : Span_id.t) () : string =
+      let span_ctx = Span_ctx.make ?sampled ~trace_id ~parent_id () in
       Bytes.unsafe_to_string @@ Span_ctx.to_w3c_trace_context span_ctx
   end
 end
