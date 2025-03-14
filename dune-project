@@ -7,7 +7,7 @@
 (source
  (github imandra-ai/ocaml-opentelemetry))
 
-(version 0.11)
+(version 0.11.1)
 
 (authors "the Imandra team and contributors")
 
