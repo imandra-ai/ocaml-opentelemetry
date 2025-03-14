@@ -433,20 +433,19 @@ let create_backend ?(stop = Atomic.make false)
       if add_own_metrics then (
         Atomic.set last_sent_metrics now;
         let open OT.Metrics in
+        let now_unix = OT.Timestamp_ns.now_unix_ns () in
         [
           make_resource_metrics
             [
               sum ~name:"otel.export.dropped" ~is_monotonic:true
                 [
-                  int
-                    ~start_time_unix_nano:(Mtime.to_uint64_ns last_emit)
-                    ~now:(Mtime.to_uint64_ns now) (Atomic.get n_dropped);
+                  int ~start_time_unix_nano:now_unix ~now:now_unix
+                    (Atomic.get n_dropped);
                 ];
               sum ~name:"otel.export.errors" ~is_monotonic:true
                 [
-                  int
-                    ~start_time_unix_nano:(Mtime.to_uint64_ns last_emit)
-                    ~now:(Mtime.to_uint64_ns now) (Atomic.get n_errors);
+                  int ~start_time_unix_nano:now_unix ~now:now_unix
+                    (Atomic.get n_errors);
                 ];
             ];
         ]
