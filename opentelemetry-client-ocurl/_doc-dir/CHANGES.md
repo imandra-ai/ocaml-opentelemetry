@@ -1,4 +1,8 @@
 
+## 0.11.1
+
+- add missing sample argument to `Traceparent.to_value`
+
 ## 0.11
 
 - add `Span_kind.t`, add {kind,set_kind} to `Scope`
