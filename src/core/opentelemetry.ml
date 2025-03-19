@@ -174,7 +174,7 @@ module Collector = struct
     Atomic.set backend (Some b)
 
   (** Remove current backend, if any.
-      @since NEXT_RELEASE *)
+      @since 0.11 *)
   let remove_backend () : unit =
     match Atomic.exchange backend None with
     | None -> ()
@@ -845,7 +845,7 @@ end = struct
   let make ~message ~code = { message; code }
 end
 
-(** @since NEXT_RELEASE *)
+(** @since 0.11 *)
 module Span_kind : sig
   open Proto.Trace
 
@@ -942,7 +942,7 @@ module Scope : sig
 
   val set_kind : t -> Span_kind.t -> unit
   (** Set the span's kind.
-      @since NEXT_RELEASE *)
+      @since 0.11 *)
 
   val ambient_scope_key : t Ambient_context.key
   (** The opaque key necessary to access/set the ambient scope with

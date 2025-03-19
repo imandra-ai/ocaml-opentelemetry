@@ -19,7 +19,7 @@ val create_backend :
   unit ->
   (module Opentelemetry.Collector.BACKEND)
 (** Create a new backend using lwt and cohttp
-  @param after_cleanup if provided, this is resolved into [()] after cleanup is done (since NEXT_RELEASE)  *)
+  @param after_cleanup if provided, this is resolved into [()] after cleanup is done (since 0.11)  *)
 
 val setup :
   ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit

@@ -50,16 +50,16 @@ val collector : unit -> Trace_core.collector
 
 val link_spans : Otrace.explicit_span -> Otrace.explicit_span -> unit
 (** [link_spans sp1 sp2] modifies [sp1] by adding a span link to [sp2].
-  @since NEXT_RELEASE *)
+  @since 0.11 *)
 
 val set_span_kind : Otrace.explicit_span -> Otel.Span.kind -> unit
 (** [set_span_kind sp k] sets the span's kind.
-  @since NEXT_RELEASE *)
+  @since 0.11 *)
 
 val record_exception :
   Otrace.explicit_span -> exn -> Printexc.raw_backtrace -> unit
 (** Record exception in the current span.
-  @since NEXT_RELEASE *)
+  @since 0.11 *)
 
 (** Static references for well-known identifiers; see {!label-wellknown}. *)
 module Well_known : sig
