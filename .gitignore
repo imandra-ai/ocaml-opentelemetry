@@ -5,3 +5,4 @@ _opam
 *.db
 .merlin
 *.install
+*.exe
