@@ -45,7 +45,7 @@
     :with-dev-setup
     (>= 0.24)
     (< 0.25))))
- (depopts trace lwt eio)
+ (depopts trace lwt eio picos_aux)
  (conflicts
   (trace
    (< 0.9)))
@@ -100,6 +100,7 @@
   (odoc :with-doc)
   (lwt
    (>= "5.3"))
+  (cohttp (and (>= 4.0) (< 6.0)))
   (cohttp-lwt
    (and
     (>= "4.0.0")

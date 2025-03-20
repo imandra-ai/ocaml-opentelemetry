@@ -1,6 +1,7 @@
 module Otel = Opentelemetry
 module Otrace = Trace_core (* ocaml-trace *)
 module TLS = Thread_local_storage
+module Ambient_context = Opentelemetry_ambient_context
 
 open struct
   let spf = Printf.sprintf
@@ -58,8 +59,8 @@ type Otrace.extension_event +=
   | Ev_set_span_kind of Otrace.explicit_span * Otel.Span_kind.t
   | Ev_record_exn of Otrace.explicit_span * exn * Printexc.raw_backtrace
 
-module Internal = struct
-  type span_begin = {
+module Span_begin = struct
+  type t = {
     start_time: int64;
     name: string;
     __FILE__: string;
@@ -68,13 +69,51 @@ module Internal = struct
     scope: Otel.Scope.t;
     parent: Otel.Span_ctx.t option;
   }
+end
 
-  module Active_span_tbl = Hashtbl.Make (struct
-    include Int64
+module Local_info = struct
+  let key : Otel.Span_ctx.t list Ambient_context.key =
+    Ambient_context.create_key ()
 
-    let hash : t -> int = Hashtbl.hash
-  end)
+  let[@inline] get_parent () : Otel.Span_ctx.t option =
+    match Ambient_context.get key with
+    | Some (p :: _) -> Some p
+    | _ -> None
+    | exception _ _ -> None 
 
+  let push_parent p : unit =
+    match Ambient_context.get key with
+    | Some l -> Ambient_context.
+    match FLS.get_exn key with
+    | l -> FLS.set key (p :: l)
+    | exception Failure _ -> () (* not in fiber *)
+    | exception FLS.Not_set -> (try FLS.set key [ p ] with _ -> ())
+
+  let pop_parent () : unit =
+    match FLS.get_exn key with
+    | _ :: tl -> FLS.set key tl
+    | [] -> ()
+    | exception Failure _ -> () (* not in fiber *)
+    | exception FLS.Not_set -> ()
+end
+
+module Spans = struct
+  module P_tbl = Ctbl_
+
+  let tbl : span_begin P_tbl.t = P_tbl.create ()
+
+  let find (span : Otrace.span) : span_begin option = P_tbl.find tbl span
+
+  let enter (span : Trace.span) (sb : Span_begin.t) : unit =
+    P_tbl.add tbl span sb;
+    Local_info.push_parent (Span_begin.to_span_ctx sb)
+
+  let exit (span : Trace.span) : unit =
+    ignore (P_tbl.try_remove tbl span : bool);
+    Local_info.pop_parent ()
+end
+
+module Internal = struct
   (** key to access a OTEL scope from an explicit span *)
   let k_explicit_scope : Otel.Scope.t Otrace.Meta_map.key =
     Otrace.Meta_map.Key.create ()

@@ -49,7 +49,8 @@ jobs:
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt,opentelemetry-client-cohttp-lwt
 
-      - run: opam install trace.0.9
+      # with depopts
+      - run: opam install trace.0.9 picos_aux
       - run: opam exec -- dune build @install -p opentelemetry
 
       - run: opam install ocaml-protoc
