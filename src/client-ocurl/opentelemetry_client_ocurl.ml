@@ -87,7 +87,7 @@ end
 
 (** start a thread in the background, running [f()] *)
 let start_bg_thread (f : unit -> unit) : Thread.t =
-  let run () =
+  let unix_run () =
     let signals =
       [
         Sys.sigusr1;
@@ -101,6 +101,8 @@ let start_bg_thread (f : unit -> unit) : Thread.t =
     ignore (Thread.sigmask Unix.SIG_BLOCK signals : _ list);
     f ()
   in
+  (* no signals on Windows *)
+  let run () = if Sys.win32 then f () else unix_run () in
   Thread.create run ()
 
 let str_to_hex (s : string) : string =
