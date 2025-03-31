@@ -1,4 +1,9 @@
 
+## 0.11.2
+
+- fix: opentelemetry-client-ocurl: don't block signals on Windows
+- fix otel-client-ocurl: use ptime timestamps for self metrics
+
 ## 0.11.1
 
 - add missing sample argument to `Traceparent.to_value`
