@@ -307,7 +307,7 @@ module Trace_id : sig
 end = struct
   type t = bytes
 
-  let to_bytes self = self
+  let[@inline] to_bytes self = self
 
   let dummy : t = Bytes.make 16 '\x00'
 
@@ -318,7 +318,7 @@ end = struct
     Bytes.set b 0 (Char.unsafe_chr (Char.code (Bytes.get b 0) lor 1));
     b
 
-  let of_bytes b =
+  let[@inline] of_bytes b =
     if Bytes.length b = 16 then
       b
     else
