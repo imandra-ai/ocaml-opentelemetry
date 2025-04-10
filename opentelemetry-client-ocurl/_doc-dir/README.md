@@ -28,7 +28,7 @@ MIT
   * [x] batching, perf, etc.
 - [ ] async collector relying on ocurl-multi
 - [ ] interface with `logs` (carry context around)
-- [x] implicit scope (via [ambient-context][])
+- [x] implicit scope (via vendored `ambient-context`, see `opentelemetry.ambient-context`)
 
 ## Use
 
@@ -36,7 +36,7 @@ For now, instrument traces/spans, logs, and metrics manually:
 
 ```ocaml
 module Otel = Opentelemetry
-let (let@) f x = f x
+let (let@) = (@@)
 
 let foo () =
   let@ scope = Otel.Trace.with_  "foo"
