@@ -2,6 +2,20 @@ module Otel := Opentelemetry
 module Otrace := Trace_core
 module TLS := Thread_local_storage
 
+module Conv : sig
+  val trace_id_of_otel : Otel.Trace_id.t -> string
+
+  val trace_id_to_otel : string -> Otel.Trace_id.t
+
+  val span_id_of_otel : Otel.Span_id.t -> int64
+
+  val span_id_to_otel : int64 -> Otel.Span_id.t
+
+  val ctx_to_otel : Otrace.explicit_span_ctx -> Otel.Span_ctx.t
+
+  val ctx_of_otel : Otel.Span_ctx.t -> Otrace.explicit_span_ctx
+end
+
 (** [opentelemetry.trace] implements a {!Trace_core.Collector} for
     {{:https://v3.ocaml.org/p/trace} ocaml-trace}.
 
@@ -28,13 +42,13 @@ module TLS := Thread_local_storage
       the {!Opentelemetry.Span.kind} of the emitted span. (See
       {!Internal.spankind_of_string} for the list of supported values.)
 
-      {[ocaml
+    {[
+      ocaml
       let describe () = [ Opentelemetry_trace.(spankind_key, client) ] in
       Trace_core.with_span ~__FILE__ ~__LINE__ ~data:describe "my-span"
       @@ fun _ ->
         (* ... *)
-      ]}
-    *)
+    ]} *)
 
 val on_internal_error : (string -> unit) ref
 (** Callback to print errors in the library itself (ie bugs) *)
@@ -43,23 +57,23 @@ val setup : unit -> unit
 (** Install the OTEL backend as a Trace collector *)
 
 val setup_with_otel_backend : Opentelemetry.Collector.backend -> unit
-(** Same as {!setup},  but also install the given backend as OTEL backend *)
+(** Same as {!setup}, but also install the given backend as OTEL backend *)
 
 val collector : unit -> Trace_core.collector
 (** Make a Trace collector that uses the OTEL backend to send spans and logs *)
 
 val link_spans : Otrace.explicit_span -> Otrace.explicit_span -> unit
 (** [link_spans sp1 sp2] modifies [sp1] by adding a span link to [sp2].
-  @since 0.11 *)
+    @since 0.11 *)
 
 val set_span_kind : Otrace.explicit_span -> Otel.Span.kind -> unit
 (** [set_span_kind sp k] sets the span's kind.
-  @since 0.11 *)
+    @since 0.11 *)
 
 val record_exception :
   Otrace.explicit_span -> exn -> Printexc.raw_backtrace -> unit
 (** Record exception in the current span.
-  @since 0.11 *)
+    @since 0.11 *)
 
 (** Static references for well-known identifiers; see {!label-wellknown}. *)
 module Well_known : sig
@@ -103,10 +117,11 @@ module Internal : sig
         {!Opentelemetry.Trace.with_}, and requires configuration of
         {!Ambient_context}.
 
-      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
+        @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context>
+          ambient-context docs *)
 
     val enter_manual_span :
-      parent:Otrace.explicit_span option ->
+      parent:Otrace.explicit_span_ctx option ->
       flavor:'a ->
       __FUNCTION__:string option ->
       __FILE__:string ->
@@ -135,8 +150,8 @@ module Internal : sig
         Generally, the best practice is to only use these [manual] functions at
         the 'leaves' of your callstack: that is, don't invoke user callbacks
         from within them; or if you do, make sure to pass the [explicit_span]
-        you recieve from this function onwards to the user callback, so they can create further
-        child-spans. *)
+        you recieve from this function onwards to the user callback, so they can
+        create further child-spans. *)
 
     val exit_manual_span : Otrace.explicit_span -> unit
     (** Implements {!Trace_core.Collector.S.exit_manual_span}, with the
@@ -197,10 +212,8 @@ module Internal : sig
 
   val otrace_of_otel : Otel.Span_id.t -> Otrace.span
 
-  val otel_of_otrace : Otrace.span -> Otel.Span_id.t
-
   val enter_span' :
-    ?explicit_parent:Otrace.span ->
+    ?explicit_parent:Otrace.explicit_span_ctx ->
     __FUNCTION__:string option ->
     __FILE__:string ->
     __LINE__:int ->

@@ -369,7 +369,7 @@ module Span_id : sig
 end = struct
   type t = bytes
 
-  let to_bytes self = self
+  let[@inline] to_bytes self = self
 
   let dummy : t = Bytes.make 8 '\x00'
 

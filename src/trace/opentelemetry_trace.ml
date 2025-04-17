@@ -6,6 +6,49 @@ open struct
   let spf = Printf.sprintf
 end
 
+module Conv = struct
+  let[@inline] trace_id_of_otel (id : Otel.Trace_id.t) : Otrace.trace_id =
+    if id == Otel.Trace_id.dummy then
+      Otrace.Collector.dummy_trace_id
+    else
+      Bytes.unsafe_to_string (Otel.Trace_id.to_bytes id)
+
+  let[@inline] trace_id_to_otel (id : Otrace.trace_id) : Otel.Trace_id.t =
+    if id == Otrace.Collector.dummy_trace_id then
+      Otel.Trace_id.dummy
+    else
+      Otel.Trace_id.of_bytes @@ Bytes.unsafe_of_string id
+
+  let[@inline] span_id_of_otel (id : Otel.Span_id.t) : Otrace.span =
+    if id == Otel.Span_id.dummy then
+      Otrace.Collector.dummy_span
+    else
+      Bytes.get_int64_le (Otel.Span_id.to_bytes id) 0
+
+  let[@inline] span_id_to_otel (id : Otrace.span) : Otel.Span_id.t =
+    if id == Otrace.Collector.dummy_span then
+      Otel.Span_id.dummy
+    else (
+      let b = Bytes.create 8 in
+      Bytes.set_int64_le b 0 id;
+      Otel.Span_id.of_bytes b
+    )
+
+  let[@inline] ctx_to_otel (self : Otrace.explicit_span_ctx) : Otel.Span_ctx.t =
+    Otel.Span_ctx.make
+      ~trace_id:(trace_id_to_otel self.trace_id)
+      ~parent_id:(span_id_to_otel self.span)
+      ()
+
+  let[@inline] ctx_of_otel (ctx : Otel.Span_ctx.t) : Otrace.explicit_span_ctx =
+    {
+      trace_id = trace_id_of_otel (Otel.Span_ctx.trace_id ctx);
+      span = span_id_of_otel (Otel.Span_ctx.parent_id ctx);
+    }
+end
+
+open Conv
+
 module Well_known = struct
   let spankind_key = "otrace.spankind"
 
@@ -42,9 +85,9 @@ module Well_known = struct
     in
     !kind, data
 
-  (** Key to store an error [Otel.Span.status] with the message.
-      Set ["otrace.error" = "mymsg"] in a span data to set the span's status
-      to [{message="mymsg"; code=Error}]. *)
+  (** Key to store an error [Otel.Span.status] with the message. Set
+      ["otrace.error" = "mymsg"] in a span data to set the span's status to
+      [{message="mymsg"; code=Error}]. *)
   let status_error_key = "otrace.error"
 end
 
@@ -101,12 +144,7 @@ module Internal = struct
     assert (Bytes.length bs = 8);
     Bytes.get_int64_le bs 0
 
-  let otel_of_otrace (id : int64) : Otel.Span_id.t =
-    let bs = Bytes.create 8 in
-    Bytes.set_int64_le bs 0 id;
-    Otel.Span_id.of_bytes bs
-
-  let enter_span' ?explicit_parent ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
+  let enter_span' ?(explicit_parent : Otrace.explicit_span_ctx option) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
       =
     let open Otel in
     let otel_id = Span_id.create () in
@@ -121,7 +159,7 @@ module Internal = struct
     let parent =
       match explicit_parent, parent_scope with
       | Some p, _ ->
-        Some (Otel.Span_ctx.make ~trace_id ~parent_id:(otel_of_otrace p) ())
+        Some (Otel.Span_ctx.make ~trace_id ~parent_id:(span_id_to_otel p.span) ())
       | None, Some parent -> Some (Otel.Scope.to_span_ctx parent)
       | None, None -> None
     in
@@ -237,13 +275,13 @@ module Internal = struct
       | None -> ()
       | Some otel_span -> Otel.Trace.emit [ otel_span ]
 
-    let enter_manual_span ~(parent : Otrace.explicit_span option) ~flavor:_
+    let enter_manual_span ~(parent : Otrace.explicit_span_ctx option) ~flavor:_
         ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name : Otrace.explicit_span =
       let otrace_id, sb =
         match parent with
         | None -> enter_span' ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
-        | Some { span; _ } ->
-          enter_span' ~explicit_parent:span ~__FUNCTION__ ~__FILE__ ~__LINE__
+        | Some parent ->
+          enter_span' ~explicit_parent:parent ~__FUNCTION__ ~__FILE__ ~__LINE__
             ~data name
       in
 
@@ -253,6 +291,7 @@ module Internal = struct
       Otrace.
         {
           span = otrace_id;
+          trace_id = trace_id_of_otel sb.scope.trace_id;
           meta = Meta_map.(empty |> add k_explicit_scope sb.scope);
         }
 
@@ -283,7 +322,7 @@ module Internal = struct
 
       let span_id =
         match span with
-        | Some id -> Some (otel_of_otrace id)
+        | Some id -> Some (span_id_to_otel id)
         | None -> Option.map (fun sc -> sc.Otel.Scope.span_id) old_scope
       in
 
