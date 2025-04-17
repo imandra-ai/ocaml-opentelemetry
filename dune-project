@@ -43,8 +43,8 @@
   (ocamlformat
    (and
     :with-dev-setup
-    (>= 0.24)
-    (< 0.25))))
+    (>= 0.27)
+    (< 0.28))))
  (depopts trace lwt eio)
  (conflicts
   (trace

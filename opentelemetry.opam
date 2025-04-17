@@ -23,7 +23,7 @@ depends: [
   "alcotest" {with-test}
   "pbrt" {>= "3.0" & < "4.0"}
   "ocaml-lsp-server" {with-dev-setup}
-  "ocamlformat" {with-dev-setup & >= "0.24" & < "0.25"}
+  "ocamlformat" {with-dev-setup & >= "0.27" & < "0.28"}
 ]
 depopts: ["trace" "lwt" "eio"]
 conflicts: [
