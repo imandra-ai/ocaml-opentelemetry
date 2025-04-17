@@ -39,9 +39,9 @@ module Self_trace = struct
     )
 end
 
-(** capture current GC metrics if {!needs_gc_metrics} is true
-    or it has been a long time since the last GC metrics collection,
-    and push them into {!gc_metrics} for later collection *)
+(** capture current GC metrics if {!needs_gc_metrics} is true or it has been a
+    long time since the last GC metrics collection, and push them into
+    {!gc_metrics} for later collection *)
 let sample_gc_metrics_if_needed () =
   let now = Mtime_clock.now () in
   let alarm = Atomic.exchange needs_gc_metrics false in
@@ -102,7 +102,12 @@ let start_bg_thread (f : unit -> unit) : Thread.t =
     f ()
   in
   (* no signals on Windows *)
-  let run () = if Sys.win32 then f () else unix_run () in
+  let run () =
+    if Sys.win32 then
+      f ()
+    else
+      unix_run ()
+  in
   Thread.create run ()
 
 let str_to_hex (s : string) : string =
@@ -128,7 +133,7 @@ module Backend_impl : sig
 
   val send_event : t -> Event.t -> unit
 
-  val shutdown : t -> unit
+  val shutdown : t -> on_done:(unit -> unit) -> unit
 end = struct
   open Opentelemetry.Proto
 
@@ -250,8 +255,8 @@ end = struct
 
   let[@inline] send_event (self : t) ev : unit = B_queue.push self.q ev
 
-  (** Thread that, in a loop, reads from [q] to get the
-      next message to send via http *)
+  (** Thread that, in a loop, reads from [q] to get the next message to send via
+      http *)
   let bg_thread_loop (self : t) : unit =
     Ezcurl.with_client ?set_opts:None @@ fun client ->
     let stop = self.stop in
@@ -379,7 +384,7 @@ end = struct
 
     self
 
-  let shutdown self : unit =
+  let shutdown self ~on_done : unit =
     Atomic.set self.stop true;
     if not (Atomic.exchange self.cleaned true) then (
       (* empty batches *)
@@ -392,7 +397,8 @@ end = struct
       (* close send queues, then wait for all threads *)
       B_queue.close self.send_q;
       Array.iter Thread.join self.send_threads
-    )
+    );
+    on_done ()
 end
 
 let create_backend ?(stop = Atomic.make false)
@@ -480,7 +486,7 @@ let create_backend ?(stop = Atomic.make false)
       Backend_impl.send_event backend Event.E_tick;
       List.iter (fun f -> f ()) (AList.get @@ Atomic.get on_tick_cbs_)
 
-    let cleanup () = Backend_impl.shutdown backend
+    let cleanup ~on_done () = Backend_impl.shutdown backend ~on_done
   end in
   (module M)
 
@@ -498,7 +504,7 @@ let setup_ticker_thread ~stop ~sleep_ms (module B : Collector.BACKEND) () =
   start_bg_thread tick_loop
 
 let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
-    =
+    : unit =
   let backend = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
@@ -508,18 +514,18 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
     (* at most a minute *)
     let sleep_ms = min 60_000 (max 2 config.ticker_interval_ms) in
     ignore (setup_ticker_thread ~stop ~sleep_ms backend () : Thread.t)
-  );
-  OT.Collector.remove_backend
+  )
+
+let remove_backend () : unit =
+  (* we don't need the callback, this runs in the same thread *)
+  OT.Collector.remove_backend () ~on_done:ignore
 
 let setup ?stop ?config ?(enable = true) () =
-  if enable then (
-    let cleanup = setup_ ?stop ?config () in
-    at_exit cleanup
-  )
+  if enable then setup_ ?stop ?config ()
 
 let with_setup ?stop ?config ?(enable = true) () f =
   if enable then (
-    let cleanup = setup_ ?stop ?config () in
-    Fun.protect ~finally:cleanup f
+    setup_ ?stop ?config ();
+    Fun.protect ~finally:remove_backend f
   ) else
     f ()

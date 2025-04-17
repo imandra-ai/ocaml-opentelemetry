@@ -89,7 +89,11 @@ module Collector = struct
         the collector's implementation, it might be called from a thread that is
         not the one that called [on_tick]. *)
 
-    val cleanup : unit -> unit
+    val cleanup : on_done:(unit -> unit) -> unit -> unit
+    (** [cleanup ~on_done ()] is called when the collector is shut down, and is
+        responsible for sending remaining batches, flushing sockets, etc.
+        @param on_done
+          callback invoked after the cleanup is done. since NEXT_RELEASE *)
   end
 
   type backend = (module BACKEND)
@@ -110,7 +114,9 @@ module Collector = struct
 
     let set_on_tick_callbacks _cbs = ()
 
-    let cleanup () = ()
+    let cleanup ~on_done () =
+      on_done ();
+      ()
   end
 
   module Debug_backend (B : BACKEND) : BACKEND = struct
@@ -152,7 +158,7 @@ module Collector = struct
 
     let set_on_tick_callbacks cbs = B.set_on_tick_callbacks cbs
 
-    let cleanup () = B.cleanup ()
+    let cleanup ~on_done () = B.cleanup ~on_done ()
   end
 
   let debug_backend : backend = (module Debug_backend (Noop_backend))
@@ -171,13 +177,14 @@ module Collector = struct
     Atomic.set backend (Some b)
 
   (** Remove current backend, if any.
-      @since 0.11 *)
-  let remove_backend () : unit =
+      @since 0.11
+      @param on_done see {!BACKEND.cleanup}, since NEXT_RELEASE *)
+  let remove_backend ~on_done () : unit =
     match Atomic.exchange backend None with
     | None -> ()
     | Some (module B) ->
       B.tick ();
-      B.cleanup ()
+      B.cleanup ~on_done ()
 
   (** Is there a configured backend? *)
   let[@inline] has_backend () : bool = Atomic.get backend != None
@@ -213,11 +220,11 @@ module Collector = struct
     | None -> ()
     | Some (module B) -> B.tick ()
 
-  let with_setup_debug_backend b ?(enable = true) () f =
+  let with_setup_debug_backend ?(on_done = ignore) b ?(enable = true) () f =
     let (module B : BACKEND) = b in
     if enable then (
       set_backend b;
-      Fun.protect ~finally:B.cleanup f
+      Fun.protect ~finally:(B.cleanup ~on_done) f
     ) else
       f ()
 end
