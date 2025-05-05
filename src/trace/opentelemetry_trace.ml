@@ -144,8 +144,8 @@ module Internal = struct
     assert (Bytes.length bs = 8);
     Bytes.get_int64_le bs 0
 
-  let enter_span' ?(explicit_parent : Otrace.explicit_span_ctx option) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name
-      =
+  let enter_span' ?(explicit_parent : Otrace.explicit_span_ctx option)
+      ~__FUNCTION__ ~__FILE__ ~__LINE__ ~data name =
     let open Otel in
     let otel_id = Span_id.create () in
     let otrace_id = otrace_of_otel otel_id in
@@ -159,7 +159,8 @@ module Internal = struct
     let parent =
       match explicit_parent, parent_scope with
       | Some p, _ ->
-        Some (Otel.Span_ctx.make ~trace_id ~parent_id:(span_id_to_otel p.span) ())
+        Some
+          (Otel.Span_ctx.make ~trace_id ~parent_id:(span_id_to_otel p.span) ())
       | None, Some parent -> Some (Otel.Scope.to_span_ctx parent)
       | None, None -> None
     in

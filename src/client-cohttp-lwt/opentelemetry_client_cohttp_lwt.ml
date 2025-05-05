@@ -9,8 +9,8 @@ open Opentelemetry
 include Common_
 
 external reraise : exn -> 'a = "%reraise"
-(** This is equivalent to [Lwt.reraise]. We inline it here so we don't force
-    to use Lwt's latest version *)
+(** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to
+    use Lwt's latest version *)
 
 let needs_gc_metrics = Atomic.make false
 
@@ -133,7 +133,8 @@ end = struct
               let bt = Printexc.get_backtrace () in
               Error
                 (`Failure
-                  (spf "decoding failed with:\n%s\n%s" (Printexc.to_string e) bt))
+                   (spf "decoding failed with:\n%s\n%s" (Printexc.to_string e)
+                      bt))
           in
           Lwt.return r
       ) else (
@@ -147,12 +148,12 @@ end = struct
             let bt = Printexc.get_backtrace () in
             Error
               (`Failure
-                (spf
-                   "httpc: decoding of status (url=%S, code=%d) failed with:\n\
-                    %s\n\
-                    status: %S\n\
-                    %s"
-                   url code (Printexc.to_string e) body bt))
+                 (spf
+                    "httpc: decoding of status (url=%S, code=%d) failed with:\n\
+                     %s\n\
+                     status: %S\n\
+                     %s"
+                    url code (Printexc.to_string e) body bt))
         in
         Lwt.return r
       )
@@ -167,10 +168,10 @@ module Batch : sig
   val push' : 'a t -> 'a -> unit
 
   val pop_if_ready : ?force:bool -> now:Mtime.t -> 'a t -> 'a list option
-  (** Is the batch ready to be emitted? If batching is disabled,
-      this is true as soon as {!is_empty} is false. If a timeout is provided
-      for this batch, then it will be ready if an element has been in it
-      for at least the timeout.
+  (** Is the batch ready to be emitted? If batching is disabled, this is true as
+      soon as {!is_empty} is false. If a timeout is provided for this batch,
+      then it will be ready if an element has been in it for at least the
+      timeout.
       @param now passed to implement timeout *)
 
   val make : ?batch:int -> ?timeout:Mtime.span -> unit -> 'a t
@@ -255,15 +256,14 @@ module type EMITTER = sig
 
   val tick : unit -> unit
 
-  val cleanup : unit -> unit
+  val cleanup : on_done:(unit -> unit) -> unit -> unit
 end
 
 (* make an emitter.
 
    exceptions inside should be caught, see
    https://opentelemetry.io/docs/reference/specification/error-handling/ *)
-let mk_emitter ~(after_cleanup : unit Lwt.u option) ~stop ~(config : Config.t)
-    () : (module EMITTER) =
+let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
   let open Proto in
   let open Lwt.Syntax in
   (* local helpers *)
@@ -448,13 +448,12 @@ let mk_emitter ~(after_cleanup : unit Lwt.u option) ~stop ~(config : Config.t)
     (* if called in a blocking context: work in the background *)
     let tick () = Lwt.async tick_
 
-    let cleanup () =
+    let cleanup ~on_done () =
       if !debug_ then Printf.eprintf "opentelemetry: exiting…\n%!";
       Lwt.async (fun () ->
           let* () = emit_all_force httpc encoder in
           Httpc.cleanup httpc;
-          (* resolve [after_cleanup], if provided *)
-          Option.iter (fun prom -> Lwt.wakeup_later prom ()) after_cleanup;
+          on_done ();
           Lwt.return ())
   end in
   (module M)
@@ -464,13 +463,9 @@ module Backend
       val stop : bool Atomic.t
 
       val config : Config.t
-
-      val after_cleanup : unit Lwt.u option
     end)
     () : Opentelemetry.Collector.BACKEND = struct
-  include
-    (val mk_emitter ~after_cleanup:Arg.after_cleanup ~stop:Arg.stop
-           ~config:Arg.config ())
+  include (val mk_emitter ~stop:Arg.stop ~config:Arg.config ())
 
   open Opentelemetry.Proto
   open Opentelemetry.Collector
@@ -562,8 +557,7 @@ module Backend
     }
 end
 
-let create_backend ?after_cleanup ?(stop = Atomic.make false)
-    ?(config = Config.make ()) () =
+let create_backend ?(stop = Atomic.make false) ?(config = Config.make ()) () =
   debug_ := config.debug;
 
   let module B =
@@ -572,43 +566,37 @@ let create_backend ?after_cleanup ?(stop = Atomic.make false)
         let stop = stop
 
         let config = config
-
-        let after_cleanup = after_cleanup
       end)
       ()
   in
   (module B : OT.Collector.BACKEND)
 
-let setup_ ?stop ?config () : (unit -> unit) * unit Lwt.t =
-  let cleanup_done, cleanup_done_prom = Lwt.wait () in
-  let backend =
-    create_backend ~after_cleanup:cleanup_done_prom ?stop ?config ()
-  in
+let setup_ ?stop ?config () : unit =
+  let backend = create_backend ?stop ?config () in
   OT.Collector.set_backend backend;
-
-  OT.Collector.remove_backend, cleanup_done
+  ()
 
 let setup ?stop ?config ?(enable = true) () =
-  if enable then (
-    let cleanup, _lwt = setup_ ?stop ?config () in
-    at_exit cleanup
-  )
+  if enable then setup_ ?stop ?config ()
+
+let remove_backend () : unit Lwt.t =
+  let done_fut, done_u = Lwt.wait () in
+  OT.Collector.remove_backend ~on_done:(fun () -> Lwt.wakeup_later done_u ()) ();
+  done_fut
 
 let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t
     =
-  if enable then
+  if enable then (
     let open Lwt.Syntax in
-    let cleanup, cleanup_done = setup_ ?stop ~config () in
+    setup_ ?stop ~config ();
 
     Lwt.catch
       (fun () ->
         let* res = f () in
-        cleanup ();
-        let+ () = cleanup_done in
+        let+ () = remove_backend () in
         res)
       (fun exn ->
-        cleanup ();
-        let* () = cleanup_done in
+        let* () = remove_backend () in
         reraise exn)
-  else
+  ) else
     f ()

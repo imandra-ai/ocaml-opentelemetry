@@ -22,14 +22,14 @@ module AList = AList
 module Proto = Opentelemetry_proto
 (** Protobuf types.
 
-   This is mostly useful internally. Users should not need to touch it. *)
+    This is mostly useful internally. Users should not need to touch it. *)
 
 (** {2 Timestamps} *)
 
 (** Unix timestamp.
 
-    These timestamps measure time since the Unix epoch (jan 1, 1970) UTC
-    in nanoseconds. *)
+    These timestamps measure time since the Unix epoch (jan 1, 1970) UTC in
+    nanoseconds. *)
 module Timestamp_ns = struct
   type t = int64
 
@@ -56,18 +56,15 @@ module Collector = struct
   open Opentelemetry_proto
 
   type 'msg sender = { send: 'a. 'msg -> ret:(unit -> 'a) -> 'a }
-  (** Sender interface for a message of type [msg].
-      Inspired from Logs' reporter
-      (see {{:https://erratique.ch/software/logs/doc/Logs/index.html#sync} its doc})
-      but without [over] as it doesn't make much sense in presence
-      of batching.
+  (** Sender interface for a message of type [msg]. Inspired from Logs' reporter
+      (see
+      {{:https://erratique.ch/software/logs/doc/Logs/index.html#sync} its doc})
+      but without [over] as it doesn't make much sense in presence of batching.
 
-      The [ret] callback is used to return the desired type (unit, or
-      a Lwt promise, or anything else) once the event has been transferred
-      to the backend.
-      It doesn't mean the event has been collected yet, it
-      could sit in a batch queue for a little while.
-  *)
+      The [ret] callback is used to return the desired type (unit, or a Lwt
+      promise, or anything else) once the event has been transferred to the
+      backend. It doesn't mean the event has been collected yet, it could sit in
+      a batch queue for a little while. *)
 
   (** Collector client interface. *)
   module type BACKEND = sig
@@ -79,20 +76,24 @@ module Collector = struct
 
     val signal_emit_gc_metrics : unit -> unit
     (** Signal the backend that it should emit GC metrics when it has the
-        chance. This should be installed in a GC alarm or another form
-        of regular trigger. *)
+        chance. This should be installed in a GC alarm or another form of
+        regular trigger. *)
 
     val tick : unit -> unit
-    (** Should be called regularly for background processing,
-        timeout checks, etc. *)
+    (** Should be called regularly for background processing, timeout checks,
+        etc. *)
 
     val set_on_tick_callbacks : (unit -> unit) AList.t -> unit
-    (** Give the collector the list of callbacks to be executed
-        when [tick()] is called. Each such callback should be short and
-        reentrant. Depending on the collector's implementation, it might be
-        called from a thread that is not the one that called [on_tick]. *)
+    (** Give the collector the list of callbacks to be executed when [tick()] is
+        called. Each such callback should be short and reentrant. Depending on
+        the collector's implementation, it might be called from a thread that is
+        not the one that called [on_tick]. *)
 
-    val cleanup : unit -> unit
+    val cleanup : on_done:(unit -> unit) -> unit -> unit
+    (** [cleanup ~on_done ()] is called when the collector is shut down, and is
+        responsible for sending remaining batches, flushing sockets, etc.
+        @param on_done
+          callback invoked after the cleanup is done. since NEXT_RELEASE *)
   end
 
   type backend = (module BACKEND)
@@ -113,7 +114,9 @@ module Collector = struct
 
     let set_on_tick_callbacks _cbs = ()
 
-    let cleanup () = ()
+    let cleanup ~on_done () =
+      on_done ();
+      ()
   end
 
   module Debug_backend (B : BACKEND) : BACKEND = struct
@@ -155,7 +158,7 @@ module Collector = struct
 
     let set_on_tick_callbacks cbs = B.set_on_tick_callbacks cbs
 
-    let cleanup () = B.cleanup ()
+    let cleanup ~on_done () = B.cleanup ~on_done ()
   end
 
   let debug_backend : backend = (module Debug_backend (Noop_backend))
@@ -174,13 +177,14 @@ module Collector = struct
     Atomic.set backend (Some b)
 
   (** Remove current backend, if any.
-      @since 0.11 *)
-  let remove_backend () : unit =
+      @since 0.11
+      @param on_done see {!BACKEND.cleanup}, since NEXT_RELEASE *)
+  let remove_backend ~on_done () : unit =
     match Atomic.exchange backend None with
     | None -> ()
     | Some (module B) ->
       B.tick ();
-      B.cleanup ()
+      B.cleanup ~on_done ()
 
   (** Is there a configured backend? *)
   let[@inline] has_backend () : bool = Atomic.get backend != None
@@ -209,18 +213,18 @@ module Collector = struct
 
   let[@inline] on_tick f = AList.add on_tick_cbs_ f
 
-  (** Do background work. Call this regularly if the collector doesn't
-      already have a ticker thread or internal timer. *)
+  (** Do background work. Call this regularly if the collector doesn't already
+      have a ticker thread or internal timer. *)
   let tick () =
     match Atomic.get backend with
     | None -> ()
     | Some (module B) -> B.tick ()
 
-  let with_setup_debug_backend b ?(enable = true) () f =
+  let with_setup_debug_backend ?(on_done = ignore) b ?(enable = true) () f =
     let (module B : BACKEND) = b in
     if enable then (
       set_backend b;
-      Fun.protect ~finally:B.cleanup f
+      Fun.protect ~finally:(B.cleanup ~on_done) f
     ) else
       f ()
 end
@@ -338,8 +342,8 @@ end = struct
   let pp fmt t = Format.fprintf fmt "%s" (to_hex t)
 end
 
-(** Hmap key to carry around a {!Trace_id.t}, to remember what the current
-    trace is.
+(** Hmap key to carry around a {!Trace_id.t}, to remember what the current trace
+    is.
     @since 0.8 *)
 let k_trace_id : Trace_id.t Hmap.key = Hmap.Key.create ()
 
@@ -402,7 +406,8 @@ end
 
 (** Span context. This bundles up a trace ID and parent ID.
 
-    {{: https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext} https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext}
+    {{:https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext}
+     https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext}
     @since 0.7 *)
 module Span_ctx : sig
   type t
@@ -510,7 +515,8 @@ let k_span_ctx : Span_ctx.t Hmap.key = Hmap.Key.create ()
 
 (** Semantic conventions
 
-    {{: https://opentelemetry.io/docs/specs/semconv/} https://opentelemetry.io/docs/specs/semconv/} *)
+    {{:https://opentelemetry.io/docs/specs/semconv/}
+     https://opentelemetry.io/docs/specs/semconv/} *)
 module Conventions = struct
   module Attributes = struct
     module Process = struct
@@ -570,7 +576,8 @@ module Conventions = struct
       let url_scheme = "url.scheme"
     end
 
-    (** https://github.com/open-telemetry/semantic-conventions/blob/main/docs/resource/host.md *)
+    (** https://github.com/open-telemetry/semantic-conventions/blob/main/docs/resource/host.md
+    *)
     module Host = struct
       let id = "host.id"
 
@@ -684,9 +691,9 @@ module Globals = struct
     default_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel"
       ()
 
-  (** Global attributes, initially set
-      via OTEL_RESOURCE_ATTRIBUTES and modifiable
-      by the user code. They will be attached to each outgoing metrics/traces. *)
+  (** Global attributes, initially set via OTEL_RESOURCE_ATTRIBUTES and
+      modifiable by the user code. They will be attached to each outgoing
+      metrics/traces. *)
   let global_attributes : key_value list ref =
     let parse_pair s =
       match String.split_on_char '=' s with
@@ -709,10 +716,10 @@ module Globals = struct
     let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
     List.rev_append (List.filter not_redundant !global_attributes) into
 
-  (** Default span kind in {!Span.create}.
-      This will be used in all spans that do not specify [~kind] explicitly;
-      it is set to "internal", following directions from the [.proto] file.
-      It can be convenient to set "client" or "server" uniformly in here.
+  (** Default span kind in {!Span.create}. This will be used in all spans that
+      do not specify [~kind] explicitly; it is set to "internal", following
+      directions from the [.proto] file. It can be convenient to set "client" or
+      "server" uniformly in here.
       @since 0.4 *)
   let default_span_kind = ref Proto.Trace.Span_kind_internal
 
@@ -746,8 +753,8 @@ end
 
 (** Events.
 
-    Events occur at a given time and can carry attributes. They always
-    belong in a span. *)
+    Events occur at a given time and can carry attributes. They always belong in
+    a span. *)
 module Event : sig
   open Proto.Trace
 
@@ -768,11 +775,10 @@ end
 
 (** Span Link
 
-   A pointer from the current span to another span in the same trace or in a
-   different trace. For example, this can be used in batching operations,
-   where a single batch handler processes multiple requests from different
-   traces or when the handler receives a request from a different project.
-*)
+    A pointer from the current span to another span in the same trace or in a
+    different trace. For example, this can be used in batching operations, where
+    a single batch handler processes multiple requests from different traces or
+    when the handler receives a request from a different project. *)
 module Span_link : sig
   open Proto.Trace
 
@@ -872,8 +878,7 @@ end
 
 (** Scopes.
 
-    A scope is a trace ID and the span ID of the currently active span.
-*)
+    A scope is a trace ID and the span ID of the currently active span. *)
 module Scope : sig
   type item_list
 
@@ -917,28 +922,28 @@ module Scope : sig
   val add_event : t -> (unit -> Event.t) -> unit
   (** Add an event to the scope. It will be aggregated into the span.
 
-  Note that this takes a function that produces an event, and will only
-  call it if there is an instrumentation backend. *)
+      Note that this takes a function that produces an event, and will only call
+      it if there is an instrumentation backend. *)
 
   val record_exception : t -> exn -> Printexc.raw_backtrace -> unit
 
   val add_attrs : t -> (unit -> key_value list) -> unit
   (** Add attributes to the scope. It will be aggregated into the span.
 
-  Note that this takes a function that produces attributes, and will only
-  call it if there is an instrumentation backend. *)
+      Note that this takes a function that produces attributes, and will only
+      call it if there is an instrumentation backend. *)
 
   val add_links : t -> (unit -> Span_link.t list) -> unit
   (** Add links to the scope. It will be aggregated into the span.
 
-  Note that this takes a function that produces links, and will only
-  call it if there is an instrumentation backend. *)
+      Note that this takes a function that produces links, and will only call it
+      if there is an instrumentation backend. *)
 
   val set_status : t -> Span_status.t -> unit
   (** set the span status.
 
-  Note that this function will be
-  called only if there is an instrumentation backend. *)
+      Note that this function will be called only if there is an instrumentation
+      backend. *)
 
   val set_kind : t -> Span_kind.t -> unit
   (** Set the span's kind.
@@ -946,17 +951,18 @@ module Scope : sig
 
   val ambient_scope_key : t Ambient_context.key
   (** The opaque key necessary to access/set the ambient scope with
-  {!Ambient_context}. *)
+      {!Ambient_context}. *)
 
   val get_ambient_scope : ?scope:t -> unit -> t option
   (** Obtain current scope from {!Ambient_context}, if available. *)
 
   val with_ambient_scope : t -> (unit -> 'a) -> 'a
   (** [with_ambient_scope sc thunk] calls [thunk()] in a context where [sc] is
-  the (thread|continuation)-local scope, then reverts to the previous local
-  scope, if any.
+      the (thread|continuation)-local scope, then reverts to the previous local
+      scope, if any.
 
-  @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context> ambient-context docs *)
+      @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context>
+        ambient-context docs *)
 end = struct
   type item_list =
     | Nil
@@ -1093,10 +1099,10 @@ end
 
 (** Spans.
 
-    A Span is the workhorse of traces, it indicates an operation that
-    took place over a given span of time (indicated by start_time and end_time)
-    as part of a hierarchical trace. All spans in a given trace are bound by
-    the use of the same {!Trace_id.t}. *)
+    A Span is the workhorse of traces, it indicates an operation that took place
+    over a given span of time (indicated by start_time and end_time) as part of
+    a hierarchical trace. All spans in a given trace are bound by the use of the
+    same {!Trace_id.t}. *)
 module Span : sig
   open Proto.Trace
 
@@ -1138,10 +1144,11 @@ module Span : sig
     string ->
     t * id
   (** [create ~trace_id name] creates a new span with its unique ID.
-        @param trace_id the trace this belongs to
-        @param parent parent span, if any
-        @param links list of links to other spans, each with their trace state
-        (see {{: https://www.w3.org/TR/trace-context/#tracestate-header} w3.org}) *)
+      @param trace_id the trace this belongs to
+      @param parent parent span, if any
+      @param links
+        list of links to other spans, each with their trace state (see
+        {{:https://www.w3.org/TR/trace-context/#tracestate-header} w3.org}) *)
 end = struct
   open Proto.Trace
 
@@ -1184,7 +1191,9 @@ end
 
 (** Traces.
 
-    See {{: https://opentelemetry.io/docs/reference/specification/overview/#tracing-signal} the spec} *)
+    See
+    {{:https://opentelemetry.io/docs/reference/specification/overview/#tracing-signal}
+     the spec} *)
 module Trace = struct
   open Proto.Trace
 
@@ -1201,11 +1210,11 @@ module Trace = struct
 
   (** Sync emitter.
 
-      This instructs the collector to forward
-      the spans to some backend at a later point.
+      This instructs the collector to forward the spans to some backend at a
+      later point.
 
-      {b NOTE} be careful not to call this inside a Gc alarm, as it can
-      cause deadlocks. *)
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can cause
+      deadlocks. *)
   let emit ?service_name ?attrs (spans : span list) : unit =
     let rs = make_resource_spans ?service_name ?attrs spans in
     Collector.send_trace [ rs ] ~ret:(fun () -> ())
@@ -1294,12 +1303,13 @@ module Trace = struct
       scope in the ambient context, so that any logically-nested calls to
       {!with_} will use this span as their parent.
 
-      {b NOTE} be careful not to call this inside a Gc alarm, as it can
-      cause deadlocks.
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can cause
+      deadlocks.
 
-      @param force_new_trace_id if true (default false), the span will not use a
-      ambient scope, the [~scope] argument, nor [~trace_id], but will instead
-      always create fresh identifiers for this span *)
+      @param force_new_trace_id
+        if true (default false), the span will not use a ambient scope, the
+        [~scope] argument, nor [~trace_id], but will instead always create fresh
+        identifiers for this span *)
 
   let with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
       ?trace_id ?parent ?scope ?links name (cb : Scope.t -> 'a) : 'a =
@@ -1322,16 +1332,18 @@ end
 
 (** Metrics.
 
-    See {{: https://opentelemetry.io/docs/reference/specification/overview/#metric-signal} the spec} *)
+    See
+    {{:https://opentelemetry.io/docs/reference/specification/overview/#metric-signal}
+     the spec} *)
 module Metrics = struct
   open Proto
   open Proto.Metrics
 
   type t = Metrics.metric
   (** A single metric, measuring some time-varying quantity or statistical
-      distribution. It is composed of one or more data points that have
-      precise values and time stamps. Each distinct metric should have a
-      distinct name. *)
+      distribution. It is composed of one or more data points that have precise
+      values and time stamps. Each distinct metric should have a distinct name.
+  *)
 
   open struct
     let _program_start = Timestamp_ns.now_unix_ns ()
@@ -1377,10 +1389,11 @@ module Metrics = struct
   (** Histogram data
       @param count number of values in population (non negative)
       @param sum sum of values in population (0 if count is 0)
-      @param bucket_counts count value of histogram for each bucket. Sum of
-      the counts must be equal to [count].
-      length must be [1+length explicit_bounds]
-      @param explicit_bounds strictly increasing list of bounds for the buckets *)
+      @param bucket_counts
+        count value of histogram for each bucket. Sum of the counts must be
+        equal to [count]. length must be [1+length explicit_bounds]
+      @param explicit_bounds strictly increasing list of bounds for the buckets
+  *)
   let histogram_data_point ?(start_time_unix_nano = _program_start)
       ?(now = Timestamp_ns.now_unix_ns ()) ?(attrs = []) ?(exemplars = [])
       ?(explicit_bounds = []) ?sum ~bucket_counts ~count () :
@@ -1411,20 +1424,18 @@ module Metrics = struct
     let resource = Proto.Resource.default_resource ~attributes () in
     default_resource_metrics ~scope_metrics:[ lm ] ~resource:(Some resource) ()
 
-  (** Emit some metrics to the collector (sync). This blocks until
-      the backend has pushed the metrics into some internal queue, or
-      discarded them.
+  (** Emit some metrics to the collector (sync). This blocks until the backend
+      has pushed the metrics into some internal queue, or discarded them.
 
-      {b NOTE} be careful not to call this inside a Gc alarm, as it can
-      cause deadlocks.
-      *)
+      {b NOTE} be careful not to call this inside a Gc alarm, as it can cause
+      deadlocks. *)
   let emit ?attrs (l : t list) : unit =
     let rm = make_resource_metrics ?attrs l in
     Collector.send_metrics [ rm ] ~ret:ignore
 end
 
-(** A set of callbacks that produce metrics when called.
-    The metrics are automatically called regularly.
+(** A set of callbacks that produce metrics when called. The metrics are
+    automatically called regularly.
 
     This allows applications to register metrics callbacks from various points
     in the program (or even in libraries), and not worry about setting
@@ -1436,13 +1447,13 @@ module Metrics_callbacks = struct
 
   (** [register f] adds the callback [f] to the list.
 
-      [f] will be called at unspecified times and is expected to return
-      a list of metrics. It might be called regularly by the backend,
-      in particular (but not only) when {!Collector.tick} is called. *)
+      [f] will be called at unspecified times and is expected to return a list
+      of metrics. It might be called regularly by the backend, in particular
+      (but not only) when {!Collector.tick} is called. *)
   let register f : unit =
     if !cbs_ = [] then
       (* make sure we call [f] (and others) at each tick *)
-      Collector.on_tick (fun () ->
+        Collector.on_tick (fun () ->
           let m = List.map (fun f -> f ()) !cbs_ |> List.flatten in
           Metrics.emit m);
     cbs_ := f :: !cbs_
@@ -1452,7 +1463,9 @@ end
 
 (** Logs.
 
-    See {{: https://opentelemetry.io/docs/reference/specification/overview/#log-signal} the spec} *)
+    See
+    {{:https://opentelemetry.io/docs/reference/specification/overview/#log-signal}
+     the spec} *)
 module Logs = struct
   open Opentelemetry_proto
   open Logs
@@ -1527,10 +1540,9 @@ module Logs = struct
 
   (** Emit logs.
 
-    This instructs the collector to send the logs to some backend at
-    a later date.
-    {b NOTE} be careful not to call this inside a Gc alarm, as it can
-    cause deadlocks. *)
+      This instructs the collector to send the logs to some backend at a later
+      date. {b NOTE} be careful not to call this inside a Gc alarm, as it can
+      cause deadlocks. *)
   let emit ?service_name ?attrs (l : t list) : unit =
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
     let resource = Proto.Resource.default_resource ~attributes () in
@@ -1548,12 +1560,10 @@ end
 
 (** Implementation of the W3C Trace Context spec
 
-    https://www.w3.org/TR/trace-context/
-*)
+    https://www.w3.org/TR/trace-context/ *)
 module Trace_context = struct
   (** The traceparent header
-      https://www.w3.org/TR/trace-context/#traceparent-header
-  *)
+      https://www.w3.org/TR/trace-context/#traceparent-header *)
   module Traceparent = struct
     let name = "traceparent"
 
@@ -1562,15 +1572,16 @@ module Trace_context = struct
         The values are of the form:
 
         {[
-        {version}-{trace_id}-{parent_id}-{flags}
+          { version } - { trace_id } - { parent_id } - { flags }
         ]}
 
         For example:
 
-        {[ 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 ]}
+        {[
+          00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+        ]}
 
-        [{flags}] are currently ignored.
-    *)
+        [{flags}] are currently ignored. *)
     let of_value str : (Trace_id.t * Span_id.t, string) result =
       match Span_ctx.of_w3c_trace_context (Bytes.unsafe_of_string str) with
       | Ok sp -> Ok (Span_ctx.trace_id sp, Span_ctx.parent_id sp)
@@ -1588,8 +1599,8 @@ end
     These metrics are emitted after each GC collection. *)
 module GC_metrics : sig
   val basic_setup : unit -> unit
-  (** Setup a hook that will emit GC statistics on every tick (assuming
-      a ticker thread) *)
+  (** Setup a hook that will emit GC statistics on every tick (assuming a ticker
+      thread) *)
 
   val get_runtime_attributes : unit -> Span.key_value list
   (** Get OCaml name and version runtime attributes *)
@@ -1597,7 +1608,9 @@ module GC_metrics : sig
   val get_metrics : unit -> Metrics.t list
   (** Get a few metrics from the current state of the GC *)
 end = struct
-  (** See https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/process.md#process-runtimes *)
+  (** See
+      https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/process.md#process-runtimes
+  *)
   let runtime_attributes =
     lazy
       Conventions.Attributes.

@@ -17,17 +17,15 @@ module Server : sig
       Use it like this:
 
       {[
-      let my_server callback =
-        let callback_traced =
-          Opentelemetry_cohttp_lwt.Server.trace
-            ~service_name:"my-service"
-            (fun _scope -> callback)
-        in
-        Cohttp_lwt_unix.Server.create
-          ~mode:(`TCP (`Port 8080))
-          (Server.make () ~callback:callback_traced)
-      ]}
-   *)
+        let my_server callback =
+          let callback_traced =
+            Opentelemetry_cohttp_lwt.Server.trace ~service_name:"my-service"
+              (fun _scope -> callback)
+          in
+          Cohttp_lwt_unix.Server.create
+            ~mode:(`TCP (`Port 8080))
+            (Server.make () ~callback:callback_traced)
+      ]} *)
 
   val with_ :
     ?trace_state:string ->
@@ -43,24 +41,20 @@ module Server : sig
 
       Identical to [Opentelemetry_lwt.Trace.with_], but fetches/stores the trace
       scope in the [x-ocaml-otel-traceparent] header in the request for
-      convenience.
-   *)
+      convenience. *)
 
   val get_trace_context :
     ?from:[ `Internal | `External ] -> Request.t -> Otel.Scope.t option
   (** Get the tracing scope from the custom [x-ocaml-otel-traceparent] header
-      added by [trace] and [with_].
-   *)
+      added by [trace] and [with_]. *)
 
   val set_trace_context : Otel.Scope.t -> Request.t -> Request.t
   (** Set the tracing scope in the custom [x-ocaml-otel-traceparent] header used
-      by [trace] and [with_].
-   *)
+      by [trace] and [with_]. *)
 
   val remove_trace_context : Request.t -> Request.t
   (** Strip the custom [x-ocaml-otel-traceparent] header added by [trace] and
-      [with_].
-   *)
+      [with_]. *)
 end = struct
   let attrs_of_request (req : Request.t) =
     let meth = req |> Request.meth |> Code.string_of_method in

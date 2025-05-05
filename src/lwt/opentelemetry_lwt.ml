@@ -12,8 +12,8 @@ module Metrics_callbacks = Metrics_callbacks
 module Trace_context = Trace_context
 
 external reraise : exn -> 'a = "%reraise"
-(** This is equivalent to [Lwt.reraise]. We inline it here so we don't force
-    to use Lwt's latest version *)
+(** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to
+    use Lwt's latest version *)
 
 module Trace = struct
   include Trace
