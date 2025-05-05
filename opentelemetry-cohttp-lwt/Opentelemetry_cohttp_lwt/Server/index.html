@@ -9,15 +9,14 @@
   <span><span class="type-var">'conn</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../../cohttp/Cohttp/Request/index.html#type-t">Cohttp_lwt.Request.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="type-var">'body</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span>(<a href="../../../cohttp/Cohttp/Response/index.html#type-t">Cohttp_lwt.Response.t</a> * <span class="type-var">'body</span>)</span> <a href="../../../lwt/Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Trace requests to a Cohttp server.</p><p>Use it like this:</p><pre class="language-ocaml"><code>let my_server callback =
-  let callback_traced =
-    Opentelemetry_cohttp_lwt.Server.trace
-      ~service_name:&quot;my-service&quot;
-      (fun _scope -&gt; callback)
-  in
-  Cohttp_lwt_unix.Server.create
-    ~mode:(`TCP (`Port 8080))
-    (Server.make () ~callback:callback_traced)</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_"><a href="#val-with_" class="anchor"></a><code><span><span class="keyword">val</span> with_ : 
+  <span><span>(<a href="../../../cohttp/Cohttp/Response/index.html#type-t">Cohttp_lwt.Response.t</a> * <span class="type-var">'body</span>)</span> <a href="../../../lwt/Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Trace requests to a Cohttp server.</p><p>Use it like this:</p><pre class="language-ocaml"><code>  let my_server callback =
+    let callback_traced =
+      Opentelemetry_cohttp_lwt.Server.trace ~service_name:&quot;my-service&quot;
+        (fun _scope -&gt; callback)
+    in
+    Cohttp_lwt_unix.Server.create
+      ~mode:(`TCP (`Port 8080))
+      (Server.make () ~callback:callback_traced)</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_"><a href="#val-with_" class="anchor"></a><code><span><span class="keyword">val</span> with_ : 
   <span><span class="optlabel">?trace_state</span>:string <span class="arrow">&#45;&gt;</span></span>
   <span><span class="optlabel">?service_name</span>:string <span class="arrow">&#45;&gt;</span></span>
   <span><span class="optlabel">?attrs</span>:<span><a href="../../../opentelemetry/Opentelemetry/Span/index.html#type-key_value">Otel.Span.key_value</a> list</span> <span class="arrow">&#45;&gt;</span></span>
