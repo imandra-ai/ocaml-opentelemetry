@@ -32,7 +32,7 @@ val setup :
       an atomic boolean. When it becomes true, background threads will all stop
       after a little while. *)
 
-val remove_backend : unit -> unit Lwt.t
+val remove_backend : unit -> unit
 (** Shutdown current backend
     @since NEXT_RELEASE *)
 
@@ -41,7 +41,7 @@ val with_setup :
   ?config:Config.t ->
   ?enable:bool ->
   unit ->
-  (unit -> 'a Lwt.t) ->
-  'a Lwt.t
+  (unit -> 'a) ->
+  'a
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up after
     [f()] returns See {!setup} for more details. *)

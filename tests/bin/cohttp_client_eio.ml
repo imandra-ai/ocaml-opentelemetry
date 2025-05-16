@@ -18,12 +18,12 @@ let run () =
     let@ scope =
       Otel_lwt.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
     in
-    let* () = Lwt_unix.sleep !sleep_outer in
+    let () = Eio_unix.sleep !sleep_outer in
     let module C = (val mk_client ~scope) in
-    let* _res, body =
+    let _res, body =
       C.get (Uri.of_string "https://enec1hql02hz.x.pipedream.net")
     in
-    let* () = Cohttp_lwt.Body.drain_body body in
+    let () = Cohttp_lwt.Body.drain_body body in
     go ()
   in
   go ()
