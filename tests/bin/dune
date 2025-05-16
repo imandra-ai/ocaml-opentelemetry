@@ -23,3 +23,11 @@
   opentelemetry
   opentelemetry-client-cohttp-lwt
   opentelemetry-cohttp-lwt))
+
+(executable
+ (name cohttp_client_eio)
+ (modules cohttp_client_eio)
+ (libraries
+  opentelemetry
+  opentelemetry-client-cohttp-eio
+  opentelemetry-cohttp-lwt))
