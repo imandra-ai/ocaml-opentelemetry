@@ -79,12 +79,9 @@
    (>= "4.08"))
   (opentelemetry
    (= :version))
-  (cohttp-lwt-unix :with-test)
+  (cohttp-eio :with-test)
   (odoc :with-doc)
-  (lwt
-   (>= "5.3"))
-  (lwt_ppx
-   (>= "2.0"))
+  eio
   (alcotest :with-test))
  (tags
   (instrumentation tracing opentelemetry datadog lwt)))
@@ -176,11 +173,7 @@
   (opentelemetry
    (= :version))
   (odoc :with-doc)
-  (lwt
-   (>= "5.3"))
-  (lwt_ppx
-   (>= "2.0"))
-  cohttp-lwt
-  cohttp-lwt-unix
+  cohttp-eio
+  eio_main
   (alcotest :with-test))
  (synopsis "Collector client for opentelemetry, using cohttp + eio"))
