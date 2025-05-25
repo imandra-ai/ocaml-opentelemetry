@@ -9,24 +9,26 @@ let sleep_inner = ref 0.1
 
 let sleep_outer = ref 2.0
 
-let mk_client ~scope =
-  Opentelemetry_cohttp_lwt.client ~scope (module Cohttp_lwt_unix.Client)
+let mk_client ~scope:_ = raise (Failure "TODO")
+  (* Opentelemetry_cohttp_lwt.client ~scope (module Cohttp_eio.Client) *)
 
 let run () =
-  let open Lwt.Syntax in
-  let rec go () =
-    let@ scope =
-      Otel_lwt.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
-    in
-    let () = Eio_unix.sleep !sleep_outer in
-    let module C = (val mk_client ~scope) in
-    let _res, body =
-      C.get (Uri.of_string "https://enec1hql02hz.x.pipedream.net")
-    in
-    let () = Cohttp_lwt.Body.drain_body body in
-    go ()
-  in
-  go ()
+  (* TODO *)
+  (* let open Lwt.Syntax in *)
+  (* let rec go () = *)
+  (*   let@ scope = *)
+  (*     Otel_lwt.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer" *)
+  (*   in *)
+  (*   let () = Eio_unix.sleep !sleep_outer in *)
+  (*   let module C = (val mk_client ~scope) in *)
+  (*   let _res, body = *)
+  (*     C.get (Uri.of_string "https://enec1hql02hz.x.pipedream.net") *)
+  (*   in *)
+  (*   let () = Cohttp_lwt.Body.drain_body body in *)
+  (*   go () *)
+  (* in *)
+  (* go () *)
+  ()
 
 let () =
   Sys.catch_break true;
@@ -70,4 +72,4 @@ let () =
     "Check HTTP requests at \
      https://requestbin.com/r/enec1hql02hz/26qShWryt5vJc1JfrOwalhr5vQt@.";
 
-  Opentelemetry_client_cohttp_eio.with_setup ~config () run |> Lwt_main.run
+  Opentelemetry_client_cohttp_eio.with_setup ~config () run
