@@ -17,7 +17,7 @@ depends: [
   "mtime" {>= "1.4"}
   "opentelemetry" {= version}
   "odoc" {with-doc}
-  "cohttp-eio"
+  "cohttp-eio" {>= "6.1.0"}
   "eio_main"
   "alcotest" {with-test}
 ]
