@@ -86,8 +86,7 @@ module Httpc : sig
   val cleanup : t -> unit
 end = struct
   open Opentelemetry.Proto
-  open Lwt.Syntax
-  module Httpc = Cohttp_lwt_unix.Client
+  module Httpc = Cohttp_eio.Client
 
   type t = unit
 
@@ -106,9 +105,9 @@ end = struct
       Header.(add headers "Content-Type" "application/x-protobuf")
     in
 
-    let body = Cohttp_lwt.Body.of_string bod in
+    let body = Cohttp_eio.Body.of_string bod in
     let r =
-      try%lwt
+      try
         let r = Httpc.post ~headers ~body uri in
         Ok r
       with e -> Error e
