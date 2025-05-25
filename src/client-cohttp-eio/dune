@@ -5,8 +5,10 @@
  (libraries
   opentelemetry
   eio
+  cohttp
   cohttp-eio
   eio_main
+  uri
   pbrt
   mtime
   mtime.clock.os))
