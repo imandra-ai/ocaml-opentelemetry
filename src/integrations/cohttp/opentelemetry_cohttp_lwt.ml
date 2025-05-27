@@ -1,7 +1,6 @@
 module Otel = Opentelemetry
 module Otel_lwt = Opentelemetry_lwt
 open Cohttp
-open Cohttp_lwt
 
 module Server : sig
   val trace :
@@ -144,6 +143,17 @@ let client ?(scope : Otel.Scope.t option) (module C : Cohttp_lwt.S.Client) =
   let module Traced = struct
     open Lwt.Syntax
 
+    (*   These types and values are not customized by our client, but are required to satisfy
+         [Cohttp_lwt.S.Client]. *)
+    include (C : sig
+               type ctx = C.ctx
+               type 'a io = 'a C.io
+               type 'a with_context = 'a C.with_context
+               type body = C.body
+               val map_context : 'a with_context -> ('a -> 'b) -> 'b with_context
+               val set_cache : Cohttp_lwt.S.call -> unit
+             end)
+
     let attrs_for ~uri ~meth:_ () =
       [
         "http.method", `String (Code.string_of_method `GET);
@@ -174,8 +184,6 @@ let client ?(scope : Otel.Scope.t option) (module C : Cohttp_lwt.S.Client) =
       Header.add headers Traceparent.name
         (Traceparent.to_value ~trace_id:scope.trace_id ~parent_id:scope.span_id
            ())
-
-    type ctx = C.ctx
 
     let call ?ctx ?headers ?body ?chunked meth (uri : Uri.t) :
         (Response.t * Cohttp_lwt.Body.t) Lwt.t =
