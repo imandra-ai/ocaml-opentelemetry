@@ -1,18 +1,121 @@
-## v5.3.1 (2023-12-13)
+# v6.1.0 (2025-03-03)
 
-- cohttp: case-insensitive check of set-cookies (chomosuke, #1008)
+- cohttp-lwt-unix: Add http/https proxy support for client requests (@art-w @MisterDA, #1080)
+- cohttp-mirage: Support conduit 8.0.0 (@hannesm, #1104)
 
-## v5.3.0 (2023-07-21)
+## v6.0.0 (2024-11-21)
 
-- cohttp-async: support for base/async v0.16
+- bump minimum dune version to 3.8 (@avsm)
+- cohttp-eio: Use system authenticator in example.
+- http, cohttp: remove the scheme field from requests. This means that
+  [Request.uri] no longer returns the same URI as was to create the request
+  with [Request.make] (@rgrinberg 1086)
+- cohttp-eio: Remove unused `Client_intf` module (talex5 #1081)
+- cohttp-eio: Make server response type abstract and allow streaming in cohttp-eio (talex5 #1024)
+- cohttp-{lwt,eio}: server: add connection header to response if not present (ushitora-anqou #1025)
+- cohttp-curl: Curl no longer prepends the first HTTP request header to the output. (jonahbeckford #1030, #987)
+- cohttp-eio: client: use permissive argument type for make_generic
+- cohttp-eio: Improve error handling in example server (talex5 #1023)
+- cohttp-eio: Don't blow up `Server.callback` on client disconnections. (mefyl #1015)
+- http: Fix assertion in `Source.to_string_trim` when `pos <> 0` (mefyl #1017)
+- cohttp: `Cohttp.Request.make_for_client` no longer allows setting both
+  `~chunked:true` and `~body_length`.
+- cohttp-lwt-unix: Don't blow up when certificates are not available and no-network requests are made. (akuhlens #1027)
+  + Makes `cohttp-lwt.S.default_ctx` lazy.
 
-## v5.2.0 (2023-07-07)
+## v6.0.0~beta2 (2024-01-05)
 
-- cohttp-lwt server: call conn_closed before drainig the body of response on error (pirbo)
+- cohttp-eio: Don't blow up `Server.run` on client disconnections. (mefyl #1011)
+- cohttp-eio: Match body encoding with headers. (mefyl #1012)
+- cohttp-lwt: Preserve extended `Server.S.IO` signature. (mefyl #1013)
 
-## v5.1.0 (2023-04-04)
+## v6.0.0~beta1 (2023-10-27)
+- cohttp-eio: move new Cohttp.{Client,Server} modules under Cohttp.Generic (mseri #1003)
+- cohttp-eio: Add Client.make_generic and HTTPS support. (talex5 #1002)
+- cohttp: move generic client and server signatures to cohttp and use them across all packages. (mefyl #984)
+- cohttp-eio: Complete rewrite to follow common interfaces and behaviors. (mefyl #984)
 
+## v6.0.0~alpha2 (2023-08-08)
+- cohttp-lwt: Do not leak exceptions to `Lwt.async_exception_hook`. (mefyl #992, #995)
+- http.header, cohttp, cohttp-eio: remove "first" and "move_to_first" and the special treatment of the "host" header (mseri #988, #986)
+- http.header: introduce "iter_ord" to guarantee iteration following the order of the entries in the headers (mseri #986)
+- do not omit mandatory null Content-Length headers (mefyl #985)
+- cohttp-async, cohttp-curl-async: compatibility with core/async v0.16.0 (mseri, dkalinichenko-js #976)
+- cohttp-lwt server: call conn_closed before drainig the body of response on error (pirbo #982)
+- cohttp-eio: Relax socket interface requirement on `Server.connection_handler`. (mefyl #983)
+
+## v6.0.0~alpha1 (2023-04-28)
 - cohttp,cohttp-async server: correctly close broken streams (reported by Stéphane Glondu, fix by samhot and anuragsoni)
+- cohttp-eio: remove unused code from tests to work with Eio 0.8 (talex5 #967)
+- Upgrade dune to v3.0 (bikallem #947)
+- cohttp-eio: allow client to optionally configure request pipelining (bikallem #949)
+- cohttp-eio: update to Eio 0.7 (talex5 #952)
+- cohttp-eio: update examples to use eio 0.7 primitives (bikallem #957)
+- cohttp-eio: generate Date header in responses (bikallem #955)
+- cohttp-eio: further improve Cohttp_eio.Client ergonomics (bikallem #?)
+- cohttp-eio: server api improvements (bikallem #962)
+
+## v6.0.0~alpha0 (2022-10-24)
+- cohttp-eio: ensure "Host" header is the first header in http client requests (bikallem #939)
+- cohttp-eio: add TE header in client. Check TE header is server (bikallem #941)
+- cohttp-eio: add User-Agent header to request from Client (bikallem #940)
+- cohttp-eio: add Content-Length header to request/response (bikallem #929)
+- cohttp-eio: add cohttp-eio client api - Cohttp_eio.Client (bikallem #879)
+- http: add requires_content_length function for requests and responses (bikallem #879)
+- cohttp-eio: use Eio.Buf_write and improve server API (talex5 #887)
+- cohttp-eio: update to Eio 0.3 (talex5 #886)
+- cohttp-eio: convert to Eio.Buf_read (talex5 #882)
+- cohttp lwt client: Connection cache and explicit pipelining (madroach #853)
+- http: add Http.Request.make and simplify Http.Response.make (bikallem mseri #878)
+- http: add pretty printer functions (bikallem #880)
+- New eio based client and server on top of the http library (bikallem #857)
+- New curl based clients (rgrinberg #813)
+  + cohttp-curl-lwt for an Lwt backend
+  + cohttp-curl-async for an Async backend
+- Completely new Parsing layers for servers (anuragsoni #819)
+  + Cohttp now uses an optimized parser for requests.
+  + The new parser produces much less temporary buffers during read operations
+    in servers.
+- Faster header comparison (gasche #818)
+- Introduce http package containing common signatures and structures useful for
+  compatibility with cohttp - and no dependencies (rgrinberg #812)
+- async(server): allow reading number of active connections (anuragsoni #809)
+- Various internal refactors (rgrinberg, mseri, #802, #812, #820, #800, #799,
+  #797)
+- http (all cohttp server backends): Consider the connection header in response
+  in addition to the request when deciding on whether to keep a connection
+  alive (anuragsoni, #843)
+  + The user provided Response can contain a connection header. That header
+    will also be considered in addition to the connection header in requests
+    when deciding whether to use keep-alive. This allows a handler to decide to
+    close a connection even if the client requested a keep-alive in the
+    request.
+- async(server): allow creating a server without using conduit (anuragsoni #839)
+  + Add `Cohttp_async.Server.Expert.create` and
+    `Cohttp_async.Server.Expert.create_with_response_action`that can be used to
+    create a server without going through Conduit. This allows creating an
+    async TCP server using the Tcp module from `Async_unix` and lets the user
+    have more control over how the `Reader.t` and `Writer.t` are created.
+- http(header): faster `to_lines` and `to_frames` implementation (mseri #847)
+- cohttp(cookies): use case-insensitive comparison to check for `set-cookies` (mseri #858)
+- New lwt based server implementation: cohttp-server-lwt-unix
+  + This new implementation does not depend on conduit and has a simpler and
+    more flexible API
+- async: Adapt cohttp-curl-async to work with core_unix.
+- *Breaking changes*
+  + refactor: move opam metadata to dune-project (rgrinberg #811)
+  + refactor: deprecate Cohttp_async.Io (rgrinberg #807)
+  + fix: move more internals to Private (rgrinberg #806)
+  + fix: deprecate transfer encoding field (rgrinberg #805)
+  + refactor: deprecate Cohttp_async.Body_raw (rgrinberg #804)
+  + fix: deprecate more aliases (rgrinberg #803)
+  + refactor: deprecate connection value(rgrinberg #798)
+  + refactor: deprecate using attributes (rgrinberg #796)
+  + cleanup: remove cohttp-{curl,server}-async (rgrinberg #904)
+  + cleanup: remove cohttp-{curl,server,proxy}-lwt (rgrinberg #904)
+  + fix: all parsers now follow the spec and require `\r\n` endings.
+    Previously, the `\r` was optional. (rgrinberg, #921)
+- `cohttp-lwt-jsoo`: do not instantiate `XMLHttpRequest` object on boot (mefyl #922)
 
 ## v5.0.0 (2021-12-15)
 
@@ -51,7 +154,7 @@
   **Breaking** the headers are no-longer lowercased when parsed, the headers key comparison is case insensitive instead.
 
 - cohttp-lwt-unix: Adopt ocaml-conduit 5.0.0 (smorimoto #787)
-  **Breaking** `Conduit_lwt_unix.connect`'s `ctx` param type chaged from `ctx` to  `ctx Lazy.t`
+  **Breaking** `Conduit_lwt_unix.connect`'s `ctx` param type changed from `ctx` to  `ctx Lazy.t`
 
 - cohttp-mirage: fix deprecated fmt usage (tmcgilchrist #783)
 - lwt_jsoo: Use logs for the warnings and document it (mseri #776)
@@ -71,7 +174,7 @@
 - Use implicit executable dependency for generate.exe (TheLortex #735)
 - cohttp: fix chunked encoding of empty body (mefyl #715)
 - cohttp-async: fix body not being uploaded with unchunked Async.Pipe (mefyl #706)
-- cohttp-{async, lwt}: fix suprising behaviours of Body.is_empty (anuragsoni #714 #712 #713)
+- cohttp-{async, lwt}: fix surprising behaviours of Body.is_empty (anuragsoni #714 #712 #713)
 - refactoring of tests (mseri #709, dinosaure #692)
 - update documentation (dinosaure #716, mseri #720)
 - fix deadlock in logging (dinosaure #722)
@@ -183,7 +286,7 @@ Async: Expert response action no longer writes empty HTTP body (#647 by andreas)
 
 In cohttp.0.99, a number of subpackages were turned into explicit
 opam packages to simplify dependency management.
-To aid migration, some compatability shims were left in place so that
+To aid migration, some compatibility shims were left in place so that
 the old findlib names would continue to work. They have now been removed
 as of this release.  If you were still using them, then please rename
 them as follows:
@@ -290,7 +393,7 @@ and avsm.
 
 ## 0.22.0 (2017-03-09)
 
-* Lwt: ensure conn_closed is cosed once client goes away (#528)
+* Lwt: ensure conn_closed is closed once client goes away (#528)
 * Use the Logs library for logging. (#532)
 
 ## 0.21.1 (2017-02-18)
