@@ -15,14 +15,14 @@ module Config = Config
 val create_backend :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
-  unit ->
+  Eio_unix.Stdenv.base ->
   (module Opentelemetry.Collector.BACKEND)
 (** Create a new backend using lwt and cohttp
 
     NOTE [after_cleanup] optional parameter removed since NEXT_RELEASE *)
 
 val setup :
-  ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit
+  ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> Eio_unix.Stdenv.base -> unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.
     @param enable
       actually setup the backend (default true). This can be used to
@@ -40,7 +40,7 @@ val with_setup :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
   ?enable:bool ->
-  unit ->
+  Eio_unix.Stdenv.base ->
   (unit -> 'a) ->
   'a
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up after
