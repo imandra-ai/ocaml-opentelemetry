@@ -1,5 +1,4 @@
 module T = Opentelemetry
-module Otel_lwt = Opentelemetry_lwt
 
 let spf = Printf.sprintf
 
@@ -9,8 +8,8 @@ let sleep_inner = ref 0.1
 
 let sleep_outer = ref 2.0
 
-let mk_client ~scope:_ = raise (Failure "TODO")
-  (* Opentelemetry_cohttp_lwt.client ~scope (module Cohttp_eio.Client) *)
+(* let mk_client ~scope:_ = raise (Failure "TODO") *)
+(*   Opentelemetry_cohttp_lwt.client ~scope (module Cohttp_eio.Client) *)
 
 let run () =
   (* TODO *)
@@ -72,4 +71,5 @@ let () =
     "Check HTTP requests at \
      https://requestbin.com/r/enec1hql02hz/26qShWryt5vJc1JfrOwalhr5vQt@.";
 
-  Opentelemetry_client_cohttp_eio.with_setup ~config () run
+  (* TODO *)
+  (* Opentelemetry_client_cohttp_eio.with_setup ~config () run *)
