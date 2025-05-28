@@ -179,7 +179,9 @@ end
 
 (** Batch of resources to be pushed later.
 
-    This type is thread-safe. *)
+    This type is thread-safe
+
+    TODO: This is NOT safe accross domains. Need to wrap in mutex or re-architect. *)
 module Batch : sig
   type 'a t
 
