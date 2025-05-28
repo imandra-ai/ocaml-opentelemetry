@@ -1,3 +1,4 @@
+(* TODO: Share this config with the lwt collector? *)
 open Common_
 
 type t = {
