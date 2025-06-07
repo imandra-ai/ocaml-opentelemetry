@@ -1,4 +1,3 @@
-module TLS = Thread_local_storage
 module Fiber = Eio.Fiber
 
 open struct
