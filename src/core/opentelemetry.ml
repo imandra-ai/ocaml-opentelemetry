@@ -1226,9 +1226,9 @@ module Trace = struct
   }
   [@@deprecated "use Scope.t"]
 
-  let add_event = Scope.add_event [@@deprecated "use Scope.add_event"]
+  let (add_event [@deprecated "use Scope.add_event"]) = Scope.add_event
 
-  let add_attrs = Scope.add_attrs [@@deprecated "use Scope.add_attrs"]
+  let (add_attrs [@deprecated "use Scope.add_attrs"]) = Scope.add_attrs
 
   let with_' ?(force_new_trace_id = false) ?trace_state ?service_name
       ?(attrs : (string * [< value ]) list = []) ?kind ?trace_id ?parent ?scope
