@@ -1,4 +1,4 @@
-type t = Client.Config.t
+type t = Opentelemetry_client.Config.t
 (** Configuration.
 
     To build one, use {!make} below. This might be extended with more fields in
@@ -6,7 +6,7 @@ type t = Client.Config.t
 
 val pp : Format.formatter -> t -> unit
 
-val make : (unit -> t) Client.Config.make
+val make : (unit -> t) Opentelemetry_client.Config.make
 (** Make a configuration {!t}. *)
 
-module Env : Client.Config.ENV
+module Env : Opentelemetry_client.Config.ENV

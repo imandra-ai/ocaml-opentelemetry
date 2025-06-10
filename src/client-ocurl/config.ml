@@ -10,7 +10,7 @@ type t = {
           [ticker_thread] is [true]. This will be clamped between [2 ms] and
           some longer interval (maximum [60s] currently). Default 500.
           @since 0.7 *)
-  common: Client.Config.t;
+  common: Opentelemetry_client.Config.t;
       (** Common configuration options
           @since 0.12*)
 }
@@ -20,9 +20,10 @@ let pp out self =
   Format.fprintf out
     "{@[ bg_threads=%d;@ ticker_thread=%B;@ ticker_interval_ms=%d;@ common=%a \
      @]}"
-    bg_threads ticker_thread ticker_interval_ms Client.Config.pp common
+    bg_threads ticker_thread ticker_interval_ms Opentelemetry_client.Config.pp
+    common
 
-module Env = Client.Config.Env ()
+module Env = Opentelemetry_client.Config.Env ()
 
 let make =
   Env.make

@@ -1,7 +1,7 @@
-type t = Client.Config.t
+type t = Opentelemetry_client.Config.t
 
-module Env = Client.Config.Env ()
+module Env = Opentelemetry_client.Config.Env ()
 
-let pp = Client.Config.pp
+let pp = Opentelemetry_client.Config.pp
 
 let make = Env.make (fun common () -> common)
