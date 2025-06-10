@@ -15,7 +15,12 @@ type t = {
           @since 0.12*)
 }
 
-let pp fmt _ = Format.pp_print_string fmt "TODO"
+let pp out self =
+  let { bg_threads; ticker_thread; ticker_interval_ms; common } = self in
+  Format.fprintf out
+    "{@[ bg_threads=%d;@ ticker_thread=%B;@ ticker_interval_ms=%d;@ common=%a \
+     @]}"
+    bg_threads ticker_thread ticker_interval_ms Client.Config.pp common
 
 module Env = Client.Config.Env ()
 
