@@ -85,7 +85,7 @@ type 'k make =
 
 (** Construct, inspect, and update {!t} configurations, drawing defaults from
     the environment and encapsulating state *)
-module type Env = sig
+module type ENV = sig
   val get_debug : unit -> bool
 
   val set_debug : bool -> unit
@@ -124,4 +124,4 @@ end
 (** A generative functor that produces a state-space that can read configuration
     values from the environment, provide stateful configuration setting and
     accessing operations, and a way to make a new {!t} configuration record *)
-module Env : functor () -> Env
+module Env : functor () -> ENV

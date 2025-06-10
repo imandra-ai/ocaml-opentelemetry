@@ -10,8 +10,6 @@ type t = {
   batch_timeout_ms: int;
   self_trace: bool;
 }
-(** Constructing and managing the configuration needed in common by all clients
-*)
 
 let pp out (self : t) : unit =
   let ppiopt = Format.pp_print_option Format.pp_print_int in
@@ -52,7 +50,7 @@ type 'k make =
   ?self_trace:bool ->
   'k
 
-module type Env = sig
+module type ENV = sig
   val get_debug : unit -> bool
 
   val set_debug : bool -> unit
@@ -64,7 +62,7 @@ module type Env = sig
   val make : (t -> 'a) -> 'a make
 end
 
-module Env () : Env = struct
+module Env () : ENV = struct
   let debug_ =
     ref
       (match Sys.getenv_opt "OTEL_OCAML_DEBUG" with

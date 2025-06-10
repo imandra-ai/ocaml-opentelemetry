@@ -32,4 +32,4 @@ val make :
   Client.Config.make
 (** Make a configuration {!t}. *)
 
-module Env : Client.Config.Env
+module Env : Client.Config.ENV

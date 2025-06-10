@@ -9,4 +9,4 @@ val pp : Format.formatter -> t -> unit
 val make : (unit -> t) Client.Config.make
 (** Make a configuration {!t}. *)
 
-module Env : Client.Config.Env
+module Env : Client.Config.ENV
