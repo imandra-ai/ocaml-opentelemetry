@@ -2,9 +2,9 @@ open Opentelemetry_client_ocurl
 
 let test_urls ~name config =
   Printf.printf "--- %s ---\n" name;
-  Printf.printf "url_traces = %s\n" config.Config.url_traces;
-  Printf.printf "url_metrics = %s\n" config.Config.url_metrics;
-  Printf.printf "url_logs = %s\n" config.Config.url_logs;
+  Printf.printf "url_traces = %s\n" config.Config.common.url_traces;
+  Printf.printf "url_metrics = %s\n" config.Config.common.url_metrics;
+  Printf.printf "url_logs = %s\n" config.Config.common.url_logs;
   print_endline "------\n"
 
 let default_url () =

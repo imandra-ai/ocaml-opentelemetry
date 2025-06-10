@@ -6,7 +6,11 @@
 module OT = Opentelemetry
 module Config = Config
 open Opentelemetry
-include Common_
+open Common_
+
+let set_headers = Config.Env.set_headers
+
+let get_headers = Config.Env.get_headers
 
 external reraise : exn -> 'a = "%reraise"
 (** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to
@@ -98,7 +102,7 @@ end = struct
     let uri = Uri.of_string url in
 
     let open Cohttp in
-    let headers = Header.(add_list (init ()) !headers) in
+    let headers = Header.(add_list (init ()) (Config.Env.get_headers ())) in
     let headers =
       Header.(add headers "Content-Type" "application/x-protobuf")
     in
@@ -312,7 +316,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         Metrics_service.default_export_metrics_service_request
           ~resource_metrics:l ()
       in
-      let url = config.Config.url_metrics in
+      let url = config.url_metrics in
       send_http_ curl encoder ~url
         ~encode:Metrics_service.encode_pb_export_metrics_service_request x
 
@@ -321,7 +325,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let x =
         Trace_service.default_export_trace_service_request ~resource_spans:l ()
       in
-      let url = config.Config.url_traces in
+      let url = config.url_traces in
       send_http_ curl encoder ~url
         ~encode:Trace_service.encode_pb_export_trace_service_request x
 
@@ -330,7 +334,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       let x =
         Logs_service.default_export_logs_service_request ~resource_logs:l ()
       in
-      let url = config.Config.url_logs in
+      let url = config.url_logs in
       send_http_ curl encoder ~url
         ~encode:Logs_service.encode_pb_export_logs_service_request x
 
@@ -374,7 +378,8 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       ()
 
     let tick_common_ () =
-      if !debug_ then Printf.eprintf "tick (from %d)\n%!" (tid ());
+      if Config.Env.get_debug () then
+        Printf.eprintf "tick (from %d)\n%!" (tid ());
       sample_gc_metrics_if_needed ();
       List.iter
         (fun f ->
@@ -449,7 +454,8 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
     let tick () = Lwt.async tick_
 
     let cleanup ~on_done () =
-      if !debug_ then Printf.eprintf "opentelemetry: exiting…\n%!";
+      if Config.Env.get_debug () then
+        Printf.eprintf "opentelemetry: exiting…\n%!";
       Lwt.async (fun () ->
           let* () = emit_all_force httpc encoder in
           Httpc.cleanup httpc;
@@ -474,7 +480,7 @@ module Backend
     {
       send =
         (fun l ~ret ->
-          (if !debug_ then
+          (if Config.Env.get_debug () then
              let@ () = Lock.with_lock in
              Format.eprintf "send spans %a@."
                (Format.pp_print_list Trace.pp_resource_spans)
@@ -489,7 +495,7 @@ module Backend
   (* send metrics from time to time *)
 
   let signal_emit_gc_metrics () =
-    if !debug_ then
+    if Config.Env.get_debug () then
       Printf.eprintf "opentelemetry: emit GC metrics requested\n%!";
     Atomic.set needs_gc_metrics true
 
@@ -531,7 +537,7 @@ module Backend
     {
       send =
         (fun m ~ret ->
-          (if !debug_ then
+          (if Config.Env.get_debug () then
              let@ () = Lock.with_lock in
              Format.eprintf "send metrics %a@."
                (Format.pp_print_list Metrics.pp_resource_metrics)
@@ -546,7 +552,7 @@ module Backend
     {
       send =
         (fun m ~ret ->
-          (if !debug_ then
+          (if Config.Env.get_debug () then
              let@ () = Lock.with_lock in
              Format.eprintf "send logs %a@."
                (Format.pp_print_list Logs.pp_resource_logs)
@@ -558,8 +564,6 @@ module Backend
 end
 
 let create_backend ?(stop = Atomic.make false) ?(config = Config.make ()) () =
-  debug_ := config.debug;
-
   let module B =
     Backend
       (struct
