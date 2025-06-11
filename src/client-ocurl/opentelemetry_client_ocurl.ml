@@ -8,6 +8,10 @@ module Config = Config
 open Opentelemetry
 include Common_
 
+let get_headers = Config.Env.get_headers
+
+let set_headers = Config.Env.set_headers
+
 let needs_gc_metrics = Atomic.make false
 
 let last_gc_metrics = Atomic.make (Mtime_clock.now ())
@@ -147,7 +151,8 @@ end = struct
     mutable send_threads: Thread.t array;  (** Threads that send data via http *)
   }
 
-  let send_http_ ~stop ~config (client : Curl.t) encoder ~url ~encode x : unit =
+  let send_http_ ~stop ~(config : Config.t) (client : Curl.t) encoder ~url
+      ~encode x : unit =
     let@ _sc =
       Self_trace.with_ ~kind:Span.Span_kind_producer "otel-ocurl.send-http"
     in
@@ -161,11 +166,11 @@ end = struct
       Pbrt.Encoder.to_string encoder
     in
 
-    if !debug_ || config.Config.debug then
+    if Config.Env.get_debug () then
       Printf.eprintf "opentelemetry: send http POST to %s (%dB)\n%!" url
         (String.length data);
     let headers =
-      ("Content-Type", "application/x-protobuf") :: config.headers
+      ("Content-Type", "application/x-protobuf") :: config.common.headers
     in
     match
       let@ _sc =
@@ -175,14 +180,14 @@ end = struct
       Ezcurl.post ~headers ~client ~params:[] ~url ~content:(`String data) ()
     with
     | Ok { code; _ } when code >= 200 && code < 300 ->
-      if !debug_ || config.debug then
+      if Config.Env.get_debug () then
         Printf.eprintf "opentelemetry: got response code=%d\n%!" code
     | Ok { code; body; headers = _; info = _ } ->
       Atomic.incr n_errors;
       Self_trace.add_event _sc
       @@ Opentelemetry.Event.make "error" ~attrs:[ "code", `Int code ];
 
-      if !debug_ || config.debug then (
+      if Config.Env.get_debug () then (
         let dec = Pbrt.Decoder.of_string body in
         let body =
           try
@@ -221,7 +226,7 @@ end = struct
     let x =
       Logs_service.default_export_logs_service_request ~resource_logs:l ()
     in
-    send_http_ ~stop ~config client encoder ~url:config.Config.url_logs
+    send_http_ ~stop ~config client encoder ~url:config.Config.common.url_logs
       ~encode:Logs_service.encode_pb_export_logs_service_request x
 
   let send_metrics_http ~stop ~config curl encoder
@@ -236,7 +241,7 @@ end = struct
       Metrics_service.default_export_metrics_service_request ~resource_metrics:l
         ()
     in
-    send_http_ ~stop ~config curl encoder ~url:config.Config.url_metrics
+    send_http_ ~stop ~config curl encoder ~url:config.Config.common.url_metrics
       ~encode:Metrics_service.encode_pb_export_metrics_service_request x
 
   let send_traces_http ~stop ~config curl encoder
@@ -250,7 +255,7 @@ end = struct
     let x =
       Trace_service.default_export_trace_service_request ~resource_spans:l ()
     in
-    send_http_ ~stop ~config curl encoder ~url:config.Config.url_traces
+    send_http_ ~stop ~config curl encoder ~url:config.Config.common.url_traces
       ~encode:Trace_service.encode_pb_export_trace_service_request x
 
   let[@inline] send_event (self : t) ev : unit = B_queue.push self.q ev
@@ -287,7 +292,7 @@ end = struct
     (Batch.len b > 0 || side != [])
     && (Batch.len b >= batch_max_size_
        ||
-       let timeout = Mtime.Span.(config.Config.batch_timeout_ms * ms) in
+       let timeout = Mtime.Span.(config.Config.common.batch_timeout_ms * ms) in
        let elapsed = Mtime.span now (Batch.time_started b) in
        Mtime.Span.compare elapsed timeout >= 0)
 
@@ -423,7 +428,7 @@ let create_backend ?(stop = Atomic.make false)
     let timeout_sent_metrics = Mtime.Span.(5 * s)
 
     let signal_emit_gc_metrics () =
-      if !debug_ || config.debug then
+      if config.common.debug then
         Printf.eprintf "opentelemetry: emit GC metrics requested\n%!";
       Atomic.set needs_gc_metrics true
 
@@ -508,7 +513,7 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
   let backend = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
-  Atomic.set Self_trace.enabled config.self_trace;
+  Atomic.set Self_trace.enabled config.common.self_trace;
 
   if config.ticker_thread then (
     (* at most a minute *)

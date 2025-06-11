@@ -1,0 +1,4 @@
+(tests
+ (names test_client_lib)
+ (package opentelemetry)
+ (libraries alcotest opentelemetry.client))

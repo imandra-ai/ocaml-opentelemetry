@@ -4,6 +4,7 @@
  (libraries
   opentelemetry
   opentelemetry.atomic
+  opentelemetry.client
   curl
   pbrt
   threads

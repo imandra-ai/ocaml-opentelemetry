@@ -1,0 +1,4 @@
+(library
+ (name opentelemetry_client)
+ (public_name opentelemetry.client)
+ (synopsis "Common types and logic shared between client implementations"))
