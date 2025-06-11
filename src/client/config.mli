@@ -110,8 +110,8 @@ module type ENV = sig
           ; common: t
           }
 
-        let make : (?new_field -> unit) make =
-          Env.make (fun common ?new_field () -> {new_field; common})
+        let make : (new_field:string -> unit) make =
+          Env.make (fun common ~new_field () -> {new_field; common})
 
         let _example : extended_config =
           make ~new_field:"foo" ~url_traces:"foo/bar" ~debug:true ()
