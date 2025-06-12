@@ -687,6 +687,10 @@ module Globals = struct
   (** Unique identifier for the service *)
   let service_instance_id = ref None
 
+  (** Version for the service
+      @since NEXT_RELEASE *)
+  let service_version = ref None
+
   let instrumentation_library =
     default_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel"
       ()
@@ -743,6 +747,14 @@ module Globals = struct
       | None -> l
       | Some v ->
         default_key_value ~key:Conventions.Attributes.Service.namespace
+          ~value:(Some (String_value v)) ()
+        :: l
+    in
+    let l =
+      match !service_version with
+      | None -> l
+      | Some v ->
+        default_key_value ~key:Conventions.Attributes.Service.version
           ~value:(Some (String_value v)) ()
         :: l
     in
