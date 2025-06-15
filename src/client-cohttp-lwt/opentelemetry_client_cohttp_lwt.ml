@@ -377,19 +377,6 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       and+ (_ : bool) = emit_metrics_maybe ~now ~force:true httpc encoder in
       ()
 
-    let tick_common_ () =
-      if Config.Env.get_debug () then
-        Printf.eprintf "tick (from %d)\n%!" (tid ());
-      sample_gc_metrics_if_needed ();
-      List.iter
-        (fun f ->
-          try f ()
-          with e ->
-            Printf.eprintf "on tick callback raised: %s\n"
-              (Printexc.to_string e))
-        (AList.get @@ Atomic.get on_tick_cbs_);
-      ()
-
     (* thread that calls [tick()] regularly, to help enforce timeouts *)
     let setup_ticker_thread ~tick ~finally () =
       let rec tick_thread () =
@@ -440,8 +427,16 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
     let set_on_tick_callbacks = set_on_tick_callbacks
 
     let tick_ () =
-      tick_common_ ();
+      if Config.Env.get_debug () then
+        Printf.eprintf "tick (from %d)\n%!" (tid ());
       sample_gc_metrics_if_needed ();
+      List.iter
+        (fun f ->
+          try f ()
+          with e ->
+            Printf.eprintf "on tick callback raised: %s\n"
+              (Printexc.to_string e))
+        (AList.get @@ Atomic.get on_tick_cbs_);
       let now = Mtime_clock.now () in
       let+ (_ : bool) = emit_traces_maybe ~now httpc encoder
       and+ (_ : bool) = emit_logs_maybe ~now httpc encoder
