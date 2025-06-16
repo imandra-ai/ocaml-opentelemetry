@@ -5,6 +5,7 @@
 
 module OT = Opentelemetry
 module Config = Config
+module Self_trace = Opentelemetry_client.Self_trace
 open Opentelemetry
 include Common_
 
@@ -20,28 +21,6 @@ let timeout_gc_metrics = Mtime.Span.(20 * s)
 
 (** side channel for GC, appended to metrics batch data *)
 let gc_metrics = AList.make ()
-
-(** Mini tracing module (disabled if [config.self_trace=false]) *)
-module Self_trace = struct
-  let enabled = Atomic.make true
-
-  let add_event (scope : Scope.t) ev = Scope.add_event scope (fun () -> ev)
-
-  let dummy_trace_id_ = Trace_id.create ()
-
-  let dummy_span_id = Span_id.create ()
-
-  let with_ ?kind ?attrs name f =
-    if Atomic.get enabled then
-      Opentelemetry.Trace.with_ ?kind ?attrs name f
-    else (
-      (* do nothing *)
-      let scope =
-        Scope.make ~trace_id:dummy_trace_id_ ~span_id:dummy_span_id ()
-      in
-      f scope
-    )
-end
 
 (** capture current GC metrics if {!needs_gc_metrics} is true or it has been a
     long time since the last GC metrics collection, and push them into
@@ -513,7 +492,7 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
   let backend = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
-  Atomic.set Self_trace.enabled config.common.self_trace;
+  Self_trace.set_enabled config.common.self_trace;
 
   if config.ticker_thread then (
     (* at most a minute *)
