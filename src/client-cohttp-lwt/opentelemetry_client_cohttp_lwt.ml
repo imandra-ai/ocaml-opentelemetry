@@ -5,6 +5,7 @@
 
 module OT = Opentelemetry
 module Config = Config
+module Signal = Opentelemetry_client.Signal
 open Opentelemetry
 open Common_
 
@@ -270,6 +271,7 @@ end
 let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
   let open Proto in
   let open Lwt.Syntax in
+  let module Conv = Signal.Converter () in
   (* local helpers *)
   let open struct
     let timeout =
@@ -291,10 +293,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
 
     let set_on_tick_callbacks = Atomic.set on_tick_cbs_
 
-    let send_http_ (httpc : Httpc.t) encoder ~url ~encode x : unit Lwt.t =
-      Pbrt.Encoder.reset encoder;
-      encode x encoder;
-      let data = Pbrt.Encoder.to_string encoder in
+    let send_http_ (httpc : Httpc.t) ~url data : unit Lwt.t =
       let* r = Httpc.send httpc ~url ~decode:(`Ret ()) data in
       match r with
       | Ok () -> Lwt.return ()
@@ -309,57 +308,41 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         (* avoid crazy error loop *)
         Lwt_unix.sleep 3.
 
-    let send_metrics_http curl encoder (l : Metrics.resource_metrics list list)
-        =
-      let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-      let x =
-        Metrics_service.default_export_metrics_service_request
-          ~resource_metrics:l ()
-      in
-      let url = config.url_metrics in
-      send_http_ curl encoder ~url
-        ~encode:Metrics_service.encode_pb_export_metrics_service_request x
+    let send_metrics_http client (l : Metrics.resource_metrics list) =
+      Conv.metrics l |> send_http_ client ~url:config.url_metrics
 
-    let send_traces_http curl encoder (l : Trace.resource_spans list list) =
-      let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-      let x =
-        Trace_service.default_export_trace_service_request ~resource_spans:l ()
-      in
-      let url = config.url_traces in
-      send_http_ curl encoder ~url
-        ~encode:Trace_service.encode_pb_export_trace_service_request x
+    let send_traces_http client (l : Trace.resource_spans list) =
+      Conv.traces l |> send_http_ client ~url:config.url_traces
 
-    let send_logs_http curl encoder (l : Logs.resource_logs list list) =
-      let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-      let x =
-        Logs_service.default_export_logs_service_request ~resource_logs:l ()
-      in
-      let url = config.url_logs in
-      send_http_ curl encoder ~url
-        ~encode:Logs_service.encode_pb_export_logs_service_request x
+    let send_logs_http client (l : Logs.resource_logs list) =
+      Conv.logs l |> send_http_ client ~url:config.url_logs
+
+    let maybe_pop ?force ~now batch =
+      Batch.pop_if_ready ?force ~now batch
+      |> Option.map (List.fold_left (fun acc l -> List.rev_append l acc) [])
 
     (* emit metrics, if the batch is full or timeout lapsed *)
-    let emit_metrics_maybe ~now ?force httpc encoder : bool Lwt.t =
-      match Batch.pop_if_ready ?force ~now batch_metrics with
+    let emit_metrics_maybe ~now ?force httpc : bool Lwt.t =
+      match maybe_pop ?force ~now batch_metrics with
       | None -> Lwt.return false
       | Some l ->
-        let batch = !gc_metrics :: l in
+        let batch = !gc_metrics @ l in
         gc_metrics := [];
-        let+ () = send_metrics_http httpc encoder batch in
+        let+ () = send_metrics_http httpc batch in
         true
 
-    let emit_traces_maybe ~now ?force httpc encoder : bool Lwt.t =
-      match Batch.pop_if_ready ?force ~now batch_traces with
+    let emit_traces_maybe ~now ?force httpc : bool Lwt.t =
+      match maybe_pop ?force ~now batch_traces with
       | None -> Lwt.return false
       | Some l ->
-        let+ () = send_traces_http httpc encoder l in
+        let+ () = send_traces_http httpc l in
         true
 
-    let emit_logs_maybe ~now ?force httpc encoder : bool Lwt.t =
-      match Batch.pop_if_ready ?force ~now batch_logs with
+    let emit_logs_maybe ~now ?force httpc : bool Lwt.t =
+      match maybe_pop ?force ~now batch_logs with
       | None -> Lwt.return false
       | Some l ->
-        let+ () = send_logs_http httpc encoder l in
+        let+ () = send_logs_http httpc l in
         true
 
     let[@inline] guard_exn_ where f =
@@ -370,11 +353,11 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
           "opentelemetry-curl: uncaught exception in %s: %s\n%s\n%!" where
           (Printexc.to_string e) bt
 
-    let emit_all_force (httpc : Httpc.t) encoder : unit Lwt.t =
+    let emit_all_force (httpc : Httpc.t) : unit Lwt.t =
       let now = Mtime_clock.now () in
-      let+ (_ : bool) = emit_traces_maybe ~now ~force:true httpc encoder
-      and+ (_ : bool) = emit_logs_maybe ~now ~force:true httpc encoder
-      and+ (_ : bool) = emit_metrics_maybe ~now ~force:true httpc encoder in
+      let+ (_ : bool) = emit_traces_maybe ~now ~force:true httpc
+      and+ (_ : bool) = emit_logs_maybe ~now ~force:true httpc
+      and+ (_ : bool) = emit_metrics_maybe ~now ~force:true httpc in
       ()
 
     (* thread that calls [tick()] regularly, to help enforce timeouts *)
@@ -391,7 +374,6 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       Lwt.async tick_thread
   end in
   let httpc = Httpc.create () in
-  let encoder = Pbrt.Encoder.create () in
 
   let module M = struct
     (* we make sure that this is thread-safe, even though we don't have a
@@ -404,7 +386,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       Batch.push' batch_traces e;
       let now = Mtime_clock.now () in
       Lwt.async (fun () ->
-          let+ (_ : bool) = emit_traces_maybe ~now httpc encoder in
+          let+ (_ : bool) = emit_traces_maybe ~now httpc in
           ())
 
     let push_metrics e =
@@ -413,7 +395,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       Batch.push' batch_metrics e;
       let now = Mtime_clock.now () in
       Lwt.async (fun () ->
-          let+ (_ : bool) = emit_metrics_maybe ~now httpc encoder in
+          let+ (_ : bool) = emit_metrics_maybe ~now httpc in
           ())
 
     let push_logs e =
@@ -421,7 +403,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       Batch.push' batch_logs e;
       let now = Mtime_clock.now () in
       Lwt.async (fun () ->
-          let+ (_ : bool) = emit_logs_maybe ~now httpc encoder in
+          let+ (_ : bool) = emit_logs_maybe ~now httpc in
           ())
 
     let set_on_tick_callbacks = set_on_tick_callbacks
@@ -438,9 +420,9 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
               (Printexc.to_string e))
         (AList.get @@ Atomic.get on_tick_cbs_);
       let now = Mtime_clock.now () in
-      let+ (_ : bool) = emit_traces_maybe ~now httpc encoder
-      and+ (_ : bool) = emit_logs_maybe ~now httpc encoder
-      and+ (_ : bool) = emit_metrics_maybe ~now httpc encoder in
+      let+ (_ : bool) = emit_traces_maybe ~now httpc
+      and+ (_ : bool) = emit_logs_maybe ~now httpc
+      and+ (_ : bool) = emit_metrics_maybe ~now httpc in
       ()
 
     let () = setup_ticker_thread ~tick:tick_ ~finally:ignore ()
@@ -452,7 +434,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       if Config.Env.get_debug () then
         Printf.eprintf "opentelemetry: exiting…\n%!";
       Lwt.async (fun () ->
-          let* () = emit_all_force httpc encoder in
+          let* () = emit_all_force httpc in
           Httpc.cleanup httpc;
           on_done ();
           Lwt.return ())
