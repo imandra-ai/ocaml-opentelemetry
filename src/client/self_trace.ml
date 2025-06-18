@@ -12,7 +12,7 @@ let with_ ?kind ?attrs name f =
   if Atomic.get enabled then
     OT.Trace.with_ ?kind ?attrs name f
   else (
-    (* do nothing *)
+    (* A new scope is needed here because it might be modified *)
     let scope =
       OT.Scope.make ~trace_id:dummy_trace_id_ ~span_id:dummy_span_id ()
     in
