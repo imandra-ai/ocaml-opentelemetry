@@ -1,10 +1,9 @@
 (** Mini tracing module (disabled if [config.self_trace=false]) *)
 
-val add_event :
-  Opentelemetry.Scope.t -> Opentelemetry_proto.Trace.span_event -> unit
+val add_event : Opentelemetry.Scope.t -> Opentelemetry.Event.t -> unit
 
 val with_ :
-  ?kind:Opentelemetry_proto.Trace.span_span_kind ->
+  ?kind:Opentelemetry.Span_kind.t ->
   ?attrs:(string * Opentelemetry.value) list ->
   string ->
   (Opentelemetry.Scope.t -> 'a) ->
