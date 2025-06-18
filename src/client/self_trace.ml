@@ -4,9 +4,9 @@ let enabled = Atomic.make true
 
 let add_event (scope : OT.Scope.t) ev = OT.Scope.add_event scope (fun () -> ev)
 
-let dummy_trace_id_ = OT.Trace_id.create ()
+let dummy_trace_id_ = OT.Trace_id.dummy
 
-let dummy_span_id = OT.Span_id.create ()
+let dummy_span_id = OT.Span_id.dummy
 
 let with_ ?kind ?attrs name f =
   if Atomic.get enabled then
