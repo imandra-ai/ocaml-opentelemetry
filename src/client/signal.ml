@@ -3,7 +3,7 @@ module Metrics_service = Opentelemetry.Proto.Metrics_service
 module Logs_service = Opentelemetry.Proto.Logs_service
 module Span = Opentelemetry.Span
 
-let ( let@ ) f x = f x
+let ( let@ ) = ( @@ )
 
 module Converter () = struct
   let encoder = Pbrt.Encoder.create ()
