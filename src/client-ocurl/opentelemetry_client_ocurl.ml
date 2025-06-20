@@ -201,7 +201,7 @@ end = struct
       in
       conv l |> send_http_ ~stop ~config ~url client
     in
-    let module Conv = Signal.Converter () in
+    let module Conv = Signal.Converter in
     try
       while not (Atomic.get stop) do
         let msg = B_queue.pop self.send_q in

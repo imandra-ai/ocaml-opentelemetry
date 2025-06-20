@@ -5,13 +5,27 @@
 
     NOTE: The converters share an underlying stateful encoder, so each domain or
     system thread should have its own [Converter] instance *)
-module Converter : functor () -> sig
-  val logs : Opentelemetry_proto.Logs.resource_logs list -> string
-  (** [logs ls] is a protobuf encoded string of the logs [ls] *)
+module Converter : sig
+  val logs :
+    ?encoder:Pbrt.Encoder.t ->
+    Opentelemetry_proto.Logs.resource_logs list ->
+    string
+  (** [logs ls] is a protobuf encoded string of the logs [ls]
 
-  val metrics : Opentelemetry_proto.Metrics.resource_metrics list -> string
-  (** [metrics ms] is a protobuf encoded string of the metrics [ms] *)
+      @param encoder provide an encoder state to reuse *)
 
-  val traces : Opentelemetry_proto.Trace.resource_spans list -> string
-  (** [metrics ts] is a protobuf encoded string of the traces [ts] *)
+  val metrics :
+    ?encoder:Pbrt.Encoder.t ->
+    Opentelemetry_proto.Metrics.resource_metrics list ->
+    string
+  (** [metrics ms] is a protobuf encoded string of the metrics [ms]
+      @param encoder provide an encoder state to reuse *)
+
+  val traces :
+    ?encoder:Pbrt.Encoder.t ->
+    Opentelemetry_proto.Trace.resource_spans list ->
+    string
+  (** [metrics ts] is a protobuf encoded string of the traces [ts]
+
+      @param encoder provide an encoder state to reuse *)
 end

@@ -271,7 +271,7 @@ end
 let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
   let open Proto in
   let open Lwt.Syntax in
-  let module Conv = Signal.Converter () in
+  let module Conv = Signal.Converter in
   (* local helpers *)
   let open struct
     let timeout =
