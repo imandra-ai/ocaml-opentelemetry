@@ -61,3 +61,13 @@ module Decode = struct
        ~dec:Trace_service.decode_pb_export_trace_service_request data)
       .resource_spans
 end
+
+module Pp = struct
+  module Proto = Opentelemetry.Proto
+
+  let logs = Format.pp_print_list Proto.Logs.pp_resource_logs
+
+  let metrics = Format.pp_print_list Proto.Metrics.pp_resource_metrics
+
+  let traces = Format.pp_print_list Proto.Trace.pp_resource_spans
+end

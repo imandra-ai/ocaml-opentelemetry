@@ -45,3 +45,16 @@ module Decode : sig
 
       @param encoder provide an encoder state to reuse *)
 end
+
+module Pp : sig
+  val logs :
+    Format.formatter -> Opentelemetry_proto.Logs.resource_logs list -> unit
+
+  val metrics :
+    Format.formatter ->
+    Opentelemetry_proto.Metrics.resource_metrics list ->
+    unit
+
+  val traces :
+    Format.formatter -> Opentelemetry_proto.Trace.resource_spans list -> unit
+end
