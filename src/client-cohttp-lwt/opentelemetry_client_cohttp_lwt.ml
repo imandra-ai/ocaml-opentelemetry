@@ -271,7 +271,6 @@ end
 let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
   let open Proto in
   let open Lwt.Syntax in
-  let module Conv = Signal.Converter in
   (* local helpers *)
   let open struct
     let timeout =
@@ -309,13 +308,13 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
         Lwt_unix.sleep 3.
 
     let send_metrics_http client (l : Metrics.resource_metrics list) =
-      Conv.metrics l |> send_http_ client ~url:config.url_metrics
+      Signal.Encode.metrics l |> send_http_ client ~url:config.url_metrics
 
     let send_traces_http client (l : Trace.resource_spans list) =
-      Conv.traces l |> send_http_ client ~url:config.url_traces
+      Signal.Encode.traces l |> send_http_ client ~url:config.url_traces
 
     let send_logs_http client (l : Logs.resource_logs list) =
-      Conv.logs l |> send_http_ client ~url:config.url_logs
+      Signal.Encode.logs l |> send_http_ client ~url:config.url_logs
 
     let maybe_pop ?force ~now batch =
       Batch.pop_if_ready ?force ~now batch
