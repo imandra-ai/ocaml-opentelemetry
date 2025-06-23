@@ -5,6 +5,8 @@
 
 module OT = Opentelemetry
 module Config = Config
+module Self_trace = Opentelemetry_client.Self_trace
+module Signal = Opentelemetry_client.Signal
 open Opentelemetry
 include Common_
 
@@ -20,28 +22,6 @@ let timeout_gc_metrics = Mtime.Span.(20 * s)
 
 (** side channel for GC, appended to metrics batch data *)
 let gc_metrics = AList.make ()
-
-(** Mini tracing module (disabled if [config.self_trace=false]) *)
-module Self_trace = struct
-  let enabled = Atomic.make true
-
-  let add_event (scope : Scope.t) ev = Scope.add_event scope (fun () -> ev)
-
-  let dummy_trace_id_ = Trace_id.create ()
-
-  let dummy_span_id = Span_id.create ()
-
-  let with_ ?kind ?attrs name f =
-    if Atomic.get enabled then
-      Opentelemetry.Trace.with_ ?kind ?attrs name f
-    else (
-      (* do nothing *)
-      let scope =
-        Scope.make ~trace_id:dummy_trace_id_ ~span_id:dummy_span_id ()
-      in
-      f scope
-    )
-end
 
 (** capture current GC metrics if {!needs_gc_metrics} is true or it has been a
     long time since the last GC metrics collection, and push them into
@@ -151,19 +131,9 @@ end = struct
     mutable send_threads: Thread.t array;  (** Threads that send data via http *)
   }
 
-  let send_http_ ~stop ~(config : Config.t) (client : Curl.t) encoder ~url
-      ~encode x : unit =
+  let send_http_ ~stop ~(config : Config.t) (client : Curl.t) ~url data : unit =
     let@ _sc =
       Self_trace.with_ ~kind:Span.Span_kind_producer "otel-ocurl.send-http"
-    in
-
-    let data =
-      let@ _sc =
-        Self_trace.with_ ~kind:Span.Span_kind_internal "encode-proto"
-      in
-      Pbrt.Encoder.reset encoder;
-      encode x encoder;
-      Pbrt.Encoder.to_string encoder
     in
 
     if Config.Env.get_debug () then
@@ -215,68 +185,36 @@ end = struct
       (* avoid crazy error loop *)
       Thread.delay 3.
 
-  let send_logs_http ~stop ~config (client : Curl.t) encoder
-      (l : Logs.resource_logs list list) : unit =
-    let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-    let@ _sp =
-      Self_trace.with_ ~kind:Span_kind_producer "send-logs"
-        ~attrs:[ "n", `Int (List.length l) ]
-    in
-
-    let x =
-      Logs_service.default_export_logs_service_request ~resource_logs:l ()
-    in
-    send_http_ ~stop ~config client encoder ~url:config.Config.common.url_logs
-      ~encode:Logs_service.encode_pb_export_logs_service_request x
-
-  let send_metrics_http ~stop ~config curl encoder
-      (l : Metrics.resource_metrics list list) : unit =
-    let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-    let@ _sp =
-      Self_trace.with_ ~kind:Span_kind_producer "send-metrics"
-        ~attrs:[ "n", `Int (List.length l) ]
-    in
-
-    let x =
-      Metrics_service.default_export_metrics_service_request ~resource_metrics:l
-        ()
-    in
-    send_http_ ~stop ~config curl encoder ~url:config.Config.common.url_metrics
-      ~encode:Metrics_service.encode_pb_export_metrics_service_request x
-
-  let send_traces_http ~stop ~config curl encoder
-      (l : Trace.resource_spans list list) : unit =
-    let l = List.fold_left (fun acc l -> List.rev_append l acc) [] l in
-    let@ _sp =
-      Self_trace.with_ ~kind:Span_kind_producer "send-traces"
-        ~attrs:[ "n", `Int (List.length l) ]
-    in
-
-    let x =
-      Trace_service.default_export_trace_service_request ~resource_spans:l ()
-    in
-    send_http_ ~stop ~config curl encoder ~url:config.Config.common.url_traces
-      ~encode:Trace_service.encode_pb_export_trace_service_request x
-
   let[@inline] send_event (self : t) ev : unit = B_queue.push self.q ev
 
   (** Thread that, in a loop, reads from [q] to get the next message to send via
       http *)
   let bg_thread_loop (self : t) : unit =
     Ezcurl.with_client ?set_opts:None @@ fun client ->
-    let stop = self.stop in
     let config = self.config in
-    let encoder = Pbrt.Encoder.create () in
+    let stop = self.stop in
+    let send ~name ~url ~conv signals =
+      let l = List.fold_left (fun acc l -> List.rev_append l acc) [] signals in
+      let@ _sp =
+        Self_trace.with_ ~kind:Span_kind_producer name
+          ~attrs:[ "n", `Int (List.length l) ]
+      in
+      conv l |> send_http_ ~stop ~config ~url client
+    in
+    let module Conv = Signal.Converter in
     try
       while not (Atomic.get stop) do
         let msg = B_queue.pop self.send_q in
         match msg with
         | To_send.Send_trace tr ->
-          send_traces_http ~stop ~config client encoder tr
+          send ~name:"send-traces" ~conv:Conv.traces
+            ~url:config.common.url_traces tr
         | To_send.Send_metric ms ->
-          send_metrics_http ~stop ~config client encoder ms
+          send ~name:"send-metrics" ~conv:Conv.metrics
+            ~url:config.common.url_metrics ms
         | To_send.Send_logs logs ->
-          send_logs_http ~stop ~config client encoder logs
+          send ~name:"send-logs" ~conv:Conv.logs ~url:config.common.url_logs
+            logs
       done
     with B_queue.Closed -> ()
 
@@ -513,7 +451,7 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
   let backend = create_backend ~stop ~config () in
   Opentelemetry.Collector.set_backend backend;
 
-  Atomic.set Self_trace.enabled config.common.self_trace;
+  Self_trace.set_enabled config.common.self_trace;
 
   if config.ticker_thread then (
     (* at most a minute *)
