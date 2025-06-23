@@ -36,6 +36,8 @@ let pp out (self : t) : unit =
     debug self_trace url_traces url_metrics url_logs ppheaders headers ppiopt
     batch_traces ppiopt batch_metrics ppiopt batch_logs batch_timeout_ms
 
+let default_url = "http://localhost:4318"
+
 type 'k make =
   ?debug:bool ->
   ?url:string ->
@@ -72,8 +74,6 @@ module Env () : ENV = struct
   let get_debug () = !debug_
 
   let set_debug b = debug_ := b
-
-  let default_url = "http://localhost:4318"
 
   let make_get_from_env env_name =
     let value = ref None in
