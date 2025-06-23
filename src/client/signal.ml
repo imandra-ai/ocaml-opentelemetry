@@ -9,7 +9,9 @@ module Converter = struct
   let resource_to_string ~encoder ~ctor ~enc resource =
     let encoder =
       match encoder with
-      | Some e -> e
+      | Some e ->
+        Pbrt.Encoder.reset e;
+        e
       | None -> Pbrt.Encoder.create ()
     in
     let x = ctor resource in
