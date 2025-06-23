@@ -16,7 +16,6 @@ module Converter = struct
     in
     let x = ctor resource in
     let@ _sc = Self_trace.with_ ~kind:Span.Span_kind_internal "encode-proto" in
-    Pbrt.Encoder.reset encoder;
     enc x encoder;
     Pbrt.Encoder.to_string encoder
 
