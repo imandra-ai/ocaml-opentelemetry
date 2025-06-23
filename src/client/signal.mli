@@ -27,3 +27,21 @@ module Encode : sig
 
       @param encoder provide an encoder state to reuse *)
 end
+
+(** Decode signals from protobuf encoded strings, received over the wire *)
+module Decode : sig
+  val logs : string -> Opentelemetry_proto.Logs.resource_logs list
+  (** [logs ls] is a protobuf encoded string of the logs [ls]
+
+      @param encoder provide an encoder state to reuse *)
+
+  val metrics : string -> Opentelemetry_proto.Metrics.resource_metrics list
+  (** [metrics ms] is a protobuf encoded string of the metrics [ms]
+
+      @param encoder provide an encoder state to reuse *)
+
+  val traces : string -> Opentelemetry_proto.Trace.resource_spans list
+  (** [metrics ts] is a protobuf encoded string of the traces [ts]
+
+      @param encoder provide an encoder state to reuse *)
+end

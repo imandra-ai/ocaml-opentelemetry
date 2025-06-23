@@ -42,3 +42,22 @@ module Encode = struct
              ())
          ~enc:Trace_service.encode_pb_export_trace_service_request
 end
+
+module Decode = struct
+  let resource_of_string ~dec s = Pbrt.Decoder.of_string s |> dec
+
+  let logs data =
+    (resource_of_string ~dec:Logs_service.decode_pb_export_logs_service_request
+       data)
+      .resource_logs
+
+  let metrics data =
+    (resource_of_string
+       ~dec:Metrics_service.decode_pb_export_metrics_service_request data)
+      .resource_metrics
+
+  let traces data =
+    (resource_of_string
+       ~dec:Trace_service.decode_pb_export_trace_service_request data)
+      .resource_spans
+end
