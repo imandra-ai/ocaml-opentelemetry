@@ -1,11 +1,9 @@
 (** Constructing and managing OTel
     {{:https://opentelemetry.io/docs/concepts/signals/} signals} *)
 
-(** Convert signals to protobuf encoded strings, ready to be sent over the wire
-
-    NOTE: The converters share an underlying stateful encoder, so each domain or
-    system thread should have its own [Converter] instance *)
-module Converter : sig
+(** Encode signals to protobuf encoded strings, ready to be sent over the wire
+*)
+module Encode : sig
   val logs :
     ?encoder:Pbrt.Encoder.t ->
     Opentelemetry_proto.Logs.resource_logs list ->

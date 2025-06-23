@@ -5,7 +5,7 @@ module Span = Opentelemetry.Span
 
 let ( let@ ) = ( @@ )
 
-module Converter = struct
+module Encode = struct
   let resource_to_string ~encoder ~ctor ~enc resource =
     let encoder =
       match encoder with
