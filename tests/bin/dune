@@ -1,7 +1,11 @@
 (executable
  (name emit1)
  (modules emit1)
- (libraries unix opentelemetry opentelemetry-client-ocurl))
+ (libraries
+  unix
+  opentelemetry
+  opentelemetry.client
+  opentelemetry-client-ocurl))
 
 (executable
  (name emit1_cohttp)
@@ -12,6 +16,7 @@
   unix
   opentelemetry
   opentelemetry-lwt
+  opentelemetry.client
   opentelemetry-client-cohttp-lwt
   lwt.unix))
 
