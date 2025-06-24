@@ -1,6 +1,16 @@
 (** Constructing and managing OTel
     {{:https://opentelemetry.io/docs/concepts/signals/} signals} *)
 
+(** The type of signals
+
+    This is not the principle type of signals from the perspective of what gets
+    encoded and sent via protocl buffers, but it is the principle type that
+    collector clients needs to reason about. *)
+type t =
+  | Traces of Opentelemetry_proto.Trace.resource_spans list
+  | Metrics of Opentelemetry_proto.Metrics.resource_metrics list
+  | Logs of Opentelemetry_proto.Logs.resource_logs list
+
 (** Encode signals to protobuf encoded strings, ready to be sent over the wire
 *)
 module Encode : sig

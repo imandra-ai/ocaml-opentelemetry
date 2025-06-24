@@ -5,6 +5,13 @@ module Span = Opentelemetry.Span
 
 let ( let@ ) = ( @@ )
 
+module Proto = Opentelemetry.Proto
+
+type t =
+  | Traces of Proto.Trace.resource_spans list
+  | Metrics of Proto.Metrics.resource_metrics list
+  | Logs of Proto.Logs.resource_logs list
+
 module Encode = struct
   let resource_to_string ~encoder ~ctor ~enc resource =
     let encoder =
@@ -63,8 +70,6 @@ module Decode = struct
 end
 
 module Pp = struct
-  module Proto = Opentelemetry.Proto
-
   let logs = Format.pp_print_list Proto.Logs.pp_resource_logs
 
   let metrics = Format.pp_print_list Proto.Metrics.pp_resource_metrics
