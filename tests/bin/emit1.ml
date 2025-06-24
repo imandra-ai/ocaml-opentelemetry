@@ -99,7 +99,6 @@ let run () =
   Array.iter Thread.join jobs
 
 let () =
-  Sys.catch_break true;
   T.Globals.service_name := "t1";
   T.Globals.service_namespace := Some "ocaml-otel.test";
   let ts_start = Unix.gettimeofday () in
