@@ -11,8 +11,13 @@ and () = Logs.Src.set_level Cohttp_eio.src (Some Warning)
 (* Record and output events observed by the server *)
 module Record = struct
   let traceln_request kind req pp data =
-    Eio.traceln "# received %s\nREQUEST: %a\nBODY: %a\n@." kind Http.Request.pp
-      req pp data
+    let _ = kind, req, pp, data in
+    (****** NOTE: Uncomment for debugging *)
+    (* let () = *)
+    (*   Eio.traceln "# received %s\nREQUEST: %a\nBODY: %a\n@." kind *)
+    (*     Http.Request.pp req pp data *)
+    (* in *)
+    ()
 
   let traces requests req data =
     let traces = data |> Eio.Flow.read_all |> Client.Signal.Decode.traces in
@@ -88,24 +93,12 @@ end
 module Tests = struct
   type t = {
     name: string;
-    condition: Signal.t -> bool;
-    test: Signal.t -> unit;
-        (** A test that is runnable iff the given signal satisfies the condition
-        *)
+    test: Signal.t -> (unit -> unit) option;
+        (** [test s] should be [Some test] iff [test] is meant to be run on the
+            signal [s] *)
   }
 
-  let test ~name ~condition test = { name; test; condition }
-
-  let take_first f l =
-    let rec search keep = function
-      | [] -> None
-      | x :: xs ->
-        if f x then
-          Some (x, List.rev_append keep xs)
-        else
-          search (x :: keep) xs
-    in
-    search [] l
+  let test ~name test = { name; test }
 
   let derive_alcotest tests signals : unit Alcotest.test_case list =
     let rec find_tests conditional_tests runnable_tests =
@@ -115,14 +108,14 @@ module Tests = struct
         (* We collected all the tests *)
         runnable_tests
       | rest ->
-        (match take_first (fun t -> t.condition signal) rest with
-        | None -> find_tests rest runnable_tests
-        | Some (t, rest') ->
-          Eio.traceln "found test %s" t.name;
-          let test =
-            Alcotest.test_case t.name `Quick (fun () -> t.test signal)
-          in
-          find_tests rest' (test :: runnable_tests))
+        let test_cases, conditionals =
+          rest
+          |> List.partition_map (fun t ->
+                 match t.test signal with
+                 | Some test -> Left (Alcotest.test_case t.name `Quick test)
+                 | None -> Right t)
+        in
+        find_tests conditionals (test_cases @ runnable_tests)
     in
     find_tests tests [] |> List.rev
 
@@ -147,13 +140,15 @@ let default_port =
   | [ _; _; port ] -> int_of_string port
   | _ -> failwith "unexpected format in Client.Config.default_url"
 
-let run_tests ?(port = default_port) ~cmd (suite, tests) =
+let collect_traces ~env ~sw ~port program_to_test signals () =
+  Eio.Fiber.both
+    (Server.run ~env ~sw ~port signals)
+    (Tested_program.run ~sw program_to_test)
+
+let run_tests ?(port = default_port) ~program_to_test ~suite_name tests =
   Eio_main.run @@ fun env ->
   Eio.Switch.run @@ fun sw ->
   let signals = Eio.Stream.create max_int in
   Eio.Fiber.first
-    (fun () ->
-      Eio.Fiber.both
-        (Server.run ~env ~sw ~port signals)
-        (Tested_program.run ~sw cmd))
-    (Tests.run suite tests env#clock signals)
+    (collect_traces ~env ~sw ~port program_to_test signals)
+    (Tests.run suite_name tests env#clock signals)
