@@ -11,6 +11,18 @@ type t =
   | Metrics of Opentelemetry_proto.Metrics.resource_metrics list
   | Logs of Opentelemetry_proto.Logs.resource_logs list
 
+val to_traces : t -> Opentelemetry_proto.Trace.resource_spans list option
+
+val to_metrics : t -> Opentelemetry_proto.Metrics.resource_metrics list option
+
+val to_logs : t -> Opentelemetry_proto.Logs.resource_logs list option
+
+val is_traces : t -> bool
+
+val is_metrics : t -> bool
+
+val is_logs : t -> bool
+
 (** Encode signals to protobuf encoded strings, ready to be sent over the wire
 *)
 module Encode : sig
@@ -67,4 +79,6 @@ module Pp : sig
 
   val traces :
     Format.formatter -> Opentelemetry_proto.Trace.resource_spans list -> unit
+
+  val pp : Format.formatter -> t -> unit
 end
