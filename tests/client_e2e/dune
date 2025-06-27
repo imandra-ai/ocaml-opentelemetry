@@ -46,6 +46,7 @@
 (rule
  ; cohttp-lwt client tests
  (deps %{bin:collect_signals} %{bin:emit1_cohttp})
+ (package opentelemetry-client-cohttp-lwt)
  (alias runtest)
  (action
   (progn
