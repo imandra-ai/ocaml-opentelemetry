@@ -104,6 +104,11 @@ let () =
   let ts_start = Unix.gettimeofday () in
 
   let debug = ref false in
+
+  let batch_traces = ref 400 in
+  let batch_metrics = ref 3 in
+  let batch_logs = ref 400 in
+
   let n_bg_threads = ref 0 in
   let opts =
     [
@@ -111,6 +116,11 @@ let () =
       ( "--stress-alloc",
         Arg.Bool (( := ) stress_alloc_),
         " perform heavy allocs in inner loop" );
+      ( "--batch-metrics",
+        Arg.Int (( := ) batch_metrics),
+        " size of metrics batch" );
+      "--batch-traces", Arg.Int (( := ) batch_traces), " size of traces batch";
+      "--batch-logs", Arg.Int (( := ) batch_logs), " size of logs batch";
       "--sleep-inner", Arg.Set_float sleep_inner, " sleep (in s) in inner loop";
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
@@ -122,15 +132,18 @@ let () =
 
   Arg.parse opts (fun _ -> ()) "emit1 [opt]*";
 
+  let some_if_nzero r =
+    if !r > 0 then
+      Some !r
+    else
+      None
+  in
   let config =
     Opentelemetry_client_ocurl.Config.make ~debug:!debug ~self_trace:true
-      ?bg_threads:
-        (let n = !n_bg_threads in
-         if n = 0 then
-           None
-         else
-           Some n)
-      ()
+      ?bg_threads:(some_if_nzero n_bg_threads)
+      ~batch_traces:(some_if_nzero batch_traces)
+      ~batch_metrics:(some_if_nzero batch_metrics)
+      ~batch_logs:(some_if_nzero batch_logs) ()
   in
   Format.printf "@[<2>sleep outer: %.3fs,@ sleep inner: %.3fs,@ config: %a@]@."
     !sleep_outer !sleep_inner Opentelemetry_client_ocurl.Config.pp config;

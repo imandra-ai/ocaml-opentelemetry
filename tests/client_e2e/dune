@@ -86,3 +86,51 @@
     cohttp_lwt_3_job.actual
     (run collect_signals emit1_cohttp -j 3))
    (diff cohttp_lwt_3_job.expected cohttp_lwt_3_job.actual))))
+
+; FIXME These runs produce a non-deterministic order of traces :(
+
+; (rule
+;  ; ocurl client tests
+;  (deps %{bin:collect_signals} %{bin:emit1})
+;  (alias runtest)
+;  (action
+;   (progn
+;    ; FIXME: The emitter with batches of size 1 currently deadlocks
+;    ; (with-stdout-to
+;    ;  cohttp_lwt_1_job_1_batch_1_iter.actual
+;    ;  (run
+;    ;   collect_signals
+;    ;   emit1_cohttp
+;    ;   -j
+;    ;   1
+;    ;   --batch-traces
+;    ;   1
+;    ;   --batch-metrics
+;    ;   1
+;    ;   --batch-logs
+;    ;   1))
+;    ; (diff
+;    ;  cohttp_lwt_1_job_1_batch_1_iter.expected
+;    ;  cohttp_lwt_1_job_1_batch_1_iter.actual)
+;    (with-stdout-to
+;     ocurl_1_job_2_batch_1_iter.actual
+;     (run
+;      collect_signals
+;      emit1
+;      -j
+;      1
+;      --batch-traces
+;      2
+;      --batch-metrics
+;      2
+;      --batch-logs
+;      2
+;      -n
+;      1))
+;    (diff
+;     ocurl_1_job_2_batch_1_iter.expected
+;     ocurl_1_job_2_batch_1_iter.actual)
+;    (with-stdout-to
+;     ocurl_3_job_1_iter.actual
+;     (run collect_signals emit1 -j 3 -n 1))
+;    (diff ocurl_3_job_1_iter.expected ocurl_3_job_1_iter.actual))))
