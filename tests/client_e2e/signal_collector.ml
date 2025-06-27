@@ -57,10 +57,10 @@ module Record = struct
   let traceln_request kind req pp data =
     let _ = kind, req, pp, data in
     (****** NOTE: Uncomment for debugging *)
-    let () =
-      Eio.traceln "# received %s\nREQUEST: %a\nBODY: %a\n@." kind
-        Http.Request.pp req pp data
-    in
+    (* let () = *)
+    (*   Eio.traceln "# received %s\nREQUEST: %a\nBODY: %a\n@." kind *)
+    (*     Http.Request.pp req pp data *)
+    (* in *)
     ()
 
   let traces requests req data =
