@@ -12,15 +12,15 @@
  (modules test_client_e2e_lwt)
  (deps %{bin:emit1_cohttp})
  (libraries
-  trace_collector
+  signal_collector
   alcotest
   opentelemetry
   opentelemetry.client
   opentelemetry-client-cohttp-lwt))
 
 (library
- (name trace_collector)
- (modules trace_collector)
+ (name signal_collector)
+ (modules signal_collector)
  (libraries
   str
   alcotest
@@ -33,34 +33,17 @@
   logs.threaded
   opentelemetry.client))
 
-; (executable
-;  (name collect_program_traces)
-;  (modules collect_program_traces)
-;  (libraries trace_collector))
-
-; (rule
-;  (action
-;   (with-stdout-to
-;    1-proc-1-buffer-cohttp-lwt.actual
-;    (run collect_program_traces emit1_cohttp -j 2 --batch-traces 2)))
-;  (deps %{bin:collect_program_traces} %{bin:emit1_cohttp}))
+;  The following are expect tests, which use the signal_collector.ml to run signal emitting
 
 (tests
  (names cohttp_lwt_1_job_1_batch_1_iter)
  (modules cohttp_lwt_1_job_1_batch_1_iter)
- (libraries trace_collector)
+ (libraries signal_collector)
  (enabled_if false) ; FIXME: Deadlocks when run with 1 batch
  (deps %{bin:emit1_cohttp}))
 
 (tests
  (names cohttp_lwt_1_job_2_batch_1_iter cohttp_lwt_3_job)
  (modules cohttp_lwt_1_job_2_batch_1_iter cohttp_lwt_3_job)
- (libraries trace_collector)
+ (libraries signal_collector)
  (deps %{bin:emit1_cohttp}))
-
-; (rule
-;  (alias runtest)
-;  (action
-;   (diff
-;     1-proc-1-buffer-cohttp-lwt.expected
-;     1-proc-1-buffer-cohttp-lwt.actual)))

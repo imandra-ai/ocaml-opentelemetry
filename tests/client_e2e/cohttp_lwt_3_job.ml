@@ -1,5 +1,5 @@
 let () =
-  Trace_collector.run
+  Signal_collector.run
     ~program_to_test:
       [
         "emit1_cohttp";
