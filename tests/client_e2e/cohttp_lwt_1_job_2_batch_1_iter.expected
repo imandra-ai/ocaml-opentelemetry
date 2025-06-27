@@ -1,0 +1,1009 @@
+[
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_logs =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       log_records =
+         [{ time_unix_nano = <redacted>;
+            observed_time_unix_nano = <redacted>;
+            severity_number = Severity_number_info;
+            severity_text = "";
+            body = Some(String_value("inner at 0"));
+            attributes = [];
+            dropped_attributes_count = 0;
+            flags = 0;
+            trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+} ]
+[
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_spans =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       spans =
+         [{ trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+            trace_state = "";
+            parent_span_id = <bytes len=0>;
+            name = "encode-proto";
+            kind = Span_kind_internal;
+            start_time_unix_nano = <redacted>;
+            end_time_unix_nano = <redacted>;
+            attributes = [];
+            dropped_attributes_count = 0;
+            events = [];
+            dropped_events_count = 0;
+            links = [];
+            dropped_links_count = 0;
+            status = None;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+} ]
+[
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_spans =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       spans =
+         [{ trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+            trace_state = "";
+            parent_span_id = <bytes len=0>;
+            name = "encode-proto";
+            kind = Span_kind_internal;
+            start_time_unix_nano = <redacted>;
+            end_time_unix_nano = <redacted>;
+            attributes = [];
+            dropped_attributes_count = 0;
+            events = [];
+            dropped_events_count = 0;
+            links = [];
+            dropped_links_count = 0;
+            status = None;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_spans =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       spans =
+         [{ trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+            trace_state = "";
+            parent_span_id = <bytes len=0>;
+            name = "loop.outer";
+            kind = Span_kind_producer;
+            start_time_unix_nano = <redacted>;
+            end_time_unix_nano = <redacted>;
+            attributes = [{ key = "i"; value = Some(Int_value(0)); }];
+            dropped_attributes_count = 0;
+            events = [];
+            dropped_events_count = 0;
+            links = [];
+            dropped_links_count = 0;
+            status = None;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+}
+]
+[
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_spans =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       spans =
+         [{ trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+            trace_state = "";
+            parent_span_id = <bytes len=0>;
+            name = "encode-proto";
+            kind = Span_kind_internal;
+            start_time_unix_nano = <redacted>;
+            end_time_unix_nano = <redacted>;
+            attributes = [];
+            dropped_attributes_count = 0;
+            events = [];
+            dropped_events_count = 0;
+            links = [];
+            dropped_links_count = 0;
+            status = None;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_spans =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       spans =
+         [{ trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+            trace_state = "";
+            parent_span_id = <bytes len=8>;
+            name = "alloc";
+            kind = Span_kind_internal;
+            start_time_unix_nano = <redacted>;
+            end_time_unix_nano = <redacted>;
+            attributes = [];
+            dropped_attributes_count = 0;
+            events =
+              [{ time_unix_nano = <redacted>;
+                 name = "done with alloc";
+                 attributes = [];
+                 dropped_attributes_count = 0;
+               }
+               ];
+            dropped_events_count = 0;
+            links = [];
+            dropped_links_count = 0;
+            status = None;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+}
+]
+[
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_spans =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       spans =
+         [{ trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+            trace_state = "";
+            parent_span_id = <bytes len=0>;
+            name = "encode-proto";
+            kind = Span_kind_internal;
+            start_time_unix_nano = <redacted>;
+            end_time_unix_nano = <redacted>;
+            attributes = [];
+            dropped_attributes_count = 0;
+            events = [];
+            dropped_events_count = 0;
+            links = [];
+            dropped_links_count = 0;
+            status = None;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_spans =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       spans =
+         [{ trace_id = <bytes len=16>;
+            span_id = <bytes len=8>;
+            trace_state = "";
+            parent_span_id = <bytes len=8>;
+            name = "loop.inner";
+            kind = Span_kind_internal;
+            start_time_unix_nano = <redacted>;
+            end_time_unix_nano = <redacted>;
+            attributes = [{ key = "j"; value = Some(Int_value(0)); }];
+            dropped_attributes_count = 0;
+            events = [];
+            dropped_events_count = 0;
+            links = [];
+            dropped_links_count = 0;
+            status = None;
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+}
+]
+[
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); };
+           { key = "process.runtime.name";
+             value = Some(String_value("ocaml"));
+           };
+           { key = "process.runtime.version";
+             value = Some(String_value("5.3.0"));
+           }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "process.runtime.ocaml.gc.major_heap";
+            description = "";
+            unit_ = "B";
+            data =
+              Gauge(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_allocated";
+            description = "";
+            unit_ = "B";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.major_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.compactions";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); };
+           { key = "process.runtime.name";
+             value = Some(String_value("ocaml"));
+           };
+           { key = "process.runtime.version";
+             value = Some(String_value("5.3.0"));
+           }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "process.runtime.ocaml.gc.major_heap";
+            description = "";
+            unit_ = "B";
+            data =
+              Gauge(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_allocated";
+            description = "";
+            unit_ = "B";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.major_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.compactions";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "num-sleep";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+}
+]
+[
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); };
+           { key = "process.runtime.name";
+             value = Some(String_value("ocaml"));
+           };
+           { key = "process.runtime.version";
+             value = Some(String_value("5.3.0"));
+           }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "process.runtime.ocaml.gc.major_heap";
+            description = "";
+            unit_ = "B";
+            data =
+              Gauge(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_allocated";
+            description = "";
+            unit_ = "B";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.major_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.compactions";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); };
+           { key = "process.runtime.name";
+             value = Some(String_value("ocaml"));
+           };
+           { key = "process.runtime.version";
+             value = Some(String_value("5.3.0"));
+           }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "process.runtime.ocaml.gc.major_heap";
+            description = "";
+            unit_ = "B";
+            data =
+              Gauge(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_allocated";
+            description = "";
+            unit_ = "B";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.minor_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.major_collections";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          };
+          { name = "process.runtime.ocaml.gc.compactions";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "num-sleep";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "num-sleep";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+},
+{ resource =
+    Some(
+      { attributes =
+          [{ key = "service.namespace";
+             value = Some(String_value("ocaml-otel.test"));
+           };
+           { key = "service.name"; value = Some(String_value("t1")); }
+           ];
+        dropped_attributes_count = 0;
+      });
+  scope_metrics =
+    [{ scope =
+         Some(
+           { name = "ocaml-otel";
+             version = "%%VERSION_NUM%%";
+             attributes = [];
+             dropped_attributes_count = 0;
+           });
+       metrics =
+         [{ name = "num-sleep";
+            description = "";
+            unit_ = "";
+            data =
+              Sum(
+                { data_points =
+                    [{ attributes = [];
+                       start_time_unix_nano = <redacted>;
+                       time_unix_nano = <redacted>;
+                       value = <redacted>;
+                       exemplars = [];
+                       flags = 0;
+                     }
+                     ];
+                  aggregation_temporality =
+                    Aggregation_temporality_cumulative;
+                  is_monotonic = true;
+                });
+          }
+          ];
+       schema_url = "";
+     }
+     ];
+  schema_url = "";
+}
+]

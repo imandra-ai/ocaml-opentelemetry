@@ -1,8 +1,7 @@
-; Make the binaries for the test emitters available on the path for the components defined in this dir.
-; See https://dune.readthedocs.io/en/stable/reference/dune/env.html
-
 (env
  (_
+  ; Make the binaries for the test emitters available on the path for the components defined in this dir.
+  ; See https://dune.readthedocs.io/en/stable/reference/dune/env.html
   (binaries
    (../bin/emit1.exe as emit1)
    (../bin/emit1_cohttp.exe as emit1_cohttp))))
@@ -34,7 +33,34 @@
   logs.threaded
   opentelemetry.client))
 
-(executable
- (name collect_program_traces)
- (modules collect_program_traces)
- (libraries trace_collector))
+; (executable
+;  (name collect_program_traces)
+;  (modules collect_program_traces)
+;  (libraries trace_collector))
+
+; (rule
+;  (action
+;   (with-stdout-to
+;    1-proc-1-buffer-cohttp-lwt.actual
+;    (run collect_program_traces emit1_cohttp -j 2 --batch-traces 2)))
+;  (deps %{bin:collect_program_traces} %{bin:emit1_cohttp}))
+
+(tests
+ (names cohttp_lwt_1_job_1_batch_1_iter)
+ (modules cohttp_lwt_1_job_1_batch_1_iter)
+ (libraries trace_collector)
+ (enabled_if false) ; FIXME: Deadlocks when run with 1 batch
+ (deps %{bin:emit1_cohttp}))
+
+(tests
+ (names cohttp_lwt_1_job_2_batch_1_iter)
+ (modules cohttp_lwt_1_job_2_batch_1_iter)
+ (libraries trace_collector)
+ (deps %{bin:emit1_cohttp}))
+
+; (rule
+;  (alias runtest)
+;  (action
+;   (diff
+;     1-proc-1-buffer-cohttp-lwt.expected
+;     1-proc-1-buffer-cohttp-lwt.actual)))
