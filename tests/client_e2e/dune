@@ -53,8 +53,8 @@
  (deps %{bin:emit1_cohttp}))
 
 (tests
- (names cohttp_lwt_1_job_2_batch_1_iter)
- (modules cohttp_lwt_1_job_2_batch_1_iter)
+ (names cohttp_lwt_1_job_2_batch_1_iter cohttp_lwt_3_job)
+ (modules cohttp_lwt_1_job_2_batch_1_iter cohttp_lwt_3_job)
  (libraries trace_collector)
  (deps %{bin:emit1_cohttp}))
 
