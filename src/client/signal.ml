@@ -70,9 +70,21 @@ module Decode = struct
 end
 
 module Pp = struct
-  let logs = Format.pp_print_list Proto.Logs.pp_resource_logs
+  let pp_sep fmt () = Format.fprintf fmt ",@."
 
-  let metrics = Format.pp_print_list Proto.Metrics.pp_resource_metrics
+  let pp_signal pp fmt t =
+    Format.fprintf fmt "[@ @[";
+    Format.pp_print_list ~pp_sep pp fmt t;
+    Format.fprintf fmt "@ ]@]@."
 
-  let traces = Format.pp_print_list Proto.Trace.pp_resource_spans
+  let logs = pp_signal Proto.Logs.pp_resource_logs
+
+  let metrics = pp_signal Proto.Metrics.pp_resource_metrics
+
+  let traces = pp_signal Proto.Trace.pp_resource_spans
+
+  let pp fmt = function
+    | Logs ls -> logs fmt ls
+    | Metrics ms -> metrics fmt ms
+    | Traces ts -> traces fmt ts
 end
