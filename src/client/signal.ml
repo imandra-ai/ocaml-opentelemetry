@@ -12,6 +12,30 @@ type t =
   | Metrics of Proto.Metrics.resource_metrics list
   | Logs of Proto.Logs.resource_logs list
 
+let to_traces = function
+  | Traces xs -> Some xs
+  | _ -> None
+
+let to_metrics = function
+  | Metrics xs -> Some xs
+  | _ -> None
+
+let to_logs = function
+  | Logs xs -> Some xs
+  | _ -> None
+
+let is_traces = function
+  | Traces _ -> true
+  | _ -> false
+
+let is_metrics = function
+  | Metrics _ -> true
+  | _ -> false
+
+let is_logs = function
+  | Logs _ -> true
+  | _ -> false
+
 module Encode = struct
   let resource_to_string ~encoder ~ctor ~enc resource =
     let encoder =
