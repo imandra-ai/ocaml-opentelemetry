@@ -105,17 +105,18 @@ let () =
   let debug = ref false in
   let batch_traces = ref 400 in
   let batch_metrics = ref 3 in
-  (* TODO: batch logs *)
+  let batch_logs = ref 400 in
   let opts =
     [
       "--debug", Arg.Bool (( := ) debug), " enable debug output";
       ( "--stress-alloc",
         Arg.Bool (( := ) stress_alloc_),
         " perform heavy allocs in inner loop" );
-      "--batch-traces", Arg.Int (( := ) batch_traces), " size of traces batch";
       ( "--batch-metrics",
         Arg.Int (( := ) batch_metrics),
         " size of metrics batch" );
+      "--batch-traces", Arg.Int (( := ) batch_traces), " size of traces batch";
+      "--batch-logs", Arg.Int (( := ) batch_logs), " size of logs batch";
       "--sleep-inner", Arg.Set_float sleep_inner, " sleep (in s) in inner loop";
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "--iterations", Arg.Set_int iterations, " the number of iterations to run";
@@ -136,7 +137,7 @@ let () =
     Opentelemetry_client_cohttp_lwt.Config.make ~debug:!debug
       ~batch_traces:(some_if_nzero batch_traces)
       ~batch_metrics:(some_if_nzero batch_metrics)
-      ()
+      ~batch_logs:(some_if_nzero batch_logs) ()
   in
   Format.printf "@[<2>sleep outer: %.3fs,@ sleep inner: %.3fs,@ config: %a@]@."
     !sleep_outer !sleep_inner Opentelemetry_client_cohttp_lwt.Config.pp config;
