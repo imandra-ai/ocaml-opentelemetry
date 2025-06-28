@@ -1,5 +1,5 @@
 (library
  (name opentelemetry_client)
  (public_name opentelemetry.client)
- (libraries opentelemetry pbrt)
+ (libraries opentelemetry pbrt mtime mtime.clock.os)
  (synopsis "Common types and logic shared between client implementations"))
