@@ -39,7 +39,10 @@ module Server = struct
         let+ () = dbg_request "logs" request Signal.Pp.logs logs in
         `OK, Some (Signal.Logs logs)
       | unexepected ->
-        let+ () = Lwt_io.eprintf "unexpected endpoint %s\n" unexepected in
+        let+ () =
+          Lwt_io.eprintf "unexpected endpoint %s -- status %s\n" unexepected
+            (Http.Status.to_string `Not_found)
+        in
         `Not_found, None
     in
     push_signal signal;
@@ -47,10 +50,30 @@ module Server = struct
     Cohttp_lwt_unix.Server.respond ~status ~body:resp_body ()
 
   let run port push_signals =
-    let* () = Lwt_io.eprintf "starting server\n" in
-    Cohttp_lwt_unix.Server.(
-      make ~callback:(handler push_signals) ()
-      |> create ~mode:(`TCP (`Port port)))
+    let request_handler =
+      Cohttp_lwt_unix.Server.make ~callback:(handler push_signals) ()
+    in
+    let mode = `TCP (`Port port) in
+    let* () = Lwt_io.eprintf "starting server on http://localhost:%d\n" port in
+    let ipv4_server = Cohttp_lwt_unix.Server.(create ~mode request_handler) in
+    let ipv6_server =
+      (* TODO: Ideally we could bind both IPv6 and IPv4 in a dual stack server.
+         However, Cohttp depends on Conduit for this, which is not currently able
+         to support a dual stack. See https://github.com/mirage/ocaml-conduit/issues/323.
+
+         We need an IPv6 server, because Cotthp_eio will try to bind this first,
+         if it is available on the local loop, and if we have an open port at
+         [::1] without a sever to handle requests, we'll end up with the
+         connection refused.
+
+         For the time being, we fix this by running one server for each case. *)
+      let* ipv6_ctx =
+        let+ ctx = Conduit_lwt_unix.init ~src:"::1" () in
+        Cohttp_lwt_unix.Net.init ~ctx ()
+      in
+      Cohttp_lwt_unix.Server.(create ~ctx:ipv6_ctx ~mode request_handler)
+    in
+    Lwt.join [ ipv4_server; ipv6_server ]
 end
 
 (** Manage launching and cleaning up the program we are testing *)

@@ -1,6 +1,5 @@
-module T = Opentelemetry_lwt
+module OT = Opentelemetry
 module Atomic = Opentelemetry_atomic.Atomic
-open Lwt.Syntax
 
 let spf = Printf.sprintf
 
@@ -25,31 +24,31 @@ let num_tr = Atomic.make 0
 (* Counter used to mark simulated failures *)
 let i = ref 0
 
-let run_job job_id : unit Lwt.t =
-  while%lwt not @@ Atomic.get stop do
+let run_job clock _job_id : unit =
+  while not @@ Atomic.get stop do
     let@ scope =
       Atomic.incr num_tr;
-      T.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
-        ~attrs:[ "i", `Int job_id ]
+      OT.Trace.with_ ~kind:OT.Span.Span_kind_producer "loop.outer"
+        ~attrs:[ "i", `Int !i ]
     in
 
-    for%lwt j = 0 to !iterations do
+    for j = 0 to !iterations do
       if j >= !iterations then
         (* Terminate program, having reached our max iterations *)
-        Lwt.return @@ Atomic.set stop true
+        Atomic.set stop true
       else
         (* parent scope is found via thread local storage *)
         let@ scope =
           Atomic.incr num_tr;
-          T.Trace.with_ ~scope ~kind:T.Span.Span_kind_internal
+          OT.Trace.with_ ~scope ~kind:OT.Span.Span_kind_internal
             ~attrs:[ "j", `Int j ]
             "loop.inner"
         in
 
-        let* () = Lwt_unix.sleep !sleep_outer in
+        let () = Eio.Time.sleep clock !sleep_outer in
         Atomic.incr num_sleep;
 
-        T.Logs.(
+        OT.Logs.(
           emit
             [
               make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
@@ -58,10 +57,10 @@ let run_job job_id : unit Lwt.t =
 
         incr i;
 
-        try%lwt
+        try
           Atomic.incr num_tr;
           let@ scope =
-            T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope "alloc"
+            OT.Trace.with_ ~kind:OT.Span.Span_kind_internal ~scope "alloc"
           in
           (* allocate some stuff *)
           if !stress_alloc_ then (
@@ -69,24 +68,23 @@ let run_job job_id : unit Lwt.t =
             ignore _arr
           );
 
-          let* () = Lwt_unix.sleep !sleep_inner in
+          let () = Eio.Time.sleep clock !sleep_inner in
           Atomic.incr num_sleep;
 
-          (* simulate a failure *)
           if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
+          (* simulate a failure *)
           Opentelemetry.Scope.add_event scope (fun () ->
-              T.Event.make "done with alloc");
-          Lwt.return ()
-        with Failure _ -> Lwt.return ()
+              OT.Event.make "done with alloc")
+        with Failure _ -> ()
     done
   done
 
-let run () : unit Lwt.t =
-  T.GC_metrics.basic_setup ();
+let run env : unit =
+  OT.GC_metrics.basic_setup ();
 
-  T.Metrics_callbacks.register (fun () ->
-      T.Metrics.
+  OT.Metrics_callbacks.register (fun () ->
+      OT.Metrics.
         [
           sum ~name:"num-sleep" ~is_monotonic:true
             [ int (Atomic.get num_sleep) ];
@@ -95,13 +93,15 @@ let run () : unit Lwt.t =
   let n_jobs = max 1 !n_jobs in
   Printf.printf "run %d jobs\n%!" n_jobs;
 
-  let jobs = List.init n_jobs run_job in
-  Lwt.join jobs
+  Eio.Switch.run (fun sw ->
+      for j = 1 to n_jobs do
+        Eio.Fiber.fork ~sw (fun () -> run_job env#clock j)
+      done)
 
 let () =
   Sys.catch_break true;
-  T.Globals.service_name := "t1";
-  T.Globals.service_namespace := Some "ocaml-otel.test";
+  OT.Globals.service_name := "t1";
+  OT.Globals.service_namespace := Some "ocaml-otel.test";
   let ts_start = Unix.gettimeofday () in
 
   let debug = ref false in
@@ -140,13 +140,13 @@ let () =
       None
   in
   let config =
-    Opentelemetry_client_cohttp_lwt.Config.make ~debug:!debug ?url:!url
+    Opentelemetry_client_cohttp_eio.Config.make ~debug:!debug ?url:!url
       ~batch_traces:(some_if_nzero batch_traces)
       ~batch_metrics:(some_if_nzero batch_metrics)
       ~batch_logs:(some_if_nzero batch_logs) ()
   in
   Format.printf "@[<2>sleep outer: %.3fs,@ sleep inner: %.3fs,@ config: %a@]@."
-    !sleep_outer !sleep_inner Opentelemetry_client_cohttp_lwt.Config.pp config;
+    !sleep_outer !sleep_inner Opentelemetry_client_cohttp_eio.Config.pp config;
 
   let@ () =
     Fun.protect ~finally:(fun () ->
@@ -155,5 +155,4 @@ let () =
         Printf.printf "\ndone. %d spans in %.4fs (%.4f/s)\n%!"
           (Atomic.get num_tr) elapsed n_per_sec)
   in
-  Opentelemetry_client_cohttp_lwt.with_setup ~stop ~config () run
-  |> Lwt_main.run
+  Opentelemetry_client_cohttp_eio.with_setup ~stop ~config run |> Eio_main.run
