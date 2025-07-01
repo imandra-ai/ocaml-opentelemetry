@@ -2,15 +2,20 @@
 
 type 'a t
 
-val make : ?batch:int -> ?timeout:Mtime.span -> unit -> 'a t
+val make :
+  ?batch:int -> ?high_watermark:int -> ?timeout:Mtime.span -> unit -> 'a t
 (** [make ()] is a new batch
 
     @param batch
       the number of elements after which the batch will be considered {b full},
-      and ready to pop. A "high water mark" is also derived form the batch as
-      [if batch = 1 then 100 else batch * 10]. This sets a limit after which new
-      elements will be [`Dropped] by {!push}. Set to [0] to disable batching.
-      Default [1].
+      and ready to pop. Set to [0] to disable batching. It is required that
+      [batch >= 0]. Default [1].
+
+    @param high_watermark
+      the batch size limit after which new elements will be [`Dropped] by
+      {!push}. This prevents the queue from growing too fast for effective
+      transmission in case of signal floods. Default
+      [if batch = 1 then 100 else batch * 10].
 
     @param timeout
       the time span after which a batch is ready to pop, whether or not it is

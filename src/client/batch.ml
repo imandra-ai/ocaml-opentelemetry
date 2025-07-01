@@ -7,14 +7,15 @@ type 'a t = {
   mutable start: Mtime.t;
 }
 
-let make ?(batch = 1) ?timeout () : _ t =
+let high_watermark batch_size =
+  if batch_size = 1 then
+    100
+  else
+    batch_size * 10
+
+let make ?(batch = 1) ?(high_watermark = high_watermark batch) ?timeout () : _ t
+    =
   assert (batch > 0);
-  let high_watermark =
-    if batch = 1 then
-      100
-    else
-      batch * 10
-  in
   {
     size = 0;
     start = Mtime_clock.now ();
