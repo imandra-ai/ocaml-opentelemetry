@@ -7,23 +7,25 @@ type 'a t = {
   mutable start: Mtime.t;
 }
 
-let high_watermark batch_size =
+let default_high_watermark batch_size =
   if batch_size = 1 then
     100
   else
     batch_size * 10
 
-let make ?(batch = 1) ?(high_watermark = high_watermark batch) ?timeout () : _ t
-    =
+let make ?(batch = 1) ?high_watermark ?now ?timeout () : _ t =
+  let high_watermark =
+    match high_watermark with
+    | Some x -> x
+    | None -> default_high_watermark batch
+  in
+  let start =
+    match now with
+    | Some x -> x
+    | None -> Mtime_clock.now ()
+  in
   assert (batch > 0);
-  {
-    size = 0;
-    start = Mtime_clock.now ();
-    q = [];
-    batch;
-    timeout;
-    high_watermark;
-  }
+  { size = 0; q = []; start; batch; timeout; high_watermark }
 
 let timeout_expired_ ~now self : bool =
   match self.timeout with

@@ -3,7 +3,12 @@
 type 'a t
 
 val make :
-  ?batch:int -> ?high_watermark:int -> ?timeout:Mtime.span -> unit -> 'a t
+  ?batch:int ->
+  ?high_watermark:int ->
+  ?now:Mtime.t ->
+  ?timeout:Mtime.span ->
+  unit ->
+  'a t
 (** [make ()] is a new batch
 
     @param batch
@@ -16,6 +21,8 @@ val make :
       {!push}. This prevents the queue from growing too fast for effective
       transmission in case of signal floods. Default
       [if batch = 1 then 100 else batch * 10].
+
+    @param now the current time. Default [Mtime_clock.now ()].
 
     @param timeout
       the time span after which a batch is ready to pop, whether or not it is
@@ -35,7 +42,9 @@ val pop_if_ready : ?force:bool -> now:Mtime.t -> 'a t -> 'a list option
 
     @param now the current time
 
-    @param force override the other batch conditions *)
+    @param force
+      override the other batch conditions, for when when we just want to emit
+      batches before exit or because the user asks for it *)
 
 val push : 'a t -> 'a list -> [ `Dropped | `Ok ]
 (** [push b xs] is [`Ok] if it succeeds in pushing the values in [xs] into the batch
