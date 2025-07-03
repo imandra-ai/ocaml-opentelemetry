@@ -20,8 +20,9 @@ let run () =
     in
     let* () = Lwt_unix.sleep !sleep_outer in
     let module C = (val mk_client ~scope) in
+    (* Using the same default server O  *)
     let* _res, body =
-      C.get (Uri.of_string "https://enec1hql02hz.x.pipedream.net")
+      C.get (Uri.of_string Opentelemetry_client.Config.default_url)
     in
     let* () = Cohttp_lwt.Body.drain_body body in
     go ()

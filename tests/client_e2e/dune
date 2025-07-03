@@ -1,0 +1,137 @@
+(env
+ (_
+  ; Make the binaries for the test emitters available on the path for the components defined in this dir.
+  ; See https://dune.readthedocs.io/en/stable/reference/dune/env.html
+  (binaries
+   (../bin/emit1.exe as emit1)
+   (../bin/emit1_cohttp.exe as emit1_cohttp)
+   (./collect_signals.exe as collect_signals))))
+
+(tests
+ (names test_client_e2e_lwt)
+ (package opentelemetry-client-cohttp-lwt)
+ (modules test_client_e2e_lwt)
+ (deps %{bin:emit1_cohttp})
+ (libraries
+  signal_collector
+  alcotest
+  opentelemetry
+  opentelemetry.client
+  opentelemetry-client-cohttp-lwt))
+
+(library
+ (name signal_collector)
+ (modules signal_collector)
+ (libraries
+  str
+  alcotest
+  cohttp-eio
+  eio_main
+  eio.unix
+  fmt
+  unix
+  logs.fmt
+  logs.threaded
+  opentelemetry.client))
+
+;  The following are expect tests, which use the signal_collector.ml to run a
+;  signal emitting program, and compare it against the expected normalized
+;  output from previous executions.
+
+(executable
+ (name collect_signals)
+ (modules collect_signals)
+ (libraries signal_collector))
+
+(rule
+ ; cohttp-lwt client tests
+ (deps %{bin:collect_signals} %{bin:emit1_cohttp})
+ (package opentelemetry-client-cohttp-lwt)
+ (alias runtest)
+ (action
+  (progn
+   ; FIXME: The emitter with batches of size 1 currently deadlocks
+   ; (with-stdout-to
+   ;  cohttp_lwt_1_job_1_batch_1_iter.actual
+   ;  (run
+   ;   collect_signals
+   ;   emit1_cohttp
+   ;   -j
+   ;   1
+   ;   --batch-traces
+   ;   1
+   ;   --batch-metrics
+   ;   1
+   ;   --batch-logs
+   ;   1))
+   ; (diff
+   ;  cohttp_lwt_1_job_1_batch_1_iter.expected
+   ;  cohttp_lwt_1_job_1_batch_1_iter.actual)
+   (with-stdout-to
+    cohttp_lwt_1_job_2_batch_1_iter.actual
+    (run
+     collect_signals
+     emit1_cohttp
+     -j
+     1
+     --batch-traces
+     2
+     --batch-metrics
+     2
+     --batch-logs
+     2))
+   (diff
+    cohttp_lwt_1_job_2_batch_1_iter.expected
+    cohttp_lwt_1_job_2_batch_1_iter.actual)
+   (with-stdout-to
+    cohttp_lwt_3_job.actual
+    (run collect_signals emit1_cohttp -j 3))
+   (diff cohttp_lwt_3_job.expected cohttp_lwt_3_job.actual))))
+
+; FIXME These runs produce a non-deterministic order of traces :(
+
+; (rule
+;  ; ocurl client tests
+;  (deps %{bin:collect_signals} %{bin:emit1})
+;  (alias runtest)
+;  (action
+;   (progn
+;    ; FIXME: The emitter with batches of size 1 currently deadlocks
+;    ; (with-stdout-to
+;    ;  cohttp_lwt_1_job_1_batch_1_iter.actual
+;    ;  (run
+;    ;   collect_signals
+;    ;   emit1_cohttp
+;    ;   -j
+;    ;   1
+;    ;   --batch-traces
+;    ;   1
+;    ;   --batch-metrics
+;    ;   1
+;    ;   --batch-logs
+;    ;   1))
+;    ; (diff
+;    ;  cohttp_lwt_1_job_1_batch_1_iter.expected
+;    ;  cohttp_lwt_1_job_1_batch_1_iter.actual)
+;    (with-stdout-to
+;     ocurl_1_job_2_batch_1_iter.actual
+;     (run
+;      collect_signals
+;      emit1
+;      -j
+;      1
+;      --batch-traces
+;      2
+;      --batch-metrics
+;      2
+;      --batch-logs
+;      2
+;      -n
+;      1))
+;    (diff
+;     ocurl_1_job_2_batch_1_iter.expected
+;     ocurl_1_job_2_batch_1_iter.actual)
+;    (with-stdout-to
+;     ocurl_3_job_1_iter.actual
+;     (run collect_signals emit1 -j 3 -n 1))
+;    (diff ocurl_3_job_1_iter.expected ocurl_3_job_1_iter.actual))))

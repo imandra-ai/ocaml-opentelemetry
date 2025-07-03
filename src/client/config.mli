@@ -38,6 +38,9 @@ type t = private {
     To build one, use {!make} below. This might be extended with more fields in
     the future. *)
 
+val default_url : string
+(** The default base URL for the config. *)
+
 val pp : Format.formatter -> t -> unit
 
 type 'k make =
@@ -59,8 +62,8 @@ type 'k make =
 
     @param url
       base url used to construct per-signal urls. Per-signal url options take
-      precedence over this base url. Default is "http://localhost:4318", or
-      "OTEL_EXPORTER_OTLP_ENDPOINT" if set.
+      precedence over this base url. If not provided, this defaults to
+      "OTEL_EXPORTER_OTLP_ENDPOINT" if set, or if not {!default_url}.
 
     Example of constructed per-signal urls with the base url
     http://localhost:4318

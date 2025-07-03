@@ -20,6 +20,7 @@ depends: [
   "lwt" {>= "5.3"}
   "cohttp-lwt" {>= "6.0.0"}
   "alcotest" {with-test}
+  "cohttp-eio" {with-test}
 ]
 build: [
   ["dune" "subst"] {dev}
