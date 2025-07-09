@@ -25,13 +25,22 @@ let signals_from_batch (signal_batch : Client.Signal.t) =
   | Logs ls -> List.map (fun l -> `Log l) ls
   | Metrics ms -> List.map (fun m -> `Metric m) ms
 
+(* For backwards compat with OCaml 4.08.
+   Copied from the standard library. *)
+let rec find_map f = function
+  | [] -> None
+  | x :: l ->
+    (match f x with
+    | Some _ as result -> result
+    | None -> find_map f l)
+
 let filter_map_spans f signals =
   signals
   |> List.filter_map (function
        | `Log _ | `Metric _ -> None
        | `Trace (r : Proto.Trace.resource_spans) ->
          r.scope_spans
-         |> List.find_map (fun ss -> ss.Proto.Trace.spans |> List.find_map f))
+         |> find_map (fun ss -> ss.Proto.Trace.spans |> find_map f))
 
 let count_spans_with_name name signals =
   signals
@@ -48,8 +57,7 @@ let filter_map_metrics f signals =
        | `Log _ | `Trace _ -> None
        | `Metric (r : Proto.Metrics.resource_metrics) ->
          r.scope_metrics
-         |> List.find_map (fun ss ->
-                ss.Proto.Metrics.metrics |> List.find_map f))
+         |> find_map (fun ss -> ss.Proto.Metrics.metrics |> find_map f))
 
 let number_data_point_to_float : Proto.Metrics.number_data_point_value -> float
     = function
@@ -78,8 +86,7 @@ let filter_map_logs (f : Proto.Logs.log_record -> 'a option) signals : 'a list =
        | `Metric _ | `Trace _ -> None
        | `Log (r : Proto.Logs.resource_logs) ->
          r.scope_logs
-         |> List.find_map (fun ss ->
-                ss.Proto.Logs.log_records |> List.find_map f))
+         |> find_map (fun ss -> ss.Proto.Logs.log_records |> find_map f))
 
 let count_logs_with_body p signals =
   signals
