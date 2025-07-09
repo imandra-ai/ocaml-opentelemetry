@@ -102,8 +102,7 @@
    (>= "5.3"))
   (cohttp-lwt
    (>= "6.0.0"))
-  (alcotest :with-test)
-  (cohttp-eio :with-test))
+  (alcotest :with-test))
  (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
 
 (package
