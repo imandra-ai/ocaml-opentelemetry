@@ -1,5 +1,6 @@
 module Client = Opentelemetry_client
 module Proto = Opentelemetry.Proto
+open Containers
 
 let batch_size : Client.Signal.t -> int = function
   | Traces ts -> List.length ts
@@ -25,27 +26,18 @@ let signals_from_batch (signal_batch : Client.Signal.t) =
   | Logs ls -> List.map (fun l -> `Log l) ls
   | Metrics ms -> List.map (fun m -> `Metric m) ms
 
-(* For backwards compat with OCaml 4.08.
-   Copied from the standard library. *)
-let rec find_map f = function
-  | [] -> None
-  | x :: l ->
-    (match f x with
-    | Some _ as result -> result
-    | None -> find_map f l)
-
 let filter_map_spans f signals =
   signals
   |> List.filter_map (function
        | `Log _ | `Metric _ -> None
        | `Trace (r : Proto.Trace.resource_spans) ->
          r.scope_spans
-         |> find_map (fun ss -> ss.Proto.Trace.spans |> find_map f))
+         |> List.find_map (fun ss -> ss.Proto.Trace.spans |> List.find_map f))
 
 let count_spans_with_name name signals =
   signals
   |> filter_map_spans (fun s ->
-         if s.Proto.Trace.name = name then
+         if String.equal s.Proto.Trace.name name then
            Some s
          else
            None)
@@ -57,7 +49,8 @@ let filter_map_metrics f signals =
        | `Log _ | `Trace _ -> None
        | `Metric (r : Proto.Metrics.resource_metrics) ->
          r.scope_metrics
-         |> find_map (fun ss -> ss.Proto.Metrics.metrics |> find_map f))
+         |> List.find_map (fun ss ->
+                ss.Proto.Metrics.metrics |> List.find_map f))
 
 let number_data_point_to_float : Proto.Metrics.number_data_point_value -> float
     = function
@@ -67,7 +60,7 @@ let number_data_point_to_float : Proto.Metrics.number_data_point_value -> float
 let get_metric_values name signals =
   signals
   |> filter_map_metrics (fun (m : Proto.Metrics.metric) ->
-         if m.name <> name then
+         if not (String.equal m.name name) then
            None
          else
            Option.some
@@ -86,7 +79,8 @@ let filter_map_logs (f : Proto.Logs.log_record -> 'a option) signals : 'a list =
        | `Metric _ | `Trace _ -> None
        | `Log (r : Proto.Logs.resource_logs) ->
          r.scope_logs
-         |> find_map (fun ss -> ss.Proto.Logs.log_records |> find_map f))
+         |> List.find_map (fun ss ->
+                ss.Proto.Logs.log_records |> List.find_map f))
 
 let count_logs_with_body p signals =
   signals
@@ -156,7 +150,7 @@ let tests params signal_batches =
             (let all_alloc_events =
                signals
                |> filter_map_spans (fun s ->
-                      if s.name <> "alloc" then
+                      if not (String.equal s.name "alloc") then
                         Some s.events
                       else
                         None)
@@ -164,7 +158,7 @@ let tests params signal_batches =
              in
              all_alloc_events
              |> List.for_all (fun (e : Proto.Trace.span_event) ->
-                    e.name = "done with alloc")));
+                    String.equal e.name "done with alloc")));
     test "num-sleep metrics" (fun () ->
         Alcotest.(check' (float 0.))
           ~msg:"should record jobs * iterations sleeps"
@@ -180,7 +174,7 @@ let tests params signal_batches =
             (signals
             |> count_logs_with_body (function
                  | Some (Proto.Common.String_value s)
-                   when String.starts_with ~prefix:"inner at" s ->
+                   when String.prefix ~pre:"inner at" s ->
                    true
                  | _ -> false)));
   ]

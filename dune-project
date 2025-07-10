@@ -122,5 +122,6 @@
    (>= "2.0"))
   cohttp-lwt
   cohttp-lwt-unix
-  (alcotest :with-test))
+  (alcotest :with-test)
+  (containers :with-test))
  (synopsis "Collector client for opentelemetry, using cohttp + lwt"))

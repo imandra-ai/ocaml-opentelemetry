@@ -16,6 +16,7 @@
   cohttp-lwt-unix
   fmt
   unix
+  containers
   logs.fmt
   logs.threaded
   opentelemetry.client))
