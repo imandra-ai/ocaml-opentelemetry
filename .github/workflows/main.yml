@@ -46,7 +46,15 @@ jobs:
           opam pin pbrt 3.0.1 -y -n
           opam install pbrt -y
 
-      - run: opam install . --deps-only --with-test --solver=mccs
+      # We cannot install packages that need eio on ocaml versions before 5
+      - if: ${{ ! startsWith("5" matrix.ocaml-compiler) }}
+        run: |
+          packages=$(ls *.opam | grep -v eio)
+          opam install $packages --deps-only --with-test --solver=mccs
+
+      # We should be able to install all packages on ocaml 5
+      - if: ${{ startsWith("5" matrix.ocaml-compiler) }}
+        run: opam install . --deps-only --with-test --solver=mccs
 
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt,opentelemetry-client-cohttp-lwt
 
