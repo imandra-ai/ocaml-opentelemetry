@@ -2,6 +2,8 @@
  (name opentelemetry_client_cohttp_eio)
  (public_name opentelemetry-client-cohttp-eio)
  (synopsis "Opentelemetry collector using cohttp+eio+unix")
+ (enabled_if
+  (>= %{ocaml_version} 5.0))
  (libraries
   opentelemetry
   opentelemetry.client

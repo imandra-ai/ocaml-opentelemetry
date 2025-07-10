@@ -25,6 +25,8 @@
  (modules emit1_eio)
  (preprocess
   (pps lwt_ppx))
+ (enabled_if
+  (>= %{ocaml_version} 5.0))
  (libraries
   unix
   logs

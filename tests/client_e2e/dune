@@ -31,6 +31,8 @@
  (names test_cottp_lwt_client_e2e)
  (modules test_cottp_lwt_client_e2e)
  (package opentelemetry-client-cohttp-lwt)
+ (enabled_if
+  (>= %{ocaml_version} 5.0))
  (deps %{bin:emit1_cohttp} %{bin:emit1_eio})
  (libraries clients_e2e_lib alcotest opentelemetry opentelemetry.client))
 
@@ -39,6 +41,8 @@
  (modules test_cottp_eio_client_e2e)
  (package opentelemetry-client-cohttp-eio)
  (deps %{bin:emit1_eio})
+ (enabled_if
+  (>= %{ocaml_version} 5.0))
  (libraries clients_e2e_lib alcotest opentelemetry opentelemetry.client))
 
 (executable
