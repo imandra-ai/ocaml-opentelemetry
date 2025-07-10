@@ -97,40 +97,6 @@ let collect_traces ~port program_to_test push_signals () =
   (* Let the tester know all the signals have be sent *)
   Lwt.return (push_signals None)
 
-let normalize_scope_span : Proto.Trace.scope_spans -> Proto.Trace.scope_spans =
-  function
-  | scope_span ->
-    {
-      scope_span with
-      spans =
-        scope_span.spans
-        |> List.map (fun (span : Proto.Trace.span) ->
-               {
-                 span with
-                 start_time_unix_nano = -1L;
-                 end_time_unix_nano = -1L;
-               });
-    }
-
-let normalize_signal : Signal.t -> Signal.t = function
-  | Traces ts ->
-    Traces
-      (ts
-      |> List.map (fun (trace : Proto.Trace.resource_spans) ->
-             {
-               trace with
-               scope_spans = trace.scope_spans |> List.map normalize_scope_span;
-             }))
-  | x -> x
-
-(* normalize trace output by redacting non-deterministic values from output *)
-let normalize =
-  let re =
-    Str.regexp
-      {|\(start_time_unix_nano\|time_unix_nano\|end_time_unix_nano\|value\) = \([0-9]*\|As_int([0-9]*)\|As_double([0-9]*\.)\);|}
-  in
-  fun s -> Str.global_replace re {|\1 = <redacted>;|} s
-
 let default_port =
   String.split_on_char ':' Client.Config.default_url |> function
   (* Extracting the port from 'http://foo:<port>' *)
@@ -144,8 +110,15 @@ let gather_signals ?(port = default_port) program_to_test =
   let* () = collect_traces ~port program_to_test push () in
   Lwt_stream.to_list stream
 
-let run ?(port = default_port) ~program_to_test () =
-  gather_signals ~port program_to_test
-  |> List.map (fun s -> s |> Format.asprintf "%a" Signal.Pp.pp |> normalize)
-  |> List.stable_sort String.compare (* Produce a deterministic order *)
-  |> List.iter print_string
+(* Just run the server, and print the signals gathered. *)
+let run ?(port = default_port) () =
+  Lwt_main.run
+  @@
+  let stream, push = Lwt_stream.create () in
+  Lwt.join
+    [
+      Server.run port push;
+      Lwt_stream.iter_s
+        (fun s -> Format.asprintf "%a" Signal.Pp.pp s |> Lwt_io.printl)
+        stream;
+    ]
