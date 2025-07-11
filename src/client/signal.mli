@@ -45,7 +45,7 @@ module Encode : sig
     ?encoder:Pbrt.Encoder.t ->
     Opentelemetry_proto.Trace.resource_spans list ->
     string
-  (** [metrics ts] is a protobuf encoded string of the traces [ts]
+  (** [traces ts] is a protobuf encoded string of the traces [ts]
 
       @param encoder provide an encoder state to reuse *)
 end
@@ -53,19 +53,22 @@ end
 (** Decode signals from protobuf encoded strings, received over the wire *)
 module Decode : sig
   val logs : string -> Opentelemetry_proto.Logs.resource_logs list
-  (** [logs ls] is a protobuf encoded string of the logs [ls]
+  (** [logs s] is a list of log resources decoded from the protobuf encoded
+      string [s].
 
-      @param encoder provide an encoder state to reuse *)
+      @raise Pbrt.Decoder.Failure if [s] is not a valid protobuf encoding. *)
 
   val metrics : string -> Opentelemetry_proto.Metrics.resource_metrics list
-  (** [metrics ms] is a protobuf encoded string of the metrics [ms]
+  (** [metrics s] is a list of metrics resources decoded from the protobuf
+      encoded string [s].
 
-      @param encoder provide an encoder state to reuse *)
+      @raise Pbrt.Decoder.Failure if [s] is not a valid protobuf encoding. *)
 
   val traces : string -> Opentelemetry_proto.Trace.resource_spans list
-  (** [metrics ts] is a protobuf encoded string of the traces [ts]
+  (** [traces s] is a list of span resources decoded from the protobuf encoded
+      string [s].
 
-      @param encoder provide an encoder state to reuse *)
+      @raise Pbrt.Decoder.Failure if [s] is not a valid protobuf encoding. *)
 end
 
 module Pp : sig
