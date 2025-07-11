@@ -4,18 +4,22 @@ module Client = Opentelemetry_client
 module Signal = Client.Signal
 open Lwt.Syntax
 
+let debug =
+  match Sys.getenv_opt "DEBUG" with
+  | Some "1" -> true
+  | _ -> false
+
 (* Server to collect telemetry data *)
 module Server = struct
   let dbg_request kind req pp data : unit Lwt.t =
-    let _ = kind, req, pp, data in
-    (* NOTE: Uncomment for debugging *)
-    (* let* () = *)
-    (*   let req : string = Format.asprintf "%a" Http.Request.pp req in *)
-    (*   let data_s : string = Format.asprintf "%a" pp data in *)
-    (*   Lwt_io.fprintf Lwt_io.stderr "# received %s\nREQUEST: %s\nBODY: %s\n@." *)
-    (*     kind req data_s *)
-    (* in *)
-    Lwt.return ()
+    if debug then (
+      let _ = kind, req, pp, data in
+      let req : string = Format.asprintf "%a" Http.Request.pp req in
+      let data_s : string = Format.asprintf "%a" pp data in
+      Lwt_io.fprintf Lwt_io.stderr "# received %s\nREQUEST: %s\nBODY: %s\n@."
+        kind req data_s
+    ) else
+      Lwt.return_unit
 
   let handler push_signal _socket (request : Http.Request.t)
       (body : Cohttp_lwt.Body.t) =
