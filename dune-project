@@ -142,6 +142,7 @@
   (cohttp-eio
    (>= 6.1.0))
   eio_main
+  tls-eio
   (alcotest :with-test)
   (containers :with-test))
  (synopsis "Collector client for opentelemetry, using cohttp + eio"))
