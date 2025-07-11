@@ -2,7 +2,6 @@
 
 module Client = Opentelemetry_client
 module Signal = Client.Signal
-module Proto = Opentelemetry.Proto
 open Lwt.Syntax
 
 (* Server to collect telemetry data *)
@@ -17,11 +16,6 @@ module Server = struct
     (*     kind req data_s *)
     (* in *)
     Lwt.return ()
-
-  let metrics req data =
-    let metrics = Signal.Decode.metrics data in
-    let+ () = dbg_request "metrics" req Signal.Pp.metrics metrics in
-    Signal.Metrics metrics
 
   let handler push_signal _socket (request : Http.Request.t)
       (body : Cohttp_lwt.Body.t) =
@@ -89,14 +83,6 @@ module Tested_program = struct
     validate_exit result
 end
 
-let collect_traces ~port program_to_test push_signals () =
-  let* () =
-    Lwt.pick
-      [ Server.run port push_signals; Tested_program.run program_to_test ]
-  in
-  (* Let the tester know all the signals have be sent *)
-  Lwt.return (push_signals None)
-
 let default_port =
   String.split_on_char ':' Client.Config.default_url |> function
   (* Extracting the port from 'http://foo:<port>' *)
@@ -107,7 +93,11 @@ let gather_signals ?(port = default_port) program_to_test =
   Lwt_main.run
   @@
   let stream, push = Lwt_stream.create () in
-  let* () = collect_traces ~port program_to_test push () in
+  let* () =
+    Lwt.pick [ Server.run port push; Tested_program.run program_to_test ]
+  in
+  (* Close out the stream *)
+  push None;
   Lwt_stream.to_list stream
 
 (* Just run the server, and print the signals gathered. *)
