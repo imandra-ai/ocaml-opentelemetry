@@ -12,6 +12,8 @@ let sleep_outer = ref 2.0
 
 let n_jobs = ref 1
 
+let iterations = ref 1
+
 let num_sleep = Atomic.make 0
 
 let stress_alloc_ = ref true
@@ -20,57 +22,63 @@ let stop = Atomic.make false
 
 let num_tr = Atomic.make 0
 
-let run_job () : unit Lwt.t =
-  let i = ref 0 in
+(* Counter used to mark simulated failures *)
+let i = ref 0
+
+let run_job job_id : unit Lwt.t =
   while%lwt not @@ Atomic.get stop do
     let@ scope =
       Atomic.incr num_tr;
       T.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
-        ~attrs:[ "i", `Int !i ]
+        ~attrs:[ "i", `Int job_id ]
     in
 
-    for%lwt j = 0 to 4 do
-      (* parent scope is found via thread local storage *)
-      let@ scope =
-        Atomic.incr num_tr;
-        T.Trace.with_ ~scope ~kind:T.Span.Span_kind_internal
-          ~attrs:[ "j", `Int j ]
-          "loop.inner"
-      in
-
-      let* () = Lwt_unix.sleep !sleep_outer in
-      Atomic.incr num_sleep;
-
-      T.Logs.(
-        emit
-          [
-            make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
-              ~severity:Severity_number_info "inner at %d" j;
-          ]);
-
-      incr i;
-
-      try%lwt
-        Atomic.incr num_tr;
+    for%lwt j = 0 to !iterations do
+      if j >= !iterations then
+        (* Terminate program, having reached our max iterations *)
+        Lwt.return @@ Atomic.set stop true
+      else
+        (* parent scope is found via thread local storage *)
         let@ scope =
-          T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope "alloc"
+          Atomic.incr num_tr;
+          T.Trace.with_ ~scope ~kind:T.Span.Span_kind_internal
+            ~attrs:[ "j", `Int j ]
+            "loop.inner"
         in
-        (* allocate some stuff *)
-        if !stress_alloc_ then (
-          let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
-          ignore _arr
-        );
 
-        let* () = Lwt_unix.sleep !sleep_inner in
+        let* () = Lwt_unix.sleep !sleep_outer in
         Atomic.incr num_sleep;
 
-        if j = 4 && !i mod 13 = 0 then failwith "oh no";
+        T.Logs.(
+          emit
+            [
+              make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
+                ~severity:Severity_number_info "inner at %d" j;
+            ]);
 
-        (* simulate a failure *)
-        Opentelemetry.Scope.add_event scope (fun () ->
-            T.Event.make "done with alloc");
-        Lwt.return ()
-      with Failure _ -> Lwt.return ()
+        incr i;
+
+        try%lwt
+          Atomic.incr num_tr;
+          let@ scope =
+            T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope "alloc"
+          in
+          (* allocate some stuff *)
+          if !stress_alloc_ then (
+            let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
+            ignore _arr
+          );
+
+          let* () = Lwt_unix.sleep !sleep_inner in
+          Atomic.incr num_sleep;
+
+          (* simulate a failure *)
+          if j = 4 && !i mod 13 = 0 then failwith "oh no";
+
+          Opentelemetry.Scope.add_event scope (fun () ->
+              T.Event.make "done with alloc");
+          Lwt.return ()
+        with Failure _ -> Lwt.return ()
     done
   done
 
@@ -87,7 +95,7 @@ let run () : unit Lwt.t =
   let n_jobs = max 1 !n_jobs in
   Printf.printf "run %d jobs\n%!" n_jobs;
 
-  let jobs = Array.init n_jobs (fun _ -> run_job ()) |> Array.to_list in
+  let jobs = List.init n_jobs run_job in
   Lwt.join jobs
 
 let () =
@@ -99,18 +107,21 @@ let () =
   let debug = ref false in
   let batch_traces = ref 400 in
   let batch_metrics = ref 3 in
+  let batch_logs = ref 400 in
   let opts =
     [
       "--debug", Arg.Bool (( := ) debug), " enable debug output";
       ( "--stress-alloc",
         Arg.Bool (( := ) stress_alloc_),
         " perform heavy allocs in inner loop" );
-      "--batch-traces", Arg.Int (( := ) batch_traces), " size of traces batch";
       ( "--batch-metrics",
         Arg.Int (( := ) batch_metrics),
         " size of metrics batch" );
+      "--batch-traces", Arg.Int (( := ) batch_traces), " size of traces batch";
+      "--batch-logs", Arg.Int (( := ) batch_logs), " size of logs batch";
       "--sleep-inner", Arg.Set_float sleep_inner, " sleep (in s) in inner loop";
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
+      "--iterations", Arg.Set_int iterations, " the number of iterations to run";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
     ]
     |> Arg.align
@@ -128,7 +139,7 @@ let () =
     Opentelemetry_client_cohttp_lwt.Config.make ~debug:!debug
       ~batch_traces:(some_if_nzero batch_traces)
       ~batch_metrics:(some_if_nzero batch_metrics)
-      ()
+      ~batch_logs:(some_if_nzero batch_logs) ()
   in
   Format.printf "@[<2>sleep outer: %.3fs,@ sleep inner: %.3fs,@ config: %a@]@."
     !sleep_outer !sleep_inner Opentelemetry_client_cohttp_lwt.Config.pp config;

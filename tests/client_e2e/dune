@@ -1,0 +1,39 @@
+(env
+ (_
+  ; Make the binaries for the test emitters available on the path for the components defined in this dir.
+  ; See https://dune.readthedocs.io/en/stable/reference/dune/env.html
+  (binaries
+   (../bin/emit1.exe as emit1)
+   (../bin/emit1_cohttp.exe as emit1_cohttp)
+   (./gather_signals.exe as gather_signals))))
+
+(library
+ (name signal_gatherer)
+ (modules signal_gatherer)
+ (libraries
+  str
+  alcotest
+  cohttp-lwt-unix
+  fmt
+  unix
+  containers
+  logs.fmt
+  logs.threaded
+  opentelemetry.client))
+
+(library
+ (name clients_e2e_lib)
+ (modules clients_e2e_lib)
+ (libraries alcotest signal_gatherer))
+
+(tests
+ (names test_cottp_lwt_client_e2e)
+ (modules test_cottp_lwt_client_e2e)
+ (package opentelemetry-client-cohttp-lwt)
+ (deps %{bin:emit1_cohttp})
+ (libraries clients_e2e_lib alcotest opentelemetry opentelemetry.client))
+
+(executable
+ (name signal_reporter_server)
+ (modules signal_reporter_server)
+ (libraries signal_gatherer))

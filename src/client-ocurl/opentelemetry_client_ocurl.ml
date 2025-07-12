@@ -201,20 +201,19 @@ end = struct
       in
       conv l |> send_http_ ~stop ~config ~url client
     in
-    let module Conv = Signal.Converter in
     try
       while not (Atomic.get stop) do
         let msg = B_queue.pop self.send_q in
         match msg with
         | To_send.Send_trace tr ->
-          send ~name:"send-traces" ~conv:Conv.traces
+          send ~name:"send-traces" ~conv:Signal.Encode.traces
             ~url:config.common.url_traces tr
         | To_send.Send_metric ms ->
-          send ~name:"send-metrics" ~conv:Conv.metrics
+          send ~name:"send-metrics" ~conv:Signal.Encode.metrics
             ~url:config.common.url_metrics ms
         | To_send.Send_logs logs ->
-          send ~name:"send-logs" ~conv:Conv.logs ~url:config.common.url_logs
-            logs
+          send ~name:"send-logs" ~conv:Signal.Encode.logs
+            ~url:config.common.url_logs logs
       done
     with B_queue.Closed -> ()
 
