@@ -21,6 +21,23 @@
   lwt.unix))
 
 (executable
+ (name emit1_eio)
+ (modules emit1_eio)
+ (preprocess
+  (pps lwt_ppx))
+ (enabled_if
+  (>= %{ocaml_version} 5.0))
+ (libraries
+  unix
+  eio_main
+  logs
+  logs.fmt
+  logs.threaded
+  opentelemetry
+  opentelemetry.client
+  opentelemetry-client-cohttp-eio))
+
+(executable
  (name cohttp_client)
  (modules cohttp_client)
  (libraries

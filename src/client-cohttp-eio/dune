@@ -1,0 +1,20 @@
+(library
+ (name opentelemetry_client_cohttp_eio)
+ (public_name opentelemetry-client-cohttp-eio)
+ (synopsis "Opentelemetry collector using cohttp+eio+unix")
+ (enabled_if
+  (>= %{ocaml_version} 5.0))
+ (libraries
+  opentelemetry
+  opentelemetry.client
+  eio
+  eio.unix
+  cohttp
+  cohttp-eio
+  tls-eio
+  uri
+  pbrt
+  mtime
+  mtime.clock.os
+  ca-certs
+  mirage-crypto-rng.unix))

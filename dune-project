@@ -125,3 +125,23 @@
   (alcotest :with-test)
   (containers :with-test))
  (synopsis "Collector client for opentelemetry, using cohttp + lwt"))
+
+(package
+ (name opentelemetry-client-cohttp-eio)
+ (depends
+  (ocaml
+   (>= "5.00"))
+  (mtime
+   (>= "1.4"))
+  ca-certs
+  mirage-crypto-rng-eio
+  (opentelemetry
+   (= :version))
+  (odoc :with-doc)
+  (cohttp-eio
+   (>= 6.1.0))
+  (eio_main :with-test)
+  tls-eio
+  (alcotest :with-test)
+  (containers :with-test))
+ (synopsis "Collector client for opentelemetry, using cohttp + eio"))
