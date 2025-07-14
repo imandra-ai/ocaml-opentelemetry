@@ -29,6 +29,7 @@
   (>= %{ocaml_version} 5.0))
  (libraries
   unix
+  eio_main
   logs
   logs.fmt
   logs.threaded

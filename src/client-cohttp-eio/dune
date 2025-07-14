@@ -8,13 +8,13 @@
   opentelemetry
   opentelemetry.client
   eio
+  eio.unix
   cohttp
   cohttp-eio
-  eio_main
+  tls-eio
   uri
   pbrt
   mtime
   mtime.clock.os
-  tls-eio
   ca-certs
   mirage-crypto-rng.unix))

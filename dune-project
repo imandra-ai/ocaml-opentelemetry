@@ -133,7 +133,6 @@
    (>= "5.00"))
   (mtime
    (>= "1.4"))
-  tls-eio
   ca-certs
   mirage-crypto-rng-eio
   (opentelemetry
