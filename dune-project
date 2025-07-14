@@ -140,7 +140,7 @@
   (odoc :with-doc)
   (cohttp-eio
    (>= 6.1.0))
-  eio_main
+  (eio_main :with-test)
   tls-eio
   (alcotest :with-test)
   (containers :with-test))
