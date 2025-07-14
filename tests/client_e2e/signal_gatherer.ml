@@ -38,9 +38,9 @@ module Server = struct
         let logs = Signal.Decode.logs data in
         let+ () = dbg_request "logs" request Signal.Pp.logs logs in
         `OK, Some (Signal.Logs logs)
-      | unexepected ->
+      | unexpected ->
         let+ () =
-          Lwt_io.eprintf "unexpected endpoint %s -- status %s\n" unexepected
+          Lwt_io.eprintf "unexpected endpoint %s -- status %s\n" unexpected
             (Http.Status.to_string `Not_found)
         in
         `Not_found, None
