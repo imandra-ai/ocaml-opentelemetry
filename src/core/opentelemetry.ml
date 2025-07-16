@@ -1069,9 +1069,9 @@ end = struct
         Event.make "exception"
           ~attrs:
             [
-              "message", `String (Printexc.to_string exn);
-              "type", `String (Printexc.exn_slot_name exn);
-              "stacktrace", `String (Printexc.raw_backtrace_to_string bt);
+              "exception.message", `String (Printexc.to_string exn);
+              "exception.type", `String (Printexc.exn_slot_name exn);
+              "exception.stacktrace", `String (Printexc.raw_backtrace_to_string bt);
             ]
       in
       scope.items <- Ev (ev, scope.items)
