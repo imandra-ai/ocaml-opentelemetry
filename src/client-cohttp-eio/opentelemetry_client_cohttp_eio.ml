@@ -284,9 +284,8 @@ let mk_emitter ~sw ~stop ~(config : Config.t) ~(net : _ Eio.Net.t) () :
       try f ()
       with e ->
         let bt = Printexc.get_backtrace () in
-        Printf.eprintf
-          "opentelemetry-curl: uncaught exception in %s: %s\n%s\n%!" where
-          (Printexc.to_string e) bt
+        Printf.eprintf "opentelemetry-eio: uncaught exception in %s: %s\n%s\n%!"
+          where (Printexc.to_string e) bt
 
     let emit_all_force (httpc : Httpc.t) : unit =
       let now = Mtime_clock.now () in
