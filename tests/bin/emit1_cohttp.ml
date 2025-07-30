@@ -109,6 +109,7 @@ let () =
   let batch_metrics = ref 3 in
   let batch_logs = ref 400 in
   let url = ref None in
+  let n_procs = ref 1 in
   let opts =
     [
       "--debug", Arg.Bool (( := ) debug), " enable debug output";
@@ -127,11 +128,17 @@ let () =
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "--iterations", Arg.Set_int iterations, " the number of iterations to run";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
+      "--procs", Arg.Set_int n_procs, " number of processes";
     ]
     |> Arg.align
   in
 
   Arg.parse opts (fun _ -> ()) "emit1 [opt]*";
+
+  if !n_procs > 1 then
+    failwith
+      "TODO: add support for running multiple processes to the lwt-cohttp \
+       emitter";
 
   let some_if_nzero r =
     if !r > 0 then

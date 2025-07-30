@@ -11,7 +11,7 @@ let sleep_outer = ref 2.0
 
 let n_jobs = ref 1
 
-let iterations = ref 1
+let iterations = Atomic.make 1
 
 let num_sleep = Atomic.make 0
 
@@ -32,8 +32,8 @@ let run_job clock _job_id : unit =
         ~attrs:[ "i", `Int !i ]
     in
 
-    for j = 0 to !iterations do
-      if j >= !iterations then
+    for j = 0 to Atomic.get iterations do
+      if j >= Atomic.get iterations then
         (* Terminate program, having reached our max iterations *)
         Atomic.set stop true
       else
@@ -80,7 +80,7 @@ let run_job clock _job_id : unit =
     done
   done
 
-let run env : unit =
+let run env proc () : unit =
   OT.GC_metrics.basic_setup ();
 
   OT.Metrics_callbacks.register (fun () ->
@@ -91,7 +91,7 @@ let run env : unit =
         ]);
 
   let n_jobs = max 1 !n_jobs in
-  Printf.printf "run %d jobs\n%!" n_jobs;
+  Printf.printf "run %d jobs in proc %d\n%!" n_jobs proc;
 
   Eio.Switch.run (fun sw ->
       for j = 1 to n_jobs do
@@ -109,6 +109,7 @@ let () =
   let batch_metrics = ref 3 in
   let batch_logs = ref 400 in
   let url = ref None in
+  let n_procs = ref 1 in
   let opts =
     [
       "--debug", Arg.Bool (( := ) debug), " enable debug output";
@@ -125,8 +126,11 @@ let () =
       "--batch-logs", Arg.Int (( := ) batch_logs), " size of logs batch";
       "--sleep-inner", Arg.Set_float sleep_inner, " sleep (in s) in inner loop";
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
-      "--iterations", Arg.Set_int iterations, " the number of iterations to run";
-      "-j", Arg.Set_int n_jobs, " number of parallel jobs";
+      ( "--iterations",
+        Arg.Int (Atomic.set iterations),
+        " the number of iterations to run" );
+      "-j", Arg.Set_int n_jobs, " number of jobs per processes";
+      "--procs", Arg.Set_int n_procs, " number of processes";
     ]
     |> Arg.align
   in
@@ -155,4 +159,16 @@ let () =
         Printf.printf "\ndone. %d spans in %.4fs (%.4f/s)\n%!"
           (Atomic.get num_tr) elapsed n_per_sec)
   in
-  Opentelemetry_client_cohttp_eio.with_setup ~stop ~config run |> Eio_main.run
+  Eio_main.run @@ fun env ->
+  (if !n_procs < 2 then
+     Opentelemetry_client_cohttp_eio.with_setup ~stop ~config (run env 0) env
+   else
+     Eio.Switch.run @@ fun sw ->
+     Opentelemetry_client_cohttp_eio.setup ~stop ~config ~sw env;
+     let dm = Eio.Stdenv.domain_mgr env in
+     Eio.Switch.run (fun sw ->
+         for proc = 1 to !n_procs do
+           Eio.Fiber.fork ~sw @@ fun () ->
+           Eio.Domain_manager.run dm (run env proc)
+         done));
+  Opentelemetry.Collector.remove_backend () ~on_done:ignore
