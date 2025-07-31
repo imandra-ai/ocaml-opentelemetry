@@ -1,0 +1,4 @@
+(library
+ (name opentelemetry_logs)
+ (public_name opentelemetry-logs)
+ (libraries opentelemetry logs))
