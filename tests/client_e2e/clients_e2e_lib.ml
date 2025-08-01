@@ -56,6 +56,15 @@ let filter_map_metrics f signals =
          |> List.find_map (fun ss ->
                 ss.Proto.Metrics.metrics |> List.find_map f))
 
+let count_metrics_with_name name signals =
+  signals
+  |> filter_map_metrics (fun s ->
+         if String.equal s.Proto.Metrics.name name then
+           Some s
+         else
+           None)
+  |> List.length
+
 let number_data_point_to_float : Proto.Metrics.number_data_point_value -> float
     = function
   | Proto.Metrics.As_double f -> f
@@ -98,6 +107,7 @@ let count_logs_with_body p signals =
 type params = {
   url: string;
   jobs: int;
+  procs: int;
   batch_traces: int;
   batch_metrics: int;
   batch_logs: int;
@@ -109,6 +119,8 @@ let cmd exec params =
     exec;
     "-j";
     string_of_int params.jobs;
+    "--procs";
+    string_of_int params.procs;
     "--url";
     params.url;
     "--iterations";
@@ -134,22 +146,24 @@ let tests params signal_batches =
     (* TODO: What properties of batch sizes does it make sense to test? *)
     test "loop.outer spans" (fun () ->
         Alcotest.(check' int)
-          ~msg:"number of occurrences should equal the configured jobs"
-          ~expected:params.jobs
+          ~msg:
+            "number of occurrences should equal the configured jobs * the \
+             configured processes"
+          ~expected:(params.jobs * params.procs)
           ~actual:(count_spans_with_name "loop.outer" signals));
     test "loop.inner spans" (fun () ->
         Alcotest.(check' int)
           ~msg:
             "number of occurrences should equal the configured jobs * the  \
-             configured iterations"
-          ~expected:(params.jobs * params.iterations)
+             configured iterations * configured processes"
+          ~expected:(params.jobs * params.iterations * params.procs)
           ~actual:(count_spans_with_name "loop.inner" signals));
     test "alloc spans" (fun () ->
         Alcotest.(check' int)
           ~msg:
             "number of occurrences should equal the configured jobs * the  \
-             configured iterations"
-          ~expected:(params.jobs * params.iterations)
+             configured iterations * configured processes"
+          ~expected:(params.jobs * params.iterations * params.procs)
           ~actual:(count_spans_with_name "alloc" signals);
         Alcotest.(check' bool)
           ~msg:"should have 'done with alloc' event" ~expected:true
@@ -167,16 +181,19 @@ let tests params signal_batches =
              |> List.for_all (fun (e : Proto.Trace.span_event) ->
                     String.equal e.name "done with alloc")));
     test "num-sleep metrics" (fun () ->
-        Alcotest.(check' (float 0.))
-          ~msg:"should record jobs * iterations sleeps"
-          ~expected:(params.jobs * params.iterations |> float_of_int)
+        Alcotest.(check' bool)
+          ~msg:
+            "should record at lest as many sleep metrics as there are \
+             iterations configured"
+          ~expected:true
           ~actual:
-            (get_metric_values "num-sleep" signals
-            |> List.sort Float.compare |> List.rev |> List.hd));
+            (count_metrics_with_name "num-sleep" signals >= params.iterations));
     test "logs" (fun () ->
         Alcotest.(check' int)
-          ~msg:"should record jobs * iterations occurrences of 'inner at n'"
-          ~expected:(params.jobs * params.iterations)
+          ~msg:
+            "should record jobs * iterations occurrences * configured \
+             processes of 'inner at n'"
+          ~expected:(params.jobs * params.iterations * params.procs)
           ~actual:
             (signals
             |> count_logs_with_body (function

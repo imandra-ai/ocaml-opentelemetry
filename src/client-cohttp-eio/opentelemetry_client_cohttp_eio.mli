@@ -24,6 +24,7 @@ val setup :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
   ?enable:bool ->
+  sw:Eio.Switch.t ->
   Eio_unix.Stdenv.base ->
   unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.
@@ -43,7 +44,7 @@ val with_setup :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
   ?enable:bool ->
-  (Eio_unix.Stdenv.base -> 'a) ->
+  (unit -> 'a) ->
   Eio_unix.Stdenv.base ->
   'a
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up after
