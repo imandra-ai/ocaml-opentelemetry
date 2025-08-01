@@ -11,8 +11,6 @@ let sleep_outer = ref 2.0
 
 let n_jobs = ref 1
 
-let iterations = Atomic.make 1
-
 let num_sleep = Atomic.make 0
 
 let stress_alloc_ = ref true
@@ -24,63 +22,61 @@ let num_tr = Atomic.make 0
 (* Counter used to mark simulated failures *)
 let i = ref 0
 
-let run_job clock _job_id : unit =
-  while not @@ Atomic.get stop do
-    let@ scope =
-      Atomic.incr num_tr;
-      OT.Trace.with_ ~kind:OT.Span.Span_kind_producer "loop.outer"
-        ~attrs:[ "i", `Int !i ]
-    in
+let run_job clock _job_id iterations : unit =
+  let@ scope =
+    Atomic.incr num_tr;
+    OT.Trace.with_ ~kind:OT.Span.Span_kind_producer "loop.outer"
+      ~attrs:[ "i", `Int !i ]
+  in
 
-    for j = 0 to Atomic.get iterations do
-      if j >= Atomic.get iterations then
-        (* Terminate program, having reached our max iterations *)
-        Atomic.set stop true
-      else
-        (* parent scope is found via thread local storage *)
+  for j = 0 to iterations do
+    if j >= iterations then
+      (* Terminate program, having reached our max iterations *)
+      Atomic.set stop true
+    else
+      (* parent scope is found via thread local storage *)
+      let@ scope =
+        Atomic.incr num_tr;
+        OT.Trace.with_ ~scope ~kind:OT.Span.Span_kind_internal
+          ~attrs:[ "j", `Int j ]
+          "loop.inner"
+      in
+
+      let () = Eio.Time.sleep clock !sleep_outer in
+      Atomic.incr num_sleep;
+
+      OT.Logs.(
+        emit
+          [
+            make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
+              ~severity:Severity_number_info "inner at %d" j;
+          ]);
+
+      incr i;
+
+      try
+        Atomic.incr num_tr;
         let@ scope =
-          Atomic.incr num_tr;
-          OT.Trace.with_ ~scope ~kind:OT.Span.Span_kind_internal
-            ~attrs:[ "j", `Int j ]
-            "loop.inner"
+          OT.Trace.with_ ~kind:OT.Span.Span_kind_internal ~scope "alloc"
         in
+        (* allocate some stuff *)
+        if !stress_alloc_ then (
+          let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
+          ignore _arr
+        );
 
-        let () = Eio.Time.sleep clock !sleep_outer in
+        let () = Eio.Time.sleep clock !sleep_inner in
         Atomic.incr num_sleep;
 
-        OT.Logs.(
-          emit
-            [
-              make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
-                ~severity:Severity_number_info "inner at %d" j;
-            ]);
+        if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
-        incr i;
-
-        try
-          Atomic.incr num_tr;
-          let@ scope =
-            OT.Trace.with_ ~kind:OT.Span.Span_kind_internal ~scope "alloc"
-          in
-          (* allocate some stuff *)
-          if !stress_alloc_ then (
-            let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
-            ignore _arr
-          );
-
-          let () = Eio.Time.sleep clock !sleep_inner in
-          Atomic.incr num_sleep;
-
-          if j = 4 && !i mod 13 = 0 then failwith "oh no";
-
-          (* simulate a failure *)
-          Opentelemetry.Scope.add_event scope (fun () ->
-              OT.Event.make "done with alloc")
-        with Failure _ -> ()
-    done
+        (* simulate a failure *)
+        Opentelemetry.Scope.add_event scope (fun () ->
+            OT.Event.make "done with alloc")
+      with Failure _ -> ()
   done
 
-let run env proc () : unit =
+let run env proc iterations () : unit =
   OT.GC_metrics.basic_setup ();
 
   OT.Metrics_callbacks.register (fun () ->
@@ -95,7 +91,7 @@ let run env proc () : unit =
 
   Eio.Switch.run (fun sw ->
       for j = 1 to n_jobs do
-        Eio.Fiber.fork ~sw (fun () -> run_job env#clock j)
+        Eio.Fiber.fork ~sw (fun () -> run_job env#clock j iterations)
       done)
 
 let () =
@@ -109,6 +105,7 @@ let () =
   let batch_metrics = ref 3 in
   let batch_logs = ref 400 in
   let url = ref None in
+  let n_iterations = ref 1 in
   let n_procs = ref 1 in
   let opts =
     [
@@ -127,7 +124,7 @@ let () =
       "--sleep-inner", Arg.Set_float sleep_inner, " sleep (in s) in inner loop";
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       ( "--iterations",
-        Arg.Int (Atomic.set iterations),
+        Arg.Set_int n_iterations,
         " the number of iterations to run" );
       "-j", Arg.Set_int n_jobs, " number of jobs per processes";
       "--procs", Arg.Set_int n_procs, " number of processes";
@@ -161,7 +158,8 @@ let () =
   in
   Eio_main.run @@ fun env ->
   (if !n_procs < 2 then
-     Opentelemetry_client_cohttp_eio.with_setup ~stop ~config (run env 0) env
+     Opentelemetry_client_cohttp_eio.with_setup ~stop ~config
+       (run env 0 !n_iterations) env
    else
      Eio.Switch.run @@ fun sw ->
      Opentelemetry_client_cohttp_eio.setup ~stop ~config ~sw env;
@@ -169,6 +167,6 @@ let () =
      Eio.Switch.run (fun sw ->
          for proc = 1 to !n_procs do
            Eio.Fiber.fork ~sw @@ fun () ->
-           Eio.Domain_manager.run dm (run env proc)
+           Eio.Domain_manager.run dm (run env proc !n_iterations)
          done));
   Opentelemetry.Collector.remove_backend () ~on_done:ignore
