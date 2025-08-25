@@ -89,6 +89,19 @@
  (synopsis "Collector client for opentelemetry, using http + ezcurl"))
 
 (package
+ (name opentelemetry-logs)
+ (depends
+  (ocaml
+   (>= "4.08"))
+  (opentelemetry
+   (= :version))
+  (odoc :with-doc)
+  (logs
+   (>= "0.7.0"))
+  (alcotest :with-test))
+ (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
+
+(package
  (name opentelemetry-cohttp-lwt)
  (depends
   (ocaml

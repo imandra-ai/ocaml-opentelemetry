@@ -38,6 +38,20 @@
   opentelemetry-client-cohttp-eio))
 
 (executable
+ (name emit_logs_cohttp)
+ (modules emit_logs_cohttp)
+ (preprocess
+  (pps lwt_ppx))
+ (libraries
+  cohttp-lwt-unix
+  opentelemetry
+  opentelemetry-client-cohttp-lwt
+  opentelemetry-cohttp-lwt
+  opentelemetry-logs
+  logs
+))
+
+(executable
  (name cohttp_client)
  (modules cohttp_client)
  (libraries
@@ -45,3 +59,5 @@
   opentelemetry
   opentelemetry-client-cohttp-lwt
   opentelemetry-cohttp-lwt))
+
+
