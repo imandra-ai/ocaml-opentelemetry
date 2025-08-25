@@ -1,4 +1,4 @@
-{0 Fmt {%html: <span class="version">v0.10.0</span>%}}
+{0 Fmt {%html: <span class="version">v0.11.0</span>%}}
 
 Fmt exposes combinators to devise {!Format} pretty-printing functions.
 
