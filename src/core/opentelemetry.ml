@@ -1455,6 +1455,11 @@ end
     alarms/intervals to emit them. *)
 module Metrics_callbacks = struct
   open struct
+    (* [true] iff the initial list of metric callbacks has already been registered
+       with `on_tick`. This registration must only happen once, after which,
+       [registered_with_on_tick] will forever be [false]. *)
+    let registered_with_on_tick : bool Atomic.t = Atomic.make false
+
     let cbs_ : (unit -> Metrics.t list) AList.t = AList.make ()
   end
 
@@ -1464,7 +1469,9 @@ module Metrics_callbacks = struct
       of metrics. It might be called regularly by the backend, in particular
       (but not only) when {!Collector.tick} is called. *)
   let register f : unit =
-    if AList.is_empty cbs_ then
+    (* sets [registered_with_on_tick] to [true] atomically, iff it is currently
+       [false]. *)
+    if Atomic.compare_and_set registered_with_on_tick false true then
       (* make sure we call [f] (and others) at each tick *)
         Collector.on_tick (fun () ->
           let m = List.map (fun f -> f ()) (AList.get cbs_) |> List.flatten in
