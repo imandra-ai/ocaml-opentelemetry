@@ -1471,7 +1471,7 @@ module Metrics_callbacks = struct
   let register f : unit =
     (* sets [registered_with_on_tick] to [true] atomically, iff it is currently
        [false]. *)
-    if Atomic.compare_and_set registered_with_on_tick false true then
+    if not (Atomic.exchange registered_with_on_tick true) then
       (* make sure we call [f] (and others) at each tick *)
         Collector.on_tick (fun () ->
           let m = List.map (fun f -> f ()) (AList.get cbs_) |> List.flatten in
