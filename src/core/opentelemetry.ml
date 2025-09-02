@@ -1071,7 +1071,8 @@ end = struct
             [
               "exception.message", `String (Printexc.to_string exn);
               "exception.type", `String (Printexc.exn_slot_name exn);
-              "exception.stacktrace", `String (Printexc.raw_backtrace_to_string bt);
+              ( "exception.stacktrace",
+                `String (Printexc.raw_backtrace_to_string bt) );
             ]
       in
       scope.items <- Ev (ev, scope.items)
@@ -1454,7 +1455,12 @@ end
     alarms/intervals to emit them. *)
 module Metrics_callbacks = struct
   open struct
-    let cbs_ : (unit -> Metrics.t list) list ref = ref []
+    (* [true] iff the initial list of metric callbacks has already been registered
+       with `on_tick`. This registration must only happen once, after which,
+       [registered_with_on_tick] will forever be [false]. *)
+    let registered_with_on_tick : bool Atomic.t = Atomic.make false
+
+    let cbs_ : (unit -> Metrics.t list) AList.t = AList.make ()
   end
 
   (** [register f] adds the callback [f] to the list.
@@ -1463,12 +1469,14 @@ module Metrics_callbacks = struct
       of metrics. It might be called regularly by the backend, in particular
       (but not only) when {!Collector.tick} is called. *)
   let register f : unit =
-    if !cbs_ = [] then
+    (* sets [registered_with_on_tick] to [true] atomically, iff it is currently
+       [false]. *)
+    if not (Atomic.exchange registered_with_on_tick true) then
       (* make sure we call [f] (and others) at each tick *)
         Collector.on_tick (fun () ->
-          let m = List.map (fun f -> f ()) !cbs_ |> List.flatten in
+          let m = List.map (fun f -> f ()) (AList.get cbs_) |> List.flatten in
           Metrics.emit m);
-    cbs_ := f :: !cbs_
+    AList.add cbs_ f
 end
 
 (** {2 Logs} *)
