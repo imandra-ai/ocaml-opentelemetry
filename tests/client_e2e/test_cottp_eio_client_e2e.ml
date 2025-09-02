@@ -15,6 +15,7 @@ let () =
         {
           url;
           jobs = 1;
+          procs = 1;
           iterations = 1;
           batch_traces = 2;
           batch_metrics = 2;
@@ -24,6 +25,17 @@ let () =
         {
           url;
           jobs = 3;
+          procs = 1;
+          iterations = 1;
+          batch_traces = 400;
+          batch_metrics = 3;
+          batch_logs = 400;
+        } );
+      ( "emit1_eio",
+        {
+          url;
+          jobs = 3;
+          procs = 3;
           iterations = 1;
           batch_traces = 400;
           batch_metrics = 3;
