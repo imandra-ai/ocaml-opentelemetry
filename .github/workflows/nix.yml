@@ -1,0 +1,13 @@
+name: "Nix"
+on:
+  pull_request:
+  push:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tree
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - run: nix develop -L .# -c dune build @runtest @check
