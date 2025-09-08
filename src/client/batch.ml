@@ -72,8 +72,16 @@ let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
 let append_with_count ~(elems : 'a list) ~(q : 'a list) : int * 'a list =
   elems |> List.fold_left (fun (count, q') x -> succ count, x :: q') (0, q)
 
+let rec push_unprotected (self : _ t) ~(elems : _ list) : unit =
+  match elems with
+  | [] -> ()
+  | x :: xs ->
+    self.q <- x :: self.q;
+    self.size <- 1 + self.size;
+    push_unprotected self ~elems:xs
+
 let push (self : _ t) elems : [ `Dropped | `Ok ] =
-  protect self.mutex @@ fun () ->
+  protect_mutex self.mutex @@ fun () ->
   if self.size >= self.high_watermark then
     (* drop this to prevent queue from growing too fast *)
     `Dropped
@@ -82,9 +90,7 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
       (* current batch starts now *)
       self.start <- Mtime_clock.now ();
 
-    let count, q' = append_with_count ~elems ~q:self.q in
     (* add to queue *)
-    self.size <- self.size + count;
-    self.q <- q';
+    push_unprotected self ~elems;
     `Ok
   )
