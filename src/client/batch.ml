@@ -1,17 +1,17 @@
 type 'a t = {
   mutable size: int;
   mutable q: 'a list;
-  (* The queue is a FIFO represented as a list in reverse order *)
-  batch: int; (* Minimum size to batch before popping *)
-  high_watermark: int;
+      (** The queue is a FIFO represented as a list in reverse order *)
+  batch: int;  (** Minimum size to batch before popping *)
+  high_watermark: int;  (** Size above which we start dropping signals *)
   timeout: Mtime.span option;
   mutable start: Mtime.t;
   mutex: Mutex.t;
 }
 
-(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08 *)
-(* cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
-let[@inline never] protect m f =
+(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08.
+   cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
+let[@inline never] protect_mutex m f =
   Mutex.lock m;
   Fun.protect f ~finally:(fun () -> Mutex.unlock m)
 
