@@ -50,18 +50,22 @@ let ready_to_pop ~force ~now self =
   self.size > 0 && (force || is_full_ self || timeout_expired_ ~now self)
 
 let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
-  protect self.mutex @@ fun () ->
-  if ready_to_pop ~force ~now self then (
-    assert (self.q <> []);
-    let batch =
-      (* Reverse the list to retrieve the FIFO order. *)
-      List.rev self.q
-    in
-    self.q <- [];
-    self.size <- 0;
-    Some batch
-  ) else
-    None
+  let rev_batch_opt =
+    protect_mutex self.mutex @@ fun () ->
+    if ready_to_pop ~force ~now self then (
+      assert (self.q <> []);
+      let batch = self.q in
+      self.q <- [];
+      self.size <- 0;
+      Some batch
+    ) else
+      None
+  in
+  match rev_batch_opt with
+  | None -> None
+  | Some batch ->
+    (* Reverse the list to retrieve the FIFO order. *)
+    Some (List.rev batch)
 
 (* Helper so we can count new elements and prepend them onto the existing [q] in
    one pass. *)
