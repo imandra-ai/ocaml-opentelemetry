@@ -15,8 +15,6 @@ let ( let@ ) = ( @@ )
 
 let spf = Printf.sprintf
 
-let tid () = Thread.id @@ Thread.self ()
-
 let set_headers = Config.Env.set_headers
 
 let get_headers = Config.Env.get_headers
@@ -330,7 +328,7 @@ let mk_emitter ~stop ~net (config : Config.t) : (module EMITTER) =
 
     let tick () =
       if Config.Env.get_debug () then
-        Printf.eprintf "tick (from %d)\n%!" (tid ());
+        Printf.eprintf "tick (from domain %d)\n%!" (Domain.self () :> int);
       run_tick_callbacks ();
       sample_gc_metrics_if_needed ();
       emit_all ~force:false

@@ -1,12 +1,19 @@
 type 'a t = {
   mutable size: int;
   mutable q: 'a list;
-      (* The queue is a FIFO represented as a list in reverse order *)
-  batch: int; (* Minimum size to batch before popping *)
-  high_watermark: int;
+      (** The queue is a FIFO represented as a list in reverse order *)
+  batch: int;  (** Minimum size to batch before popping *)
+  high_watermark: int;  (** Size above which we start dropping signals *)
   timeout: Mtime.span option;
   mutable start: Mtime.t;
+  mutex: Mutex.t;
 }
+
+(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08.
+   cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
+let[@inline never] protect_mutex m f =
+  Mutex.lock m;
+  Fun.protect f ~finally:(fun () -> Mutex.unlock m)
 
 let default_high_watermark batch_size =
   if batch_size = 1 then
@@ -25,8 +32,9 @@ let make ?(batch = 1) ?high_watermark ?now ?timeout () : _ t =
     | Some x -> x
     | None -> Mtime_clock.now ()
   in
+  let mutex = Mutex.create () in
   assert (batch > 0);
-  { size = 0; q = []; start; batch; timeout; high_watermark }
+  { size = 0; q = []; start; batch; timeout; high_watermark; mutex }
 
 let timeout_expired_ ~now self : bool =
   match self.timeout with
@@ -42,24 +50,38 @@ let ready_to_pop ~force ~now self =
   self.size > 0 && (force || is_full_ self || timeout_expired_ ~now self)
 
 let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
-  if ready_to_pop ~force ~now self then (
-    assert (self.q <> []);
-    let batch =
-      (* Reverse the list to retrieve the FIFO order. *)
-      List.rev self.q
-    in
-    self.q <- [];
-    self.size <- 0;
-    Some batch
-  ) else
-    None
+  let rev_batch_opt =
+    protect_mutex self.mutex @@ fun () ->
+    if ready_to_pop ~force ~now self then (
+      assert (self.q <> []);
+      let batch = self.q in
+      self.q <- [];
+      self.size <- 0;
+      Some batch
+    ) else
+      None
+  in
+  match rev_batch_opt with
+  | None -> None
+  | Some batch ->
+    (* Reverse the list to retrieve the FIFO order. *)
+    Some (List.rev batch)
 
 (* Helper so we can count new elements and prepend them onto the existing [q] in
    one pass. *)
 let append_with_count ~(elems : 'a list) ~(q : 'a list) : int * 'a list =
   elems |> List.fold_left (fun (count, q') x -> succ count, x :: q') (0, q)
 
+let rec push_unprotected (self : _ t) ~(elems : _ list) : unit =
+  match elems with
+  | [] -> ()
+  | x :: xs ->
+    self.q <- x :: self.q;
+    self.size <- 1 + self.size;
+    push_unprotected self ~elems:xs
+
 let push (self : _ t) elems : [ `Dropped | `Ok ] =
+  protect_mutex self.mutex @@ fun () ->
   if self.size >= self.high_watermark then
     (* drop this to prevent queue from growing too fast *)
     `Dropped
@@ -68,9 +90,7 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
       (* current batch starts now *)
       self.start <- Mtime_clock.now ();
 
-    let count, q' = append_with_count ~elems ~q:self.q in
     (* add to queue *)
-    self.size <- self.size + count;
-    self.q <- q';
+    push_unprotected self ~elems;
     `Ok
   )

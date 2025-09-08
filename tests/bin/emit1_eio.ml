@@ -11,22 +11,22 @@ let sleep_outer = ref 2.0
 
 let n_jobs = ref 1
 
-let num_sleep = Atomic.make 0
-
 let stress_alloc_ = ref true
+
+let num_sleep = Atomic.make 0
 
 let stop = Atomic.make false
 
 let num_tr = Atomic.make 0
 
 (* Counter used to mark simulated failures *)
-let i = ref 0
+let i = Atomic.make 0
 
 let run_job clock _job_id iterations : unit =
   let@ scope =
     Atomic.incr num_tr;
     OT.Trace.with_ ~kind:OT.Span.Span_kind_producer "loop.outer"
-      ~attrs:[ "i", `Int !i ]
+      ~attrs:[ "i", `Int (Atomic.get i) ]
   in
 
   for j = 0 to iterations do
@@ -52,7 +52,7 @@ let run_job clock _job_id iterations : unit =
               ~severity:Severity_number_info "inner at %d" j;
           ]);
 
-      incr i;
+      Atomic.incr i;
 
       try
         Atomic.incr num_tr;
@@ -68,7 +68,7 @@ let run_job clock _job_id iterations : unit =
         let () = Eio.Time.sleep clock !sleep_inner in
         Atomic.incr num_sleep;
 
-        if j = 4 && !i mod 13 = 0 then failwith "oh no";
+        if j = 4 && Atomic.get i mod 13 = 0 then failwith "oh no";
 
         (* simulate a failure *)
         Opentelemetry.Scope.add_event scope (fun () ->
