@@ -67,11 +67,6 @@ let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
     (* Reverse the list to retrieve the FIFO order. *)
     Some (List.rev batch)
 
-(* Helper so we can count new elements and prepend them onto the existing [q] in
-   one pass. *)
-let append_with_count ~(elems : 'a list) ~(q : 'a list) : int * 'a list =
-  elems |> List.fold_left (fun (count, q') x -> succ count, x :: q') (0, q)
-
 let rec push_unprotected (self : _ t) ~(elems : _ list) : unit =
   match elems with
   | [] -> ()
