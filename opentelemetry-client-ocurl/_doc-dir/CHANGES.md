@@ -1,4 +1,23 @@
 
+## 0.12
+
+- breaking: change `Collector.cleanup` so it takes a callback
+
+- feat: add Eio collector
+- feat: add Logs integration
+- Specify and document the Signal_gatherer API
+- feat: add `Globals.service_version`
+- add `pp` implemtation for `Client_ocurl.Config`
+- feat: adapt to trace 0.10
+
+- fix concurrency issues, make the libraries thread safe
+- add many tests
+- fix: opentelemetry exception attr spec
+- Add tests for Opentelemetry.Client.Config
+
+- large refactorings to factor out batching logic out of cohttp-lwt client,
+    also encoding logic. The code for collectors is now much cleaner.
+
 ## 0.11.2
 
 - fix: opentelemetry-client-ocurl: don't block signals on Windows
