@@ -18,6 +18,10 @@ depends: [
   "odoc" {with-doc}
   "logs" {>= "0.7.0"}
   "alcotest" {with-test}
+  "containers" {with-test}
+  "cohttp-lwt-unix" {with-test}
+  "opentelemetry-client-cohttp-lwt" {with-test & = version}
+  "opentelemetry-cohttp-lwt" {with-test & = version}
 ]
 build: [
   ["dune" "subst"] {dev}
