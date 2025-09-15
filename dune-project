@@ -44,7 +44,9 @@
    (and
     :with-dev-setup
     (>= 0.27)
-    (< 0.28))))
+    (< 0.28)))
+  (mtime
+    (>= "1.4")))
  (depopts trace lwt eio)
  (conflicts
   (trace
@@ -98,7 +100,13 @@
   (odoc :with-doc)
   (logs
    (>= "0.7.0"))
-  (alcotest :with-test))
+  (alcotest :with-test)
+  (containers :with-test)
+  (cohttp-lwt-unix :with-test)
+  (opentelemetry-client-cohttp-lwt
+   (and :with-test (= :version)))
+  (opentelemetry-cohttp-lwt
+   (and :with-test (= :version))))
  (synopsis "Opentelemetry tracing for Cohttp HTTP servers"))
 
 (package
@@ -136,7 +144,8 @@
   cohttp-lwt
   cohttp-lwt-unix
   (alcotest :with-test)
-  (containers :with-test))
+  (containers :with-test)
+  (opentelemetry-lwt (and :with-test (= :version))))
  (synopsis "Collector client for opentelemetry, using cohttp + lwt"))
 
 (package
@@ -154,7 +163,9 @@
   (cohttp-eio
    (>= 6.1.0))
   (eio_main :with-test)
-  tls-eio
+  (tls-eio
+   (>= 2.0.1))
   (alcotest :with-test)
-  (containers :with-test))
+  (containers :with-test)
+  (cohttp-lwt-unix :with-test))
  (synopsis "Collector client for opentelemetry, using cohttp + eio"))
