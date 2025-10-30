@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-27-30-39-44"]
 
 type span_span_kind =
   | Span_kind_unspecified 

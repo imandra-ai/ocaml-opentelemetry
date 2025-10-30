@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-27-30-39-44"]
 
 type exemplar_value =
   | As_double of float

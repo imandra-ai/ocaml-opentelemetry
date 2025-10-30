@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-27-30-39-44"]
 
 type any_value =
   | String_value of string

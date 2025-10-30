@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-27-30-39-44"]
 
 type export_metrics_service_request = {
   resource_metrics : Metrics.resource_metrics list;

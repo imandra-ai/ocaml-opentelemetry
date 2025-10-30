@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-27-30-39-44"]
 
 type export_logs_service_request = {
   resource_logs : Logs.resource_logs list;

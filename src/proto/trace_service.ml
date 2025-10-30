@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-27-30-39-44"]
 
 type export_trace_service_request = {
   resource_spans : Trace.resource_spans list;
