@@ -54,14 +54,14 @@ module Encode = struct
     resource_logs
     |> resource_to_string ~encoder
          ~ctor:(fun r ->
-           Logs_service.default_export_logs_service_request ~resource_logs:r ())
+           Logs_service.make_export_logs_service_request ~resource_logs:r ())
          ~enc:Logs_service.encode_pb_export_logs_service_request
 
   let metrics ?encoder resource_metrics =
     resource_metrics
     |> resource_to_string ~encoder
          ~ctor:(fun r ->
-           Metrics_service.default_export_metrics_service_request
+           Metrics_service.make_export_metrics_service_request
              ~resource_metrics:r ())
          ~enc:Metrics_service.encode_pb_export_metrics_service_request
 
@@ -69,8 +69,7 @@ module Encode = struct
     resource_spans
     |> resource_to_string ~encoder
          ~ctor:(fun r ->
-           Trace_service.default_export_trace_service_request ~resource_spans:r
-             ())
+           Trace_service.make_export_trace_service_request ~resource_spans:r ())
          ~enc:Trace_service.encode_pb_export_trace_service_request
 end
 

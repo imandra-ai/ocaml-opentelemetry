@@ -193,8 +193,9 @@ module Internal = struct
 
     let status : Span_status.t =
       match List.assoc_opt Well_known.status_error_key attrs with
-      | Some (`String message) -> { message; code = Status_code_error }
-      | _ -> { message = ""; code = Status_code_ok }
+      | Some (`String message) ->
+        Span_status.make ~message ~code:Status_code_error
+      | _ -> Span_status.make ~message:"" ~code:Status_code_ok
     in
 
     let attrs =
