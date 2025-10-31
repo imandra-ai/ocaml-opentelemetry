@@ -15,19 +15,23 @@ type span_span_kind =
   | Span_kind_producer 
   | Span_kind_consumer 
 
-type span_event = {
-  time_unix_nano : int64;
-  name : string;
-  attributes : Common.key_value list;
-  dropped_attributes_count : int32;
+type span_event = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 3 fields *)
+  mutable time_unix_nano : int64;
+  mutable name : string;
+  mutable attributes : Common.key_value list;
+  mutable dropped_attributes_count : int32;
 }
 
-type span_link = {
-  trace_id : bytes;
-  span_id : bytes;
-  trace_state : string;
-  attributes : Common.key_value list;
-  dropped_attributes_count : int32;
+type span_link = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 4 fields *)
+  mutable trace_id : bytes;
+  mutable span_id : bytes;
+  mutable trace_state : string;
+  mutable attributes : Common.key_value list;
+  mutable dropped_attributes_count : int32;
 }
 
 type status_status_code =
@@ -35,81 +39,181 @@ type status_status_code =
   | Status_code_ok 
   | Status_code_error 
 
-type status = {
-  message : string;
-  code : status_status_code;
+type status = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 2 fields *)
+  mutable message : string;
+  mutable code : status_status_code;
 }
 
-type span = {
-  trace_id : bytes;
-  span_id : bytes;
-  trace_state : string;
-  parent_span_id : bytes;
-  name : string;
-  kind : span_span_kind;
-  start_time_unix_nano : int64;
-  end_time_unix_nano : int64;
-  attributes : Common.key_value list;
-  dropped_attributes_count : int32;
-  events : span_event list;
-  dropped_events_count : int32;
-  links : span_link list;
-  dropped_links_count : int32;
-  status : status option;
+type span = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 11 fields *)
+  mutable trace_id : bytes;
+  mutable span_id : bytes;
+  mutable trace_state : string;
+  mutable parent_span_id : bytes;
+  mutable name : string;
+  mutable kind : span_span_kind;
+  mutable start_time_unix_nano : int64;
+  mutable end_time_unix_nano : int64;
+  mutable attributes : Common.key_value list;
+  mutable dropped_attributes_count : int32;
+  mutable events : span_event list;
+  mutable dropped_events_count : int32;
+  mutable links : span_link list;
+  mutable dropped_links_count : int32;
+  mutable status : status option;
 }
 
-type scope_spans = {
-  scope : Common.instrumentation_scope option;
-  spans : span list;
-  schema_url : string;
+type scope_spans = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 1 fields *)
+  mutable scope : Common.instrumentation_scope option;
+  mutable spans : span list;
+  mutable schema_url : string;
 }
 
-type resource_spans = {
-  resource : Resource.resource option;
-  scope_spans : scope_spans list;
-  schema_url : string;
+type resource_spans = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 1 fields *)
+  mutable resource : Resource.resource option;
+  mutable scope_spans : scope_spans list;
+  mutable schema_url : string;
 }
 
-type traces_data = {
-  resource_spans : resource_spans list;
+type traces_data = private {
+  mutable resource_spans : resource_spans list;
 }
 
 
 (** {2 Basic values} *)
 
 val default_span_span_kind : unit -> span_span_kind
-(** [default_span_span_kind ()] is the default value for type [span_span_kind] *)
+(** [default_span_span_kind ()] is a new empty value for type [span_span_kind] *)
 
-val default_span_event : 
+val default_span_event : unit -> span_event 
+(** [default_span_event ()] is a new empty value for type [span_event] *)
+
+val default_span_link : unit -> span_link 
+(** [default_span_link ()] is a new empty value for type [span_link] *)
+
+val default_status_status_code : unit -> status_status_code
+(** [default_status_status_code ()] is a new empty value for type [status_status_code] *)
+
+val default_status : unit -> status 
+(** [default_status ()] is a new empty value for type [status] *)
+
+val default_span : unit -> span 
+(** [default_span ()] is a new empty value for type [span] *)
+
+val default_scope_spans : unit -> scope_spans 
+(** [default_scope_spans ()] is a new empty value for type [scope_spans] *)
+
+val default_resource_spans : unit -> resource_spans 
+(** [default_resource_spans ()] is a new empty value for type [resource_spans] *)
+
+val default_traces_data : unit -> traces_data 
+(** [default_traces_data ()] is a new empty value for type [traces_data] *)
+
+
+(** {2 Make functions} *)
+
+
+val make_span_event : 
   ?time_unix_nano:int64 ->
   ?name:string ->
-  ?attributes:Common.key_value list ->
+  attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
   unit ->
   span_event
-(** [default_span_event ()] is the default value for type [span_event] *)
+(** [make_span_event … ()] is a builder for type [span_event] *)
 
-val default_span_link : 
+val copy_span_event : span_event -> span_event
+
+val has_span_event_time_unix_nano : span_event -> bool
+  (** presence of field "time_unix_nano" in [span_event] *)
+
+val set_span_event_time_unix_nano : span_event -> int64 -> unit
+  (** set field time_unix_nano in span_event *)
+
+val has_span_event_name : span_event -> bool
+  (** presence of field "name" in [span_event] *)
+
+val set_span_event_name : span_event -> string -> unit
+  (** set field name in span_event *)
+
+val set_span_event_attributes : span_event -> Common.key_value list -> unit
+  (** set field attributes in span_event *)
+
+val has_span_event_dropped_attributes_count : span_event -> bool
+  (** presence of field "dropped_attributes_count" in [span_event] *)
+
+val set_span_event_dropped_attributes_count : span_event -> int32 -> unit
+  (** set field dropped_attributes_count in span_event *)
+
+val make_span_link : 
   ?trace_id:bytes ->
   ?span_id:bytes ->
   ?trace_state:string ->
-  ?attributes:Common.key_value list ->
+  attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
   unit ->
   span_link
-(** [default_span_link ()] is the default value for type [span_link] *)
+(** [make_span_link … ()] is a builder for type [span_link] *)
 
-val default_status_status_code : unit -> status_status_code
-(** [default_status_status_code ()] is the default value for type [status_status_code] *)
+val copy_span_link : span_link -> span_link
 
-val default_status : 
+val has_span_link_trace_id : span_link -> bool
+  (** presence of field "trace_id" in [span_link] *)
+
+val set_span_link_trace_id : span_link -> bytes -> unit
+  (** set field trace_id in span_link *)
+
+val has_span_link_span_id : span_link -> bool
+  (** presence of field "span_id" in [span_link] *)
+
+val set_span_link_span_id : span_link -> bytes -> unit
+  (** set field span_id in span_link *)
+
+val has_span_link_trace_state : span_link -> bool
+  (** presence of field "trace_state" in [span_link] *)
+
+val set_span_link_trace_state : span_link -> string -> unit
+  (** set field trace_state in span_link *)
+
+val set_span_link_attributes : span_link -> Common.key_value list -> unit
+  (** set field attributes in span_link *)
+
+val has_span_link_dropped_attributes_count : span_link -> bool
+  (** presence of field "dropped_attributes_count" in [span_link] *)
+
+val set_span_link_dropped_attributes_count : span_link -> int32 -> unit
+  (** set field dropped_attributes_count in span_link *)
+
+
+val make_status : 
   ?message:string ->
   ?code:status_status_code ->
   unit ->
   status
-(** [default_status ()] is the default value for type [status] *)
+(** [make_status … ()] is a builder for type [status] *)
 
-val default_span : 
+val copy_status : status -> status
+
+val has_status_message : status -> bool
+  (** presence of field "message" in [status] *)
+
+val set_status_message : status -> string -> unit
+  (** set field message in status *)
+
+val has_status_code : status -> bool
+  (** presence of field "code" in [status] *)
+
+val set_status_code : status -> status_status_code -> unit
+  (** set field code in status *)
+
+val make_span : 
   ?trace_id:bytes ->
   ?span_id:bytes ->
   ?trace_state:string ->
@@ -118,111 +222,151 @@ val default_span :
   ?kind:span_span_kind ->
   ?start_time_unix_nano:int64 ->
   ?end_time_unix_nano:int64 ->
-  ?attributes:Common.key_value list ->
+  attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
-  ?events:span_event list ->
-  ?dropped_events_count:int32 ->
-  ?links:span_link list ->
-  ?dropped_links_count:int32 ->
-  ?status:status option ->
-  unit ->
-  span
-(** [default_span ()] is the default value for type [span] *)
-
-val default_scope_spans : 
-  ?scope:Common.instrumentation_scope option ->
-  ?spans:span list ->
-  ?schema_url:string ->
-  unit ->
-  scope_spans
-(** [default_scope_spans ()] is the default value for type [scope_spans] *)
-
-val default_resource_spans : 
-  ?resource:Resource.resource option ->
-  ?scope_spans:scope_spans list ->
-  ?schema_url:string ->
-  unit ->
-  resource_spans
-(** [default_resource_spans ()] is the default value for type [resource_spans] *)
-
-val default_traces_data : 
-  ?resource_spans:resource_spans list ->
-  unit ->
-  traces_data
-(** [default_traces_data ()] is the default value for type [traces_data] *)
-
-
-(** {2 Make functions} *)
-
-
-val make_span_event : 
-  time_unix_nano:int64 ->
-  name:string ->
-  attributes:Common.key_value list ->
-  dropped_attributes_count:int32 ->
-  unit ->
-  span_event
-(** [make_span_event … ()] is a builder for type [span_event] *)
-
-val make_span_link : 
-  trace_id:bytes ->
-  span_id:bytes ->
-  trace_state:string ->
-  attributes:Common.key_value list ->
-  dropped_attributes_count:int32 ->
-  unit ->
-  span_link
-(** [make_span_link … ()] is a builder for type [span_link] *)
-
-
-val make_status : 
-  message:string ->
-  code:status_status_code ->
-  unit ->
-  status
-(** [make_status … ()] is a builder for type [status] *)
-
-val make_span : 
-  trace_id:bytes ->
-  span_id:bytes ->
-  trace_state:string ->
-  parent_span_id:bytes ->
-  name:string ->
-  kind:span_span_kind ->
-  start_time_unix_nano:int64 ->
-  end_time_unix_nano:int64 ->
-  attributes:Common.key_value list ->
-  dropped_attributes_count:int32 ->
   events:span_event list ->
-  dropped_events_count:int32 ->
+  ?dropped_events_count:int32 ->
   links:span_link list ->
-  dropped_links_count:int32 ->
-  ?status:status option ->
+  ?dropped_links_count:int32 ->
+  ?status:status ->
   unit ->
   span
 (** [make_span … ()] is a builder for type [span] *)
 
+val copy_span : span -> span
+
+val has_span_trace_id : span -> bool
+  (** presence of field "trace_id" in [span] *)
+
+val set_span_trace_id : span -> bytes -> unit
+  (** set field trace_id in span *)
+
+val has_span_span_id : span -> bool
+  (** presence of field "span_id" in [span] *)
+
+val set_span_span_id : span -> bytes -> unit
+  (** set field span_id in span *)
+
+val has_span_trace_state : span -> bool
+  (** presence of field "trace_state" in [span] *)
+
+val set_span_trace_state : span -> string -> unit
+  (** set field trace_state in span *)
+
+val has_span_parent_span_id : span -> bool
+  (** presence of field "parent_span_id" in [span] *)
+
+val set_span_parent_span_id : span -> bytes -> unit
+  (** set field parent_span_id in span *)
+
+val has_span_name : span -> bool
+  (** presence of field "name" in [span] *)
+
+val set_span_name : span -> string -> unit
+  (** set field name in span *)
+
+val has_span_kind : span -> bool
+  (** presence of field "kind" in [span] *)
+
+val set_span_kind : span -> span_span_kind -> unit
+  (** set field kind in span *)
+
+val has_span_start_time_unix_nano : span -> bool
+  (** presence of field "start_time_unix_nano" in [span] *)
+
+val set_span_start_time_unix_nano : span -> int64 -> unit
+  (** set field start_time_unix_nano in span *)
+
+val has_span_end_time_unix_nano : span -> bool
+  (** presence of field "end_time_unix_nano" in [span] *)
+
+val set_span_end_time_unix_nano : span -> int64 -> unit
+  (** set field end_time_unix_nano in span *)
+
+val set_span_attributes : span -> Common.key_value list -> unit
+  (** set field attributes in span *)
+
+val has_span_dropped_attributes_count : span -> bool
+  (** presence of field "dropped_attributes_count" in [span] *)
+
+val set_span_dropped_attributes_count : span -> int32 -> unit
+  (** set field dropped_attributes_count in span *)
+
+val set_span_events : span -> span_event list -> unit
+  (** set field events in span *)
+
+val has_span_dropped_events_count : span -> bool
+  (** presence of field "dropped_events_count" in [span] *)
+
+val set_span_dropped_events_count : span -> int32 -> unit
+  (** set field dropped_events_count in span *)
+
+val set_span_links : span -> span_link list -> unit
+  (** set field links in span *)
+
+val has_span_dropped_links_count : span -> bool
+  (** presence of field "dropped_links_count" in [span] *)
+
+val set_span_dropped_links_count : span -> int32 -> unit
+  (** set field dropped_links_count in span *)
+
+val set_span_status : span -> status -> unit
+  (** set field status in span *)
+
 val make_scope_spans : 
-  ?scope:Common.instrumentation_scope option ->
+  ?scope:Common.instrumentation_scope ->
   spans:span list ->
-  schema_url:string ->
+  ?schema_url:string ->
   unit ->
   scope_spans
 (** [make_scope_spans … ()] is a builder for type [scope_spans] *)
 
+val copy_scope_spans : scope_spans -> scope_spans
+
+val set_scope_spans_scope : scope_spans -> Common.instrumentation_scope -> unit
+  (** set field scope in scope_spans *)
+
+val set_scope_spans_spans : scope_spans -> span list -> unit
+  (** set field spans in scope_spans *)
+
+val has_scope_spans_schema_url : scope_spans -> bool
+  (** presence of field "schema_url" in [scope_spans] *)
+
+val set_scope_spans_schema_url : scope_spans -> string -> unit
+  (** set field schema_url in scope_spans *)
+
 val make_resource_spans : 
-  ?resource:Resource.resource option ->
+  ?resource:Resource.resource ->
   scope_spans:scope_spans list ->
-  schema_url:string ->
+  ?schema_url:string ->
   unit ->
   resource_spans
 (** [make_resource_spans … ()] is a builder for type [resource_spans] *)
+
+val copy_resource_spans : resource_spans -> resource_spans
+
+val set_resource_spans_resource : resource_spans -> Resource.resource -> unit
+  (** set field resource in resource_spans *)
+
+val set_resource_spans_scope_spans : resource_spans -> scope_spans list -> unit
+  (** set field scope_spans in resource_spans *)
+
+val has_resource_spans_schema_url : resource_spans -> bool
+  (** presence of field "schema_url" in [resource_spans] *)
+
+val set_resource_spans_schema_url : resource_spans -> string -> unit
+  (** set field schema_url in resource_spans *)
 
 val make_traces_data : 
   resource_spans:resource_spans list ->
   unit ->
   traces_data
 (** [make_traces_data … ()] is a builder for type [traces_data] *)
+
+val copy_traces_data : traces_data -> traces_data
+
+val set_traces_data_resource_spans : traces_data -> resource_spans list -> unit
+  (** set field resource_spans in traces_data *)
 
 
 (** {2 Formatters} *)

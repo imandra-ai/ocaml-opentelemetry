@@ -16,59 +16,47 @@ type any_value =
   | Kvlist_value of key_value_list
   | Bytes_value of bytes
 
-and array_value = {
-  values : any_value list;
+and array_value = private {
+  mutable values : any_value list;
 }
 
-and key_value_list = {
-  values : key_value list;
+and key_value_list = private {
+  mutable values : key_value list;
 }
 
-and key_value = {
-  key : string;
-  value : any_value option;
+and key_value = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 1 fields *)
+  mutable key : string;
+  mutable value : any_value option;
 }
 
-type instrumentation_scope = {
-  name : string;
-  version : string;
-  attributes : key_value list;
-  dropped_attributes_count : int32;
+type instrumentation_scope = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 3 fields *)
+  mutable name : string;
+  mutable version : string;
+  mutable attributes : key_value list;
+  mutable dropped_attributes_count : int32;
 }
 
 
 (** {2 Basic values} *)
 
 val default_any_value : unit -> any_value
-(** [default_any_value ()] is the default value for type [any_value] *)
+(** [default_any_value ()] is a new empty value for type [any_value] *)
 
-val default_array_value : 
-  ?values:any_value list ->
-  unit ->
-  array_value
-(** [default_array_value ()] is the default value for type [array_value] *)
+val default_array_value : unit -> array_value 
+(** [default_array_value ()] is a new empty value for type [array_value] *)
 
-val default_key_value_list : 
-  ?values:key_value list ->
-  unit ->
-  key_value_list
-(** [default_key_value_list ()] is the default value for type [key_value_list] *)
+val default_key_value_list : unit -> key_value_list 
+(** [default_key_value_list ()] is a new empty value for type [key_value_list] *)
 
-val default_key_value : 
-  ?key:string ->
-  ?value:any_value option ->
-  unit ->
-  key_value
-(** [default_key_value ()] is the default value for type [key_value] *)
+val default_key_value : unit -> key_value 
+(** [default_key_value ()] is a new empty value for type [key_value] *)
 
-val default_instrumentation_scope : 
-  ?name:string ->
-  ?version:string ->
-  ?attributes:key_value list ->
-  ?dropped_attributes_count:int32 ->
-  unit ->
-  instrumentation_scope
-(** [default_instrumentation_scope ()] is the default value for type [instrumentation_scope] *)
+val default_instrumentation_scope : unit -> instrumentation_scope 
+(** [default_instrumentation_scope ()] is a new empty value for type [instrumentation_scope] *)
 
 
 (** {2 Make functions} *)
@@ -80,27 +68,71 @@ val make_array_value :
   array_value
 (** [make_array_value … ()] is a builder for type [array_value] *)
 
+val copy_array_value : array_value -> array_value
+
+val set_array_value_values : array_value -> any_value list -> unit
+  (** set field values in array_value *)
+
 val make_key_value_list : 
   values:key_value list ->
   unit ->
   key_value_list
 (** [make_key_value_list … ()] is a builder for type [key_value_list] *)
 
+val copy_key_value_list : key_value_list -> key_value_list
+
+val set_key_value_list_values : key_value_list -> key_value list -> unit
+  (** set field values in key_value_list *)
+
 val make_key_value : 
-  key:string ->
-  ?value:any_value option ->
+  ?key:string ->
+  ?value:any_value ->
   unit ->
   key_value
 (** [make_key_value … ()] is a builder for type [key_value] *)
 
+val copy_key_value : key_value -> key_value
+
+val has_key_value_key : key_value -> bool
+  (** presence of field "key" in [key_value] *)
+
+val set_key_value_key : key_value -> string -> unit
+  (** set field key in key_value *)
+
+val set_key_value_value : key_value -> any_value -> unit
+  (** set field value in key_value *)
+
 val make_instrumentation_scope : 
-  name:string ->
-  version:string ->
+  ?name:string ->
+  ?version:string ->
   attributes:key_value list ->
-  dropped_attributes_count:int32 ->
+  ?dropped_attributes_count:int32 ->
   unit ->
   instrumentation_scope
 (** [make_instrumentation_scope … ()] is a builder for type [instrumentation_scope] *)
+
+val copy_instrumentation_scope : instrumentation_scope -> instrumentation_scope
+
+val has_instrumentation_scope_name : instrumentation_scope -> bool
+  (** presence of field "name" in [instrumentation_scope] *)
+
+val set_instrumentation_scope_name : instrumentation_scope -> string -> unit
+  (** set field name in instrumentation_scope *)
+
+val has_instrumentation_scope_version : instrumentation_scope -> bool
+  (** presence of field "version" in [instrumentation_scope] *)
+
+val set_instrumentation_scope_version : instrumentation_scope -> string -> unit
+  (** set field version in instrumentation_scope *)
+
+val set_instrumentation_scope_attributes : instrumentation_scope -> key_value list -> unit
+  (** set field attributes in instrumentation_scope *)
+
+val has_instrumentation_scope_dropped_attributes_count : instrumentation_scope -> bool
+  (** presence of field "dropped_attributes_count" in [instrumentation_scope] *)
+
+val set_instrumentation_scope_dropped_attributes_count : instrumentation_scope -> int32 -> unit
+  (** set field dropped_attributes_count in instrumentation_scope *)
 
 
 (** {2 Formatters} *)

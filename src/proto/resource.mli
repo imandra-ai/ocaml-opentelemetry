@@ -7,30 +7,39 @@
 
 (** {2 Types} *)
 
-type resource = {
-  attributes : Common.key_value list;
-  dropped_attributes_count : int32;
+type resource = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 1 fields *)
+  mutable attributes : Common.key_value list;
+  mutable dropped_attributes_count : int32;
 }
 
 
 (** {2 Basic values} *)
 
-val default_resource : 
-  ?attributes:Common.key_value list ->
-  ?dropped_attributes_count:int32 ->
-  unit ->
-  resource
-(** [default_resource ()] is the default value for type [resource] *)
+val default_resource : unit -> resource 
+(** [default_resource ()] is a new empty value for type [resource] *)
 
 
 (** {2 Make functions} *)
 
 val make_resource : 
   attributes:Common.key_value list ->
-  dropped_attributes_count:int32 ->
+  ?dropped_attributes_count:int32 ->
   unit ->
   resource
 (** [make_resource … ()] is a builder for type [resource] *)
+
+val copy_resource : resource -> resource
+
+val set_resource_attributes : resource -> Common.key_value list -> unit
+  (** set field attributes in resource *)
+
+val has_resource_dropped_attributes_count : resource -> bool
+  (** presence of field "dropped_attributes_count" in [resource] *)
+
+val set_resource_dropped_attributes_count : resource -> int32 -> unit
+  (** set field dropped_attributes_count in resource *)
 
 
 (** {2 Formatters} *)

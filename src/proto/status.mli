@@ -7,33 +7,47 @@
 
 (** {2 Types} *)
 
-type status = {
-  code : int32;
-  message : bytes;
-  details : bytes list;
+type status = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 2 fields *)
+  mutable code : int32;
+  mutable message : bytes;
+  mutable details : bytes list;
 }
 
 
 (** {2 Basic values} *)
 
-val default_status : 
-  ?code:int32 ->
-  ?message:bytes ->
-  ?details:bytes list ->
-  unit ->
-  status
-(** [default_status ()] is the default value for type [status] *)
+val default_status : unit -> status 
+(** [default_status ()] is a new empty value for type [status] *)
 
 
 (** {2 Make functions} *)
 
 val make_status : 
-  code:int32 ->
-  message:bytes ->
+  ?code:int32 ->
+  ?message:bytes ->
   details:bytes list ->
   unit ->
   status
 (** [make_status … ()] is a builder for type [status] *)
+
+val copy_status : status -> status
+
+val has_status_code : status -> bool
+  (** presence of field "code" in [status] *)
+
+val set_status_code : status -> int32 -> unit
+  (** set field code in status *)
+
+val has_status_message : status -> bool
+  (** presence of field "message" in [status] *)
+
+val set_status_message : status -> bytes -> unit
+  (** set field message in status *)
+
+val set_status_details : status -> bytes list -> unit
+  (** set field details in status *)
 
 
 (** {2 Formatters} *)
