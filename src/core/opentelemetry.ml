@@ -1223,7 +1223,9 @@ module Trace = struct
       make_scope_spans ~scope:Globals.instrumentation_library ~spans ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource = Proto.Resource.make_resource ~attributes () in
+    let resource =
+      Proto.Resource.make_resource ~entity_refs:[] ~attributes ()
+    in
     make_resource_spans ~resource ~scope_spans:[ ils ] ()
 
   (** Sync emitter.
@@ -1387,7 +1389,7 @@ module Metrics = struct
   (** Aggregation of a scalar metric, always with the current value *)
   let gauge ~name ?description ?unit_ (l : number_data_point list) : t =
     let data = Gauge (make_gauge ~data_points:l ()) in
-    make_metric ~name ?description ?unit_ ~data ()
+    make_metric ~metadata:[] ~name ?description ?unit_ ~data ()
 
   type aggregation_temporality = Metrics.aggregation_temporality =
     | Aggregation_temporality_unspecified
@@ -1401,7 +1403,7 @@ module Metrics = struct
     let data =
       Sum (make_sum ~data_points:l ?is_monotonic ~aggregation_temporality ())
     in
-    make_metric ~name ?description ?unit_ ~data ()
+    make_metric ~metadata:[] ~name ?description ?unit_ ~data ()
 
   (** Histogram data
       @param count number of values in population (non negative)
@@ -1424,7 +1426,7 @@ module Metrics = struct
     let data =
       Histogram (make_histogram ~data_points:l ?aggregation_temporality ())
     in
-    make_metric ~name ?description ?unit_ ~data ()
+    make_metric ~metadata:[] ~name ?description ?unit_ ~data ()
 
   (* TODO: exponential history *)
   (* TODO: summary *)
@@ -1437,7 +1439,9 @@ module Metrics = struct
       make_scope_metrics ~scope:Globals.instrumentation_library ~metrics:l ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource = Proto.Resource.make_resource ~attributes () in
+    let resource =
+      Proto.Resource.make_resource ~entity_refs:[] ~attributes ()
+    in
     make_resource_metrics ~scope_metrics:[ lm ] ~resource ()
 
   (** Emit some metrics to the collector (sync). This blocks until the backend
@@ -1568,7 +1572,9 @@ module Logs = struct
       cause deadlocks. *)
   let emit ?service_name ?attrs (l : t list) : unit =
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource = Proto.Resource.make_resource ~attributes () in
+    let resource =
+      Proto.Resource.make_resource ~entity_refs:[] ~attributes ()
+    in
     let ll =
       make_scope_logs ~scope:Globals.instrumentation_library ~log_records:l ()
     in
