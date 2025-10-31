@@ -2,7 +2,7 @@
 
 open Opentelemetry
 
-let m =
+let res1 =
   Metrics.make_resource_metrics
     [
       Metrics.sum ~name:"sum.foo"
@@ -17,6 +17,16 @@ let m =
         ];
     ]
 
+let str =
+  let enc = Pbrt.Encoder.create () in
+  Proto.Metrics.encode_pb_resource_metrics res1 enc;
+  Pbrt.Encoder.to_string enc
+
+let () = Printf.printf "metrics size: %dB\n" (String.length str)
+
 let () =
-  let str = Opentelemetry_client.Signal.Encode.metrics [ m; m ] in
-  Printf.printf "metrics size: %dB\n" (String.length str)
+  let dec = Pbrt.Decoder.of_string str in
+  let res2 = Proto.Metrics.decode_pb_resource_metrics dec in
+  Format.printf "res1: %a@." Proto.Metrics.pp_resource_metrics res1;
+  Format.printf "res1: %a@." Proto.Metrics.pp_resource_metrics res2;
+  ()

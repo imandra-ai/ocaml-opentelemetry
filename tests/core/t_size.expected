@@ -1,1 +1,147 @@
-metrics size: 492B
+metrics size: 243B
+res1: { resource =
+          Some(
+            { attributes =
+                [{ key = "service.name";
+                   value = Some(String_value("unknown_service"));
+                 }
+                 ];
+              dropped_attributes_count = 0;
+            });
+        scope_metrics =
+          [{ scope =
+               Some(
+                 { name = "ocaml-otel";
+                   version = "%%VERSION_NUM%%";
+                   attributes = [];
+                   dropped_attributes_count = 0;
+                 });
+             metrics =
+               [{ name = "sum.foo";
+                  description = "";
+                  unit_ = "";
+                  data =
+                    Sum(
+                      { data_points =
+                          [{ attributes = [];
+                             start_time_unix_nano = 42;
+                             time_unix_nano = 45;
+                             value = As_int(10);
+                             exemplars = [];
+                             flags = 0;
+                           };
+                           { attributes = [];
+                             start_time_unix_nano = 52;
+                             time_unix_nano = 55;
+                             value = As_int(20);
+                             exemplars = [];
+                             flags = 0;
+                           }
+                           ];
+                        aggregation_temporality =
+                          Aggregation_temporality_cumulative;
+                        is_monotonic = false;
+                      });
+                };
+                { name = "gauge.bar";
+                  description = "";
+                  unit_ = "";
+                  data =
+                    Gauge(
+                      { data_points =
+                          [{ attributes = [];
+                             start_time_unix_nano = 42;
+                             time_unix_nano = 45;
+                             value = As_double(10.);
+                             exemplars = [];
+                             flags = 0;
+                           };
+                           { attributes = [];
+                             start_time_unix_nano = 52;
+                             time_unix_nano = 55;
+                             value = As_double(20.);
+                             exemplars = [];
+                             flags = 0;
+                           }
+                           ];
+                      });
+                }
+                ];
+             schema_url = "";
+           }
+           ];
+        schema_url = "";
+      }
+res1: { resource =
+          Some(
+            { attributes =
+                [{ key = "service.name";
+                   value = Some(String_value("unknown_service"));
+                 }
+                 ];
+              dropped_attributes_count = 0;
+            });
+        scope_metrics =
+          [{ scope =
+               Some(
+                 { name = "ocaml-otel";
+                   version = "%%VERSION_NUM%%";
+                   attributes = [];
+                   dropped_attributes_count = 0;
+                 });
+             metrics =
+               [{ name = "sum.foo";
+                  description = "";
+                  unit_ = "";
+                  data =
+                    Sum(
+                      { data_points =
+                          [{ attributes = [];
+                             start_time_unix_nano = 42;
+                             time_unix_nano = 45;
+                             value = As_int(10);
+                             exemplars = [];
+                             flags = 0;
+                           };
+                           { attributes = [];
+                             start_time_unix_nano = 52;
+                             time_unix_nano = 55;
+                             value = As_int(20);
+                             exemplars = [];
+                             flags = 0;
+                           }
+                           ];
+                        aggregation_temporality =
+                          Aggregation_temporality_cumulative;
+                        is_monotonic = false;
+                      });
+                };
+                { name = "gauge.bar";
+                  description = "";
+                  unit_ = "";
+                  data =
+                    Gauge(
+                      { data_points =
+                          [{ attributes = [];
+                             start_time_unix_nano = 42;
+                             time_unix_nano = 45;
+                             value = As_double(10.);
+                             exemplars = [];
+                             flags = 0;
+                           };
+                           { attributes = [];
+                             start_time_unix_nano = 52;
+                             time_unix_nano = 55;
+                             value = As_double(20.);
+                             exemplars = [];
+                             flags = 0;
+                           }
+                           ];
+                      });
+                }
+                ];
+             schema_url = "";
+           }
+           ];
+        schema_url = "";
+      }
