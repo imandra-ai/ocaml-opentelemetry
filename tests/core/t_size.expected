@@ -29,6 +29,7 @@ res1: { resource = None;
                             Aggregation_temporality_cumulative;
                           is_monotonic = false;(* absent *)
                         }));
+                  metadata = [];
                 };
                 { name = "gauge.bar";
                   description = "";(* absent *)
@@ -53,6 +54,7 @@ res1: { resource = None;
                              }
                              ];
                         }));
+                  metadata = [];
                 }
                 ];
              schema_url = "";(* absent *)
@@ -90,6 +92,7 @@ res1: { resource = None;
                             Aggregation_temporality_cumulative;
                           is_monotonic = false;(* absent *)
                         }));
+                  metadata = [];
                 };
                 { name = "gauge.bar";
                   description = "";(* absent *)
@@ -114,6 +117,7 @@ res1: { resource = None;
                              }
                              ];
                         }));
+                  metadata = [];
                 }
                 ];
              schema_url = "";(* absent *)
@@ -130,6 +134,7 @@ trace1: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=0>;(* absent *)
+                    flags = 0;(* absent *)
                     name = "sp1";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 10;
@@ -146,6 +151,7 @@ trace1: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp2";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 20;
@@ -162,6 +168,7 @@ trace1: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp3";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 30;
@@ -178,6 +185,7 @@ trace1: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp4";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 40;
@@ -194,6 +202,7 @@ trace1: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp5";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 50;
@@ -210,6 +219,7 @@ trace1: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp6";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 60;
@@ -236,6 +246,7 @@ trace2: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=0>;(* absent *)
+                    flags = 0;(* absent *)
                     name = "sp1";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 10;
@@ -252,6 +263,7 @@ trace2: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp2";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 20;
@@ -268,6 +280,7 @@ trace2: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp3";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 30;
@@ -284,6 +297,7 @@ trace2: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp4";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 40;
@@ -300,6 +314,7 @@ trace2: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp5";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 50;
@@ -316,6 +331,7 @@ trace2: { resource = None;
                     span_id = <bytes len=8>;
                     trace_state = "";(* absent *)
                     parent_span_id = <bytes len=8>;
+                    flags = 0;(* absent *)
                     name = "sp6";
                     kind = Span_kind_unspecified;(* absent *)
                     start_time_unix_nano = 60;

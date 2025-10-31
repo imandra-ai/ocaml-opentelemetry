@@ -9,6 +9,7 @@
            { key = "my_reporter_attr"; value = Some(String_value("foo")); }
            ];
         dropped_attributes_count = 0;(* absent *)
+        entity_refs = [];
       });
   scope_logs =
     [{ scope =
@@ -29,6 +30,7 @@
             flags = 0;(* absent *)
             trace_id = <bytes len=0>;(* absent *)
             span_id = <bytes len=0>;(* absent *)
+            event_name = "";(* absent *)
           }
           ];
        schema_url = "";(* absent *)
@@ -47,6 +49,7 @@
              { key = "my_reporter_attr"; value = Some(String_value("foo")); }
              ];
           dropped_attributes_count = 0;(* absent *)
+          entity_refs = [];
         });
     scope_logs =
       [{ scope =
@@ -67,6 +70,7 @@
               flags = 0;(* absent *)
               trace_id = <bytes len=0>;(* absent *)
               span_id = <bytes len=0>;(* absent *)
+              event_name = "";(* absent *)
             }
             ];
          schema_url = "";(* absent *)
@@ -87,6 +91,7 @@
                { key = "my_reporter_attr"; value = Some(String_value("foo")); }
                ];
             dropped_attributes_count = 0;(* absent *)
+            entity_refs = [];
           });
       scope_logs =
         [{ scope =
@@ -107,6 +112,7 @@
                 flags = 0;(* absent *)
                 trace_id = <bytes len=0>;(* absent *)
                 span_id = <bytes len=0>;(* absent *)
+                event_name = "";(* absent *)
               }
               ];
            schema_url = "";(* absent *)
@@ -129,6 +135,7 @@
                  }
                  ];
               dropped_attributes_count = 0;(* absent *)
+              entity_refs = [];
             });
         scope_logs =
           [{ scope =
@@ -149,6 +156,7 @@
                   flags = 0;(* absent *)
                   trace_id = <bytes len=0>;(* absent *)
                   span_id = <bytes len=0>;(* absent *)
+                  event_name = "";(* absent *)
                 }
                 ];
              schema_url = "";(* absent *)
@@ -171,6 +179,7 @@
                    }
                    ];
                 dropped_attributes_count = 0;(* absent *)
+                entity_refs = [];
               });
           scope_logs =
             [{ scope =
@@ -191,6 +200,7 @@
                     flags = 0;(* absent *)
                     trace_id = <bytes len=0>;(* absent *)
                     span_id = <bytes len=0>;(* absent *)
+                    event_name = "";(* absent *)
                   }
                   ];
                schema_url = "";(* absent *)
@@ -222,6 +232,7 @@
                      }
                      ];
                   dropped_attributes_count = 0;(* absent *)
+                  entity_refs = [];
                 });
             scope_logs =
               [{ scope =
@@ -245,6 +256,7 @@
                       flags = 0;(* absent *)
                       trace_id = <bytes len=16>;
                       span_id = <bytes len=8>;
+                      event_name = "";(* absent *)
                     }
                     ];
                  schema_url = "";(* absent *)
@@ -276,6 +288,7 @@
                        }
                        ];
                     dropped_attributes_count = 0;(* absent *)
+                    entity_refs = [];
                   });
               scope_logs =
                 [{ scope =
@@ -299,6 +312,7 @@
                         flags = 0;(* absent *)
                         trace_id = <bytes len=0>;(* absent *)
                         span_id = <bytes len=0>;(* absent *)
+                        event_name = "";(* absent *)
                       }
                       ];
                    schema_url = "";(* absent *)
@@ -323,6 +337,7 @@
                          }
                          ];
                       dropped_attributes_count = 0;(* absent *)
+                      entity_refs = [];
                     });
                 scope_logs =
                   [{ scope =
@@ -346,6 +361,7 @@
                           flags = 0;(* absent *)
                           trace_id = <bytes len=0>;(* absent *)
                           span_id = <bytes len=0>;(* absent *)
+                          event_name = "";(* absent *)
                         }
                         ];
                      schema_url = "";(* absent *)
