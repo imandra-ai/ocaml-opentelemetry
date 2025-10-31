@@ -1,119 +1,123 @@
-metrics size: 171B
+metrics size: 149B
 res1: { resource = None;
         scope_metrics =
           [{ scope = None;
              metrics =
                [{ name = "sum.foo";
-                  description = "";
-                  unit_ = "";
+                  description = "";(* absent *)
+                  unit_ = "";(* absent *)
                   data =
-                    Sum(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_int(10);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_int(20);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                        aggregation_temporality =
-                          Aggregation_temporality_cumulative;
-                        is_monotonic = false;
-                      });
+                    Some(
+                      Sum(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_int(10));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_int(20));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             }
+                             ];
+                          aggregation_temporality =
+                            Aggregation_temporality_cumulative;
+                          is_monotonic = false;(* absent *)
+                        }));
                 };
                 { name = "gauge.bar";
-                  description = "";
-                  unit_ = "";
+                  description = "";(* absent *)
+                  unit_ = "";(* absent *)
                   data =
-                    Gauge(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_double(10.);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_double(20.);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                      });
+                    Some(
+                      Gauge(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_double(10.));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_double(20.));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             }
+                             ];
+                        }));
                 }
                 ];
-             schema_url = "";
+             schema_url = "";(* absent *)
            }
            ];
-        schema_url = "";
+        schema_url = "";(* absent *)
       }
 res1: { resource = None;
         scope_metrics =
           [{ scope = None;
              metrics =
                [{ name = "sum.foo";
-                  description = "";
-                  unit_ = "";
+                  description = "";(* absent *)
+                  unit_ = "";(* absent *)
                   data =
-                    Sum(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_int(10);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_int(20);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                        aggregation_temporality =
-                          Aggregation_temporality_cumulative;
-                        is_monotonic = false;
-                      });
+                    Some(
+                      Sum(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_int(10));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_int(20));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             }
+                             ];
+                          aggregation_temporality =
+                            Aggregation_temporality_cumulative;
+                          is_monotonic = false;(* absent *)
+                        }));
                 };
                 { name = "gauge.bar";
-                  description = "";
-                  unit_ = "";
+                  description = "";(* absent *)
+                  unit_ = "";(* absent *)
                   data =
-                    Gauge(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_double(10.);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_double(20.);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                      });
+                    Some(
+                      Gauge(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_double(10.));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_double(20.));
+                               exemplars = [];
+                               flags = 0;(* absent *)
+                             }
+                             ];
+                        }));
                 }
                 ];
-             schema_url = "";
+             schema_url = "";(* absent *)
            }
            ];
-        schema_url = "";
+        schema_url = "";(* absent *)
       }

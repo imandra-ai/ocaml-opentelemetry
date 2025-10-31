@@ -3,10 +3,10 @@
 open Opentelemetry
 
 let res1 : Proto.Metrics.resource_metrics =
-  Proto.Metrics.make_resource_metrics ~schema_url:""
+  Proto.Metrics.make_resource_metrics
     ~scope_metrics:
       [
-        Proto.Metrics.make_scope_metrics ~schema_url:""
+        Proto.Metrics.make_scope_metrics
           ~metrics:
             [
               Metrics.sum ~name:"sum.foo"
