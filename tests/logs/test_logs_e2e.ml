@@ -23,17 +23,20 @@ let tests (signal_batches : Client.Signal.t list) =
                      let masked_log_records =
                        List.map
                          (fun (lr : L.log_record) ->
-                           {
-                             lr with
-                             time_unix_nano = 0L;
-                             observed_time_unix_nano = 0L;
-                           })
+                           let lr = L.copy_log_record lr in
+                           L.set_log_record_time_unix_nano lr 0L;
+                           L.set_log_record_observed_time_unix_nano lr 0L;
+                           lr)
                          sl.log_records
                      in
-                     { sl with log_records = masked_log_records })
+                     let sl = L.copy_scope_logs sl in
+                     L.set_scope_logs_log_records sl masked_log_records;
+                     sl)
                    l.scope_logs
                in
-               { l with scope_logs = masked_scope_logs })
+               let l = L.copy_resource_logs l in
+               L.set_resource_logs_scope_logs l masked_scope_logs;
+               l)
         |> List.iter (Format.printf "%a\n" L.pp_resource_logs)
       | _ -> ())
     signal_batches
