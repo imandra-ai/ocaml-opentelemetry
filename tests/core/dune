@@ -1,4 +1,4 @@
 (tests
- (names test_trace_context)
+ (names test_trace_context t_size)
  (package opentelemetry)
- (libraries opentelemetry))
+ (libraries opentelemetry opentelemetry.client))
