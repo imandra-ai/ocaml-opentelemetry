@@ -26,12 +26,13 @@ type span_event = private {
 
 type span_link = private {
   mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 4 fields *)
+  (** tracking presence for 5 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
   mutable attributes : Common.key_value list;
   mutable dropped_attributes_count : int32;
+  mutable flags : int32;
 }
 
 type status_status_code =
@@ -48,11 +49,12 @@ type status = private {
 
 type span = private {
   mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 11 fields *)
+  (** tracking presence for 12 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
   mutable parent_span_id : bytes;
+  mutable flags : int32;
   mutable name : string;
   mutable kind : span_span_kind;
   mutable start_time_unix_nano : int64;
@@ -86,6 +88,12 @@ type traces_data = private {
   mutable resource_spans : resource_spans list;
 }
 
+type span_flags =
+  | Span_flags_do_not_use 
+  | Span_flags_trace_flags_mask 
+  | Span_flags_context_has_is_remote_mask 
+  | Span_flags_context_is_remote_mask 
+
 
 (** {2 Basic values} *)
 
@@ -115,6 +123,9 @@ val default_resource_spans : unit -> resource_spans
 
 val default_traces_data : unit -> traces_data 
 (** [default_traces_data ()] is a new empty value for type [traces_data] *)
+
+val default_span_flags : unit -> span_flags
+(** [default_span_flags ()] is a new empty value for type [span_flags] *)
 
 
 (** {2 Make functions} *)
@@ -158,6 +169,7 @@ val make_span_link :
   ?trace_state:string ->
   attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
+  ?flags:int32 ->
   unit ->
   span_link
 (** [make_span_link … ()] is a builder for type [span_link] *)
@@ -191,6 +203,12 @@ val has_span_link_dropped_attributes_count : span_link -> bool
 val set_span_link_dropped_attributes_count : span_link -> int32 -> unit
   (** set field dropped_attributes_count in span_link *)
 
+val has_span_link_flags : span_link -> bool
+  (** presence of field "flags" in [span_link] *)
+
+val set_span_link_flags : span_link -> int32 -> unit
+  (** set field flags in span_link *)
+
 
 val make_status : 
   ?message:string ->
@@ -218,6 +236,7 @@ val make_span :
   ?span_id:bytes ->
   ?trace_state:string ->
   ?parent_span_id:bytes ->
+  ?flags:int32 ->
   ?name:string ->
   ?kind:span_span_kind ->
   ?start_time_unix_nano:int64 ->
@@ -258,6 +277,12 @@ val has_span_parent_span_id : span -> bool
 
 val set_span_parent_span_id : span -> bytes -> unit
   (** set field parent_span_id in span *)
+
+val has_span_flags : span -> bool
+  (** presence of field "flags" in [span] *)
+
+val set_span_flags : span -> int32 -> unit
+  (** set field flags in span *)
 
 val has_span_name : span -> bool
   (** presence of field "name" in [span] *)
@@ -369,6 +394,7 @@ val set_traces_data_resource_spans : traces_data -> resource_spans list -> unit
   (** set field resource_spans in traces_data *)
 
 
+
 (** {2 Formatters} *)
 
 val pp_span_span_kind : Format.formatter -> span_span_kind -> unit 
@@ -397,6 +423,9 @@ val pp_resource_spans : Format.formatter -> resource_spans -> unit
 
 val pp_traces_data : Format.formatter -> traces_data -> unit 
 (** [pp_traces_data v] formats v *)
+
+val pp_span_flags : Format.formatter -> span_flags -> unit 
+(** [pp_span_flags v] formats v *)
 
 
 (** {2 Protobuf Encoding} *)
@@ -428,6 +457,9 @@ val encode_pb_resource_spans : resource_spans -> Pbrt.Encoder.t -> unit
 val encode_pb_traces_data : traces_data -> Pbrt.Encoder.t -> unit
 (** [encode_pb_traces_data v encoder] encodes [v] with the given [encoder] *)
 
+val encode_pb_span_flags : span_flags -> Pbrt.Encoder.t -> unit
+(** [encode_pb_span_flags v encoder] encodes [v] with the given [encoder] *)
+
 
 (** {2 Protobuf Decoding} *)
 
@@ -457,3 +489,6 @@ val decode_pb_resource_spans : Pbrt.Decoder.t -> resource_spans
 
 val decode_pb_traces_data : Pbrt.Decoder.t -> traces_data
 (** [decode_pb_traces_data decoder] decodes a [traces_data] binary value from [decoder] *)
+
+val decode_pb_span_flags : Pbrt.Decoder.t -> span_flags
+(** [decode_pb_span_flags decoder] decodes a [span_flags] binary value from [decoder] *)

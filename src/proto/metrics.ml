@@ -139,6 +139,7 @@ and metric = {
   mutable description : string;
   mutable unit_ : string;
   mutable data : metric_data option;
+  mutable metadata : Common.key_value list;
 }
 
 type scope_metrics = {
@@ -294,6 +295,7 @@ let default_metric (): metric =
   description="";
   unit_="";
   data=None;
+  metadata=[];
 }
 
 let default_scope_metrics (): scope_metrics = 
@@ -789,6 +791,8 @@ let[@inline] set_metric_unit_ (self:metric) (x:string) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 2); self.unit_ <- x
 let[@inline] set_metric_data (self:metric) (x:metric_data) : unit =
   self.data <- Some x
+let[@inline] set_metric_metadata (self:metric) (x:Common.key_value list) : unit =
+  self.metadata <- x
 
 let copy_metric (self:metric) : metric =
   { self with name = self.name }
@@ -798,6 +802,7 @@ let make_metric
   ?(description:string option)
   ?(unit_:string option)
   ?(data:metric_data option)
+  ~(metadata:Common.key_value list) 
   () : metric  =
   let _res = default_metric () in
   (match name with
@@ -812,6 +817,7 @@ let make_metric
   (match data with
   | None -> ()
   | Some v -> set_metric_data _res v);
+  set_metric_metadata _res metadata;
   _res
 
 let[@inline] has_scope_metrics_schema_url (self:scope_metrics) : bool = (Pbrt.Bitfield.get self._presence 0)
@@ -1065,6 +1071,7 @@ and pp_metric fmt (v:metric) =
     Pbrt.Pp.pp_record_field ~first:false "unit_" Pbrt.Pp.pp_string fmt v.unit_;
     if not (Pbrt.Bitfield.get v._presence 2) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "data" (Pbrt.Pp.pp_option pp_metric_data) fmt v.data;
+    Pbrt.Pp.pp_record_field ~first:false "metadata" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.metadata;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -1469,6 +1476,10 @@ and encode_pb_metric (v:metric) encoder =
     Pbrt.Encoder.nested encode_pb_summary x encoder;
     Pbrt.Encoder.key 11 Pbrt.Bytes encoder; 
   end;
+  Pbrt.List_util.rev_iter_with (fun x encoder ->
+    Pbrt.Encoder.nested Common.encode_pb_key_value x encoder;
+    Pbrt.Encoder.key 12 Pbrt.Bytes encoder; 
+  ) v.metadata encoder;
   ()
 
 let rec encode_pb_scope_metrics (v:scope_metrics) encoder = 
@@ -2032,6 +2043,8 @@ and decode_pb_metric d =
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
+      (* put lists in the correct order *)
+      set_metric_metadata v (List.rev v.metadata);
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
       set_metric_name v (Pbrt.Decoder.string d);
@@ -2073,6 +2086,11 @@ and decode_pb_metric d =
     end
     | Some (11, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(metric), field(11)" pk
+    | Some (12, Pbrt.Bytes) -> begin
+      set_metric_metadata v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.metadata);
+    end
+    | Some (12, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(metric), field(12)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : metric)

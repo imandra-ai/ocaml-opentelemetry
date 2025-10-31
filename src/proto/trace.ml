@@ -19,12 +19,13 @@ type span_event = {
 
 type span_link = {
   mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 4 fields *)
+  (** tracking presence for 5 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
   mutable attributes : Common.key_value list;
   mutable dropped_attributes_count : int32;
+  mutable flags : int32;
 }
 
 type status_status_code =
@@ -41,11 +42,12 @@ type status = {
 
 type span = {
   mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 11 fields *)
+  (** tracking presence for 12 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
   mutable parent_span_id : bytes;
+  mutable flags : int32;
   mutable name : string;
   mutable kind : span_span_kind;
   mutable start_time_unix_nano : int64;
@@ -79,6 +81,12 @@ type traces_data = {
   mutable resource_spans : resource_spans list;
 }
 
+type span_flags =
+  | Span_flags_do_not_use 
+  | Span_flags_trace_flags_mask 
+  | Span_flags_context_has_is_remote_mask 
+  | Span_flags_context_is_remote_mask 
+
 let default_span_span_kind () = (Span_kind_unspecified:span_span_kind)
 
 let default_span_event (): span_event = 
@@ -98,6 +106,7 @@ let default_span_link (): span_link =
   trace_state="";
   attributes=[];
   dropped_attributes_count=0l;
+  flags=0l;
 }
 
 let default_status_status_code () = (Status_code_unset:status_status_code)
@@ -116,6 +125,7 @@ let default_span (): span =
   span_id=Bytes.create 0;
   trace_state="";
   parent_span_id=Bytes.create 0;
+  flags=0l;
   name="";
   kind=default_span_span_kind ();
   start_time_unix_nano=0L;
@@ -149,6 +159,8 @@ let default_traces_data (): traces_data =
 {
   resource_spans=[];
 }
+
+let default_span_flags () = (Span_flags_do_not_use:span_flags)
 
 
 (** {2 Make functions} *)
@@ -193,6 +205,7 @@ let[@inline] has_span_link_trace_id (self:span_link) : bool = (Pbrt.Bitfield.get
 let[@inline] has_span_link_span_id (self:span_link) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] has_span_link_trace_state (self:span_link) : bool = (Pbrt.Bitfield.get self._presence 2)
 let[@inline] has_span_link_dropped_attributes_count (self:span_link) : bool = (Pbrt.Bitfield.get self._presence 3)
+let[@inline] has_span_link_flags (self:span_link) : bool = (Pbrt.Bitfield.get self._presence 4)
 
 let[@inline] set_span_link_trace_id (self:span_link) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.trace_id <- x
@@ -204,6 +217,8 @@ let[@inline] set_span_link_attributes (self:span_link) (x:Common.key_value list)
   self.attributes <- x
 let[@inline] set_span_link_dropped_attributes_count (self:span_link) (x:int32) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 3); self.dropped_attributes_count <- x
+let[@inline] set_span_link_flags (self:span_link) (x:int32) : unit =
+  self._presence <- (Pbrt.Bitfield.set self._presence 4); self.flags <- x
 
 let copy_span_link (self:span_link) : span_link =
   { self with trace_id = self.trace_id }
@@ -214,6 +229,7 @@ let make_span_link
   ?(trace_state:string option)
   ~(attributes:Common.key_value list) 
   ?(dropped_attributes_count:int32 option)
+  ?(flags:int32 option)
   () : span_link  =
   let _res = default_span_link () in
   (match trace_id with
@@ -229,6 +245,9 @@ let make_span_link
   (match dropped_attributes_count with
   | None -> ()
   | Some v -> set_span_link_dropped_attributes_count _res v);
+  (match flags with
+  | None -> ()
+  | Some v -> set_span_link_flags _res v);
   _res
 
 
@@ -260,13 +279,14 @@ let[@inline] has_span_trace_id (self:span) : bool = (Pbrt.Bitfield.get self._pre
 let[@inline] has_span_span_id (self:span) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] has_span_trace_state (self:span) : bool = (Pbrt.Bitfield.get self._presence 2)
 let[@inline] has_span_parent_span_id (self:span) : bool = (Pbrt.Bitfield.get self._presence 3)
-let[@inline] has_span_name (self:span) : bool = (Pbrt.Bitfield.get self._presence 4)
-let[@inline] has_span_kind (self:span) : bool = (Pbrt.Bitfield.get self._presence 5)
-let[@inline] has_span_start_time_unix_nano (self:span) : bool = (Pbrt.Bitfield.get self._presence 6)
-let[@inline] has_span_end_time_unix_nano (self:span) : bool = (Pbrt.Bitfield.get self._presence 7)
-let[@inline] has_span_dropped_attributes_count (self:span) : bool = (Pbrt.Bitfield.get self._presence 8)
-let[@inline] has_span_dropped_events_count (self:span) : bool = (Pbrt.Bitfield.get self._presence 9)
-let[@inline] has_span_dropped_links_count (self:span) : bool = (Pbrt.Bitfield.get self._presence 10)
+let[@inline] has_span_flags (self:span) : bool = (Pbrt.Bitfield.get self._presence 4)
+let[@inline] has_span_name (self:span) : bool = (Pbrt.Bitfield.get self._presence 5)
+let[@inline] has_span_kind (self:span) : bool = (Pbrt.Bitfield.get self._presence 6)
+let[@inline] has_span_start_time_unix_nano (self:span) : bool = (Pbrt.Bitfield.get self._presence 7)
+let[@inline] has_span_end_time_unix_nano (self:span) : bool = (Pbrt.Bitfield.get self._presence 8)
+let[@inline] has_span_dropped_attributes_count (self:span) : bool = (Pbrt.Bitfield.get self._presence 9)
+let[@inline] has_span_dropped_events_count (self:span) : bool = (Pbrt.Bitfield.get self._presence 10)
+let[@inline] has_span_dropped_links_count (self:span) : bool = (Pbrt.Bitfield.get self._presence 11)
 
 let[@inline] set_span_trace_id (self:span) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.trace_id <- x
@@ -276,26 +296,28 @@ let[@inline] set_span_trace_state (self:span) (x:string) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 2); self.trace_state <- x
 let[@inline] set_span_parent_span_id (self:span) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 3); self.parent_span_id <- x
+let[@inline] set_span_flags (self:span) (x:int32) : unit =
+  self._presence <- (Pbrt.Bitfield.set self._presence 4); self.flags <- x
 let[@inline] set_span_name (self:span) (x:string) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 4); self.name <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 5); self.name <- x
 let[@inline] set_span_kind (self:span) (x:span_span_kind) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 5); self.kind <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 6); self.kind <- x
 let[@inline] set_span_start_time_unix_nano (self:span) (x:int64) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 6); self.start_time_unix_nano <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 7); self.start_time_unix_nano <- x
 let[@inline] set_span_end_time_unix_nano (self:span) (x:int64) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 7); self.end_time_unix_nano <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 8); self.end_time_unix_nano <- x
 let[@inline] set_span_attributes (self:span) (x:Common.key_value list) : unit =
   self.attributes <- x
 let[@inline] set_span_dropped_attributes_count (self:span) (x:int32) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 8); self.dropped_attributes_count <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 9); self.dropped_attributes_count <- x
 let[@inline] set_span_events (self:span) (x:span_event list) : unit =
   self.events <- x
 let[@inline] set_span_dropped_events_count (self:span) (x:int32) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 9); self.dropped_events_count <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 10); self.dropped_events_count <- x
 let[@inline] set_span_links (self:span) (x:span_link list) : unit =
   self.links <- x
 let[@inline] set_span_dropped_links_count (self:span) (x:int32) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 10); self.dropped_links_count <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 11); self.dropped_links_count <- x
 let[@inline] set_span_status (self:span) (x:status) : unit =
   self.status <- Some x
 
@@ -307,6 +329,7 @@ let make_span
   ?(span_id:bytes option)
   ?(trace_state:string option)
   ?(parent_span_id:bytes option)
+  ?(flags:int32 option)
   ?(name:string option)
   ?(kind:span_span_kind option)
   ?(start_time_unix_nano:int64 option)
@@ -332,6 +355,9 @@ let make_span
   (match parent_span_id with
   | None -> ()
   | Some v -> set_span_parent_span_id _res v);
+  (match flags with
+  | None -> ()
+  | Some v -> set_span_flags _res v);
   (match name with
   | None -> ()
   | Some v -> set_span_name _res v);
@@ -429,6 +455,7 @@ let make_traces_data
   set_traces_data_resource_spans _res resource_spans;
   _res
 
+
 [@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Formatters} *)
@@ -465,6 +492,8 @@ let rec pp_span_link fmt (v:span_link) =
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
     Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
     if not (Pbrt.Bitfield.get v._presence 3) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
+    if not (Pbrt.Bitfield.get v._presence 4) then Format.pp_print_string fmt "(* absent *)";
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -493,23 +522,25 @@ let rec pp_span fmt (v:span) =
     if not (Pbrt.Bitfield.get v._presence 2) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "parent_span_id" Pbrt.Pp.pp_bytes fmt v.parent_span_id;
     if not (Pbrt.Bitfield.get v._presence 3) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "name" Pbrt.Pp.pp_string fmt v.name;
+    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
     if not (Pbrt.Bitfield.get v._presence 4) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "kind" pp_span_span_kind fmt v.kind;
+    Pbrt.Pp.pp_record_field ~first:false "name" Pbrt.Pp.pp_string fmt v.name;
     if not (Pbrt.Bitfield.get v._presence 5) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~first:false "kind" pp_span_span_kind fmt v.kind;
     if not (Pbrt.Bitfield.get v._presence 6) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "end_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.end_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
     if not (Pbrt.Bitfield.get v._presence 7) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~first:false "end_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.end_time_unix_nano;
+    if not (Pbrt.Bitfield.get v._presence 8) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
     Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (Pbrt.Bitfield.get v._presence 8) then Format.pp_print_string fmt "(* absent *)";
+    if not (Pbrt.Bitfield.get v._presence 9) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "events" (Pbrt.Pp.pp_list pp_span_event) fmt v.events;
     Pbrt.Pp.pp_record_field ~first:false "dropped_events_count" Pbrt.Pp.pp_int32 fmt v.dropped_events_count;
-    if not (Pbrt.Bitfield.get v._presence 9) then Format.pp_print_string fmt "(* absent *)";
+    if not (Pbrt.Bitfield.get v._presence 10) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "links" (Pbrt.Pp.pp_list pp_span_link) fmt v.links;
     Pbrt.Pp.pp_record_field ~first:false "dropped_links_count" Pbrt.Pp.pp_int32 fmt v.dropped_links_count;
-    if not (Pbrt.Bitfield.get v._presence 10) then Format.pp_print_string fmt "(* absent *)";
+    if not (Pbrt.Bitfield.get v._presence 11) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "status" (Pbrt.Pp.pp_option pp_status) fmt v.status;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -537,6 +568,13 @@ let rec pp_traces_data fmt (v:traces_data) =
     Pbrt.Pp.pp_record_field ~first:true "resource_spans" (Pbrt.Pp.pp_list pp_resource_spans) fmt v.resource_spans;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
+
+let rec pp_span_flags fmt (v:span_flags) =
+  match v with
+  | Span_flags_do_not_use -> Format.fprintf fmt "Span_flags_do_not_use"
+  | Span_flags_trace_flags_mask -> Format.fprintf fmt "Span_flags_trace_flags_mask"
+  | Span_flags_context_has_is_remote_mask -> Format.fprintf fmt "Span_flags_context_has_is_remote_mask"
+  | Span_flags_context_is_remote_mask -> Format.fprintf fmt "Span_flags_context_is_remote_mask"
 
 [@@@ocaml.warning "-23-27-30-39"]
 
@@ -591,6 +629,10 @@ let rec encode_pb_span_link (v:span_link) encoder =
     Pbrt.Encoder.int32_as_varint v.dropped_attributes_count encoder;
     Pbrt.Encoder.key 5 Pbrt.Varint encoder; 
   );
+  if (Pbrt.Bitfield.get v._presence 4) then (
+    Pbrt.Encoder.int32_as_bits32 v.flags encoder;
+    Pbrt.Encoder.key 6 Pbrt.Bits32 encoder; 
+  );
   ()
 
 let rec encode_pb_status_status_code (v:status_status_code) encoder =
@@ -628,18 +670,22 @@ let rec encode_pb_span (v:span) encoder =
     Pbrt.Encoder.key 4 Pbrt.Bytes encoder; 
   );
   if (Pbrt.Bitfield.get v._presence 4) then (
+    Pbrt.Encoder.int32_as_bits32 v.flags encoder;
+    Pbrt.Encoder.key 16 Pbrt.Bits32 encoder; 
+  );
+  if (Pbrt.Bitfield.get v._presence 5) then (
     Pbrt.Encoder.string v.name encoder;
     Pbrt.Encoder.key 5 Pbrt.Bytes encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 5) then (
+  if (Pbrt.Bitfield.get v._presence 6) then (
     encode_pb_span_span_kind v.kind encoder;
     Pbrt.Encoder.key 6 Pbrt.Varint encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 6) then (
+  if (Pbrt.Bitfield.get v._presence 7) then (
     Pbrt.Encoder.int64_as_bits64 v.start_time_unix_nano encoder;
     Pbrt.Encoder.key 7 Pbrt.Bits64 encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 7) then (
+  if (Pbrt.Bitfield.get v._presence 8) then (
     Pbrt.Encoder.int64_as_bits64 v.end_time_unix_nano encoder;
     Pbrt.Encoder.key 8 Pbrt.Bits64 encoder; 
   );
@@ -647,7 +693,7 @@ let rec encode_pb_span (v:span) encoder =
     Pbrt.Encoder.nested Common.encode_pb_key_value x encoder;
     Pbrt.Encoder.key 9 Pbrt.Bytes encoder; 
   ) v.attributes encoder;
-  if (Pbrt.Bitfield.get v._presence 8) then (
+  if (Pbrt.Bitfield.get v._presence 9) then (
     Pbrt.Encoder.int32_as_varint v.dropped_attributes_count encoder;
     Pbrt.Encoder.key 10 Pbrt.Varint encoder; 
   );
@@ -655,7 +701,7 @@ let rec encode_pb_span (v:span) encoder =
     Pbrt.Encoder.nested encode_pb_span_event x encoder;
     Pbrt.Encoder.key 11 Pbrt.Bytes encoder; 
   ) v.events encoder;
-  if (Pbrt.Bitfield.get v._presence 9) then (
+  if (Pbrt.Bitfield.get v._presence 10) then (
     Pbrt.Encoder.int32_as_varint v.dropped_events_count encoder;
     Pbrt.Encoder.key 12 Pbrt.Varint encoder; 
   );
@@ -663,7 +709,7 @@ let rec encode_pb_span (v:span) encoder =
     Pbrt.Encoder.nested encode_pb_span_link x encoder;
     Pbrt.Encoder.key 13 Pbrt.Bytes encoder; 
   ) v.links encoder;
-  if (Pbrt.Bitfield.get v._presence 10) then (
+  if (Pbrt.Bitfield.get v._presence 11) then (
     Pbrt.Encoder.int32_as_varint v.dropped_links_count encoder;
     Pbrt.Encoder.key 14 Pbrt.Varint encoder; 
   );
@@ -715,6 +761,13 @@ let rec encode_pb_traces_data (v:traces_data) encoder =
     Pbrt.Encoder.key 1 Pbrt.Bytes encoder; 
   ) v.resource_spans encoder;
   ()
+
+let rec encode_pb_span_flags (v:span_flags) encoder =
+  match v with
+  | Span_flags_do_not_use -> Pbrt.Encoder.int_as_varint (0) encoder
+  | Span_flags_trace_flags_mask -> Pbrt.Encoder.int_as_varint 255 encoder
+  | Span_flags_context_has_is_remote_mask -> Pbrt.Encoder.int_as_varint 256 encoder
+  | Span_flags_context_is_remote_mask -> Pbrt.Encoder.int_as_varint 512 encoder
 
 [@@@ocaml.warning "-23-27-30-39"]
 
@@ -797,6 +850,11 @@ let rec decode_pb_span_link d =
     end
     | Some (5, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(span_link), field(5)" pk
+    | Some (6, Pbrt.Bits32) -> begin
+      set_span_link_flags v (Pbrt.Decoder.int32_as_bits32 d);
+    end
+    | Some (6, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(span_link), field(6)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : span_link)
@@ -860,6 +918,11 @@ let rec decode_pb_span d =
     end
     | Some (4, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(span), field(4)" pk
+    | Some (16, Pbrt.Bits32) -> begin
+      set_span_flags v (Pbrt.Decoder.int32_as_bits32 d);
+    end
+    | Some (16, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(span), field(16)" pk
     | Some (5, Pbrt.Bytes) -> begin
       set_span_name v (Pbrt.Decoder.string d);
     end
@@ -992,3 +1055,11 @@ let rec decode_pb_traces_data d =
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : traces_data)
+
+let rec decode_pb_span_flags d = 
+  match Pbrt.Decoder.int_as_varint d with
+  | 0 -> (Span_flags_do_not_use:span_flags)
+  | 255 -> (Span_flags_trace_flags_mask:span_flags)
+  | 256 -> (Span_flags_context_has_is_remote_mask:span_flags)
+  | 512 -> (Span_flags_context_is_remote_mask:span_flags)
+  | _ -> Pbrt.Decoder.malformed_variant "span_flags"

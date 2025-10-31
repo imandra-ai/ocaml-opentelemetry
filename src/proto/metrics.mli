@@ -146,6 +146,7 @@ and metric = private {
   mutable description : string;
   mutable unit_ : string;
   mutable data : metric_data option;
+  mutable metadata : Common.key_value list;
 }
 
 type scope_metrics = private {
@@ -645,6 +646,7 @@ val make_metric :
   ?description:string ->
   ?unit_:string ->
   ?data:metric_data ->
+  metadata:Common.key_value list ->
   unit ->
   metric
 (** [make_metric … ()] is a builder for type [metric] *)
@@ -671,6 +673,9 @@ val set_metric_unit_ : metric -> string -> unit
 
 val set_metric_data : metric -> metric_data -> unit
   (** set field data in metric *)
+
+val set_metric_metadata : metric -> Common.key_value list -> unit
+  (** set field metadata in metric *)
 
 val make_scope_metrics : 
   ?scope:Common.instrumentation_scope ->

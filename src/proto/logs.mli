@@ -36,7 +36,7 @@ type severity_number =
 
 type log_record = private {
   mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 8 fields *)
+  (** tracking presence for 9 fields *)
   mutable time_unix_nano : int64;
   mutable observed_time_unix_nano : int64;
   mutable severity_number : severity_number;
@@ -47,6 +47,7 @@ type log_record = private {
   mutable flags : int32;
   mutable trace_id : bytes;
   mutable span_id : bytes;
+  mutable event_name : string;
 }
 
 type scope_logs = private {
@@ -109,6 +110,7 @@ val make_log_record :
   ?flags:int32 ->
   ?trace_id:bytes ->
   ?span_id:bytes ->
+  ?event_name:string ->
   unit ->
   log_record
 (** [make_log_record … ()] is a builder for type [log_record] *)
@@ -168,6 +170,12 @@ val has_log_record_span_id : log_record -> bool
 
 val set_log_record_span_id : log_record -> bytes -> unit
   (** set field span_id in log_record *)
+
+val has_log_record_event_name : log_record -> bool
+  (** presence of field "event_name" in [log_record] *)
+
+val set_log_record_event_name : log_record -> string -> unit
+  (** set field event_name in log_record *)
 
 val make_scope_logs : 
   ?scope:Common.instrumentation_scope ->

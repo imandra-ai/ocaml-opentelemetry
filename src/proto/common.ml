@@ -33,6 +33,15 @@ type instrumentation_scope = {
   mutable dropped_attributes_count : int32;
 }
 
+type entity_ref = {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 2 fields *)
+  mutable schema_url : string;
+  mutable type_ : string;
+  mutable id_keys : string list;
+  mutable description_keys : string list;
+}
+
 let default_any_value (): any_value = String_value ("")
 
 let default_array_value (): array_value = 
@@ -59,6 +68,15 @@ let default_instrumentation_scope (): instrumentation_scope =
   version="";
   attributes=[];
   dropped_attributes_count=0l;
+}
+
+let default_entity_ref (): entity_ref = 
+{
+  _presence=Pbrt.Bitfield.empty;
+  schema_url="";
+  type_="";
+  id_keys=[];
+  description_keys=[];
 }
 
 
@@ -151,6 +169,38 @@ let make_instrumentation_scope
   | Some v -> set_instrumentation_scope_dropped_attributes_count _res v);
   _res
 
+let[@inline] has_entity_ref_schema_url (self:entity_ref) : bool = (Pbrt.Bitfield.get self._presence 0)
+let[@inline] has_entity_ref_type_ (self:entity_ref) : bool = (Pbrt.Bitfield.get self._presence 1)
+
+let[@inline] set_entity_ref_schema_url (self:entity_ref) (x:string) : unit =
+  self._presence <- (Pbrt.Bitfield.set self._presence 0); self.schema_url <- x
+let[@inline] set_entity_ref_type_ (self:entity_ref) (x:string) : unit =
+  self._presence <- (Pbrt.Bitfield.set self._presence 1); self.type_ <- x
+let[@inline] set_entity_ref_id_keys (self:entity_ref) (x:string list) : unit =
+  self.id_keys <- x
+let[@inline] set_entity_ref_description_keys (self:entity_ref) (x:string list) : unit =
+  self.description_keys <- x
+
+let copy_entity_ref (self:entity_ref) : entity_ref =
+  { self with schema_url = self.schema_url }
+
+let make_entity_ref 
+  ?(schema_url:string option)
+  ?(type_:string option)
+  ~(id_keys:string list) 
+  ~(description_keys:string list) 
+  () : entity_ref  =
+  let _res = default_entity_ref () in
+  (match schema_url with
+  | None -> ()
+  | Some v -> set_entity_ref_schema_url _res v);
+  (match type_ with
+  | None -> ()
+  | Some v -> set_entity_ref_type_ _res v);
+  set_entity_ref_id_keys _res id_keys;
+  set_entity_ref_description_keys _res description_keys;
+  _res
+
 [@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Formatters} *)
@@ -194,6 +244,17 @@ let rec pp_instrumentation_scope fmt (v:instrumentation_scope) =
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list pp_key_value) fmt v.attributes;
     Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
     if not (Pbrt.Bitfield.get v._presence 2) then Format.pp_print_string fmt "(* absent *)";
+  in
+  Pbrt.Pp.pp_brk pp_i fmt ()
+
+let rec pp_entity_ref fmt (v:entity_ref) = 
+  let pp_i fmt () =
+    Pbrt.Pp.pp_record_field ~first:true "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
+    if not (Pbrt.Bitfield.get v._presence 0) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~first:false "type_" Pbrt.Pp.pp_string fmt v.type_;
+    if not (Pbrt.Bitfield.get v._presence 1) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~first:false "id_keys" (Pbrt.Pp.pp_list Pbrt.Pp.pp_string) fmt v.id_keys;
+    Pbrt.Pp.pp_record_field ~first:false "description_keys" (Pbrt.Pp.pp_list Pbrt.Pp.pp_string) fmt v.description_keys;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -270,6 +331,25 @@ let rec encode_pb_instrumentation_scope (v:instrumentation_scope) encoder =
     Pbrt.Encoder.int32_as_varint v.dropped_attributes_count encoder;
     Pbrt.Encoder.key 4 Pbrt.Varint encoder; 
   );
+  ()
+
+let rec encode_pb_entity_ref (v:entity_ref) encoder = 
+  if (Pbrt.Bitfield.get v._presence 0) then (
+    Pbrt.Encoder.string v.schema_url encoder;
+    Pbrt.Encoder.key 1 Pbrt.Bytes encoder; 
+  );
+  if (Pbrt.Bitfield.get v._presence 1) then (
+    Pbrt.Encoder.string v.type_ encoder;
+    Pbrt.Encoder.key 2 Pbrt.Bytes encoder; 
+  );
+  Pbrt.List_util.rev_iter_with (fun x encoder ->
+    Pbrt.Encoder.string x encoder;
+    Pbrt.Encoder.key 3 Pbrt.Bytes encoder; 
+  ) v.id_keys encoder;
+  Pbrt.List_util.rev_iter_with (fun x encoder ->
+    Pbrt.Encoder.string x encoder;
+    Pbrt.Encoder.key 4 Pbrt.Bytes encoder; 
+  ) v.description_keys encoder;
   ()
 
 [@@@ocaml.warning "-23-27-30-39"]
@@ -385,3 +465,37 @@ let rec decode_pb_instrumentation_scope d =
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : instrumentation_scope)
+
+let rec decode_pb_entity_ref d =
+  let v = default_entity_ref () in
+  let continue__= ref true in
+  while !continue__ do
+    match Pbrt.Decoder.key d with
+    | None -> (
+      (* put lists in the correct order *)
+      set_entity_ref_description_keys v (List.rev v.description_keys);
+      set_entity_ref_id_keys v (List.rev v.id_keys);
+    ); continue__ := false
+    | Some (1, Pbrt.Bytes) -> begin
+      set_entity_ref_schema_url v (Pbrt.Decoder.string d);
+    end
+    | Some (1, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(1)" pk
+    | Some (2, Pbrt.Bytes) -> begin
+      set_entity_ref_type_ v (Pbrt.Decoder.string d);
+    end
+    | Some (2, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(2)" pk
+    | Some (3, Pbrt.Bytes) -> begin
+      set_entity_ref_id_keys v ((Pbrt.Decoder.string d) :: v.id_keys);
+    end
+    | Some (3, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(3)" pk
+    | Some (4, Pbrt.Bytes) -> begin
+      set_entity_ref_description_keys v ((Pbrt.Decoder.string d) :: v.description_keys);
+    end
+    | Some (4, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(4)" pk
+    | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
+  done;
+  (v : entity_ref)

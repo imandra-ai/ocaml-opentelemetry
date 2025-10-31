@@ -29,7 +29,7 @@ type severity_number =
 
 type log_record = {
   mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 8 fields *)
+  (** tracking presence for 9 fields *)
   mutable time_unix_nano : int64;
   mutable observed_time_unix_nano : int64;
   mutable severity_number : severity_number;
@@ -40,6 +40,7 @@ type log_record = {
   mutable flags : int32;
   mutable trace_id : bytes;
   mutable span_id : bytes;
+  mutable event_name : string;
 }
 
 type scope_logs = {
@@ -81,6 +82,7 @@ let default_log_record (): log_record =
   flags=0l;
   trace_id=Bytes.create 0;
   span_id=Bytes.create 0;
+  event_name="";
 }
 
 let default_scope_logs (): scope_logs = 
@@ -118,6 +120,7 @@ let[@inline] has_log_record_dropped_attributes_count (self:log_record) : bool = 
 let[@inline] has_log_record_flags (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 5)
 let[@inline] has_log_record_trace_id (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 6)
 let[@inline] has_log_record_span_id (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 7)
+let[@inline] has_log_record_event_name (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 8)
 
 let[@inline] set_log_record_time_unix_nano (self:log_record) (x:int64) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.time_unix_nano <- x
@@ -139,6 +142,8 @@ let[@inline] set_log_record_trace_id (self:log_record) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 6); self.trace_id <- x
 let[@inline] set_log_record_span_id (self:log_record) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 7); self.span_id <- x
+let[@inline] set_log_record_event_name (self:log_record) (x:string) : unit =
+  self._presence <- (Pbrt.Bitfield.set self._presence 8); self.event_name <- x
 
 let copy_log_record (self:log_record) : log_record =
   { self with time_unix_nano = self.time_unix_nano }
@@ -154,6 +159,7 @@ let make_log_record
   ?(flags:int32 option)
   ?(trace_id:bytes option)
   ?(span_id:bytes option)
+  ?(event_name:string option)
   () : log_record  =
   let _res = default_log_record () in
   (match time_unix_nano with
@@ -184,6 +190,9 @@ let make_log_record
   (match span_id with
   | None -> ()
   | Some v -> set_log_record_span_id _res v);
+  (match event_name with
+  | None -> ()
+  | Some v -> set_log_record_event_name _res v);
   _res
 
 let[@inline] has_scope_logs_schema_url (self:scope_logs) : bool = (Pbrt.Bitfield.get self._presence 0)
@@ -307,6 +316,8 @@ let rec pp_log_record fmt (v:log_record) =
     if not (Pbrt.Bitfield.get v._presence 6) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
     if not (Pbrt.Bitfield.get v._presence 7) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~first:false "event_name" Pbrt.Pp.pp_string fmt v.event_name;
+    if not (Pbrt.Bitfield.get v._presence 8) then Format.pp_print_string fmt "(* absent *)";
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -413,6 +424,10 @@ let rec encode_pb_log_record (v:log_record) encoder =
   if (Pbrt.Bitfield.get v._presence 7) then (
     Pbrt.Encoder.bytes v.span_id encoder;
     Pbrt.Encoder.key 10 Pbrt.Bytes encoder; 
+  );
+  if (Pbrt.Bitfield.get v._presence 8) then (
+    Pbrt.Encoder.string v.event_name encoder;
+    Pbrt.Encoder.key 12 Pbrt.Bytes encoder; 
   );
   ()
 
@@ -554,6 +569,11 @@ let rec decode_pb_log_record d =
     end
     | Some (10, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(10)" pk
+    | Some (12, Pbrt.Bytes) -> begin
+      set_log_record_event_name v (Pbrt.Decoder.string d);
+    end
+    | Some (12, pk) -> 
+      Pbrt.Decoder.unexpected_payload "Message(log_record), field(12)" pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : log_record)

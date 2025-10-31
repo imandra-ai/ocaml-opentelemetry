@@ -40,6 +40,15 @@ type instrumentation_scope = private {
   mutable dropped_attributes_count : int32;
 }
 
+type entity_ref = private {
+  mutable _presence: Pbrt.Bitfield.t;
+  (** tracking presence for 2 fields *)
+  mutable schema_url : string;
+  mutable type_ : string;
+  mutable id_keys : string list;
+  mutable description_keys : string list;
+}
+
 
 (** {2 Basic values} *)
 
@@ -57,6 +66,9 @@ val default_key_value : unit -> key_value
 
 val default_instrumentation_scope : unit -> instrumentation_scope 
 (** [default_instrumentation_scope ()] is a new empty value for type [instrumentation_scope] *)
+
+val default_entity_ref : unit -> entity_ref 
+(** [default_entity_ref ()] is a new empty value for type [entity_ref] *)
 
 
 (** {2 Make functions} *)
@@ -134,6 +146,35 @@ val has_instrumentation_scope_dropped_attributes_count : instrumentation_scope -
 val set_instrumentation_scope_dropped_attributes_count : instrumentation_scope -> int32 -> unit
   (** set field dropped_attributes_count in instrumentation_scope *)
 
+val make_entity_ref : 
+  ?schema_url:string ->
+  ?type_:string ->
+  id_keys:string list ->
+  description_keys:string list ->
+  unit ->
+  entity_ref
+(** [make_entity_ref … ()] is a builder for type [entity_ref] *)
+
+val copy_entity_ref : entity_ref -> entity_ref
+
+val has_entity_ref_schema_url : entity_ref -> bool
+  (** presence of field "schema_url" in [entity_ref] *)
+
+val set_entity_ref_schema_url : entity_ref -> string -> unit
+  (** set field schema_url in entity_ref *)
+
+val has_entity_ref_type_ : entity_ref -> bool
+  (** presence of field "type_" in [entity_ref] *)
+
+val set_entity_ref_type_ : entity_ref -> string -> unit
+  (** set field type_ in entity_ref *)
+
+val set_entity_ref_id_keys : entity_ref -> string list -> unit
+  (** set field id_keys in entity_ref *)
+
+val set_entity_ref_description_keys : entity_ref -> string list -> unit
+  (** set field description_keys in entity_ref *)
+
 
 (** {2 Formatters} *)
 
@@ -151,6 +192,9 @@ val pp_key_value : Format.formatter -> key_value -> unit
 
 val pp_instrumentation_scope : Format.formatter -> instrumentation_scope -> unit 
 (** [pp_instrumentation_scope v] formats v *)
+
+val pp_entity_ref : Format.formatter -> entity_ref -> unit 
+(** [pp_entity_ref v] formats v *)
 
 
 (** {2 Protobuf Encoding} *)
@@ -170,6 +214,9 @@ val encode_pb_key_value : key_value -> Pbrt.Encoder.t -> unit
 val encode_pb_instrumentation_scope : instrumentation_scope -> Pbrt.Encoder.t -> unit
 (** [encode_pb_instrumentation_scope v encoder] encodes [v] with the given [encoder] *)
 
+val encode_pb_entity_ref : entity_ref -> Pbrt.Encoder.t -> unit
+(** [encode_pb_entity_ref v encoder] encodes [v] with the given [encoder] *)
+
 
 (** {2 Protobuf Decoding} *)
 
@@ -187,3 +234,6 @@ val decode_pb_key_value : Pbrt.Decoder.t -> key_value
 
 val decode_pb_instrumentation_scope : Pbrt.Decoder.t -> instrumentation_scope
 (** [decode_pb_instrumentation_scope decoder] decodes a [instrumentation_scope] binary value from [decoder] *)
+
+val decode_pb_entity_ref : Pbrt.Decoder.t -> entity_ref
+(** [decode_pb_entity_ref decoder] decodes a [entity_ref] binary value from [decoder] *)
