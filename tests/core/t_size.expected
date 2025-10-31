@@ -121,3 +121,216 @@ res1: { resource = None;
            ];
         schema_url = "";(* absent *)
       }
+trace size: 371B
+trace1: { resource = None;
+          scope_spans =
+            [{ scope = None;
+               spans =
+                 [{ trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=0>;(* absent *)
+                    name = "sp1";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 10;
+                    end_time_unix_nano = 15;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp2";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 20;
+                    end_time_unix_nano = 25;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp3";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 30;
+                    end_time_unix_nano = 35;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp4";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 40;
+                    end_time_unix_nano = 45;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp5";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 50;
+                    end_time_unix_nano = 55;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp6";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 60;
+                    end_time_unix_nano = 65;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  }
+                  ];
+               schema_url = "";(* absent *)
+             }
+             ];
+          schema_url = "";(* absent *)
+        }
+trace2: { resource = None;
+          scope_spans =
+            [{ scope = None;
+               spans =
+                 [{ trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=0>;(* absent *)
+                    name = "sp1";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 10;
+                    end_time_unix_nano = 15;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp2";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 20;
+                    end_time_unix_nano = 25;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp3";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 30;
+                    end_time_unix_nano = 35;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp4";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 40;
+                    end_time_unix_nano = 45;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp5";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 50;
+                    end_time_unix_nano = 55;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "";(* absent *)
+                    parent_span_id = <bytes len=8>;
+                    name = "sp6";
+                    kind = Span_kind_unspecified;(* absent *)
+                    start_time_unix_nano = 60;
+                    end_time_unix_nano = 65;
+                    attributes = [];
+                    dropped_attributes_count = 0;(* absent *)
+                    events = [];
+                    dropped_events_count = 0;(* absent *)
+                    links = [];
+                    dropped_links_count = 0;(* absent *)
+                    status = None;
+                  }
+                  ];
+               schema_url = "";(* absent *)
+             }
+             ];
+          schema_url = "";(* absent *)
+        }
