@@ -1,21 +1,7 @@
-metrics size: 243B
-res1: { resource =
-          Some(
-            { attributes =
-                [{ key = "service.name";
-                   value = Some(String_value("unknown_service"));
-                 }
-                 ];
-              dropped_attributes_count = 0;
-            });
+metrics size: 171B
+res1: { resource = None;
         scope_metrics =
-          [{ scope =
-               Some(
-                 { name = "ocaml-otel";
-                   version = "%%VERSION_NUM%%";
-                   attributes = [];
-                   dropped_attributes_count = 0;
-                 });
+          [{ scope = None;
              metrics =
                [{ name = "sum.foo";
                   description = "";
@@ -72,23 +58,9 @@ res1: { resource =
            ];
         schema_url = "";
       }
-res1: { resource =
-          Some(
-            { attributes =
-                [{ key = "service.name";
-                   value = Some(String_value("unknown_service"));
-                 }
-                 ];
-              dropped_attributes_count = 0;
-            });
+res1: { resource = None;
         scope_metrics =
-          [{ scope =
-               Some(
-                 { name = "ocaml-otel";
-                   version = "%%VERSION_NUM%%";
-                   attributes = [];
-                   dropped_attributes_count = 0;
-                 });
+          [{ scope = None;
              metrics =
                [{ name = "sum.foo";
                   description = "";
