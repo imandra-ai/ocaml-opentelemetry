@@ -12,8 +12,7 @@ type export_logs_service_request = private {
 }
 
 type export_logs_partial_success = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable rejected_log_records : int64;
   mutable error_message : string;
 }
@@ -38,7 +37,7 @@ val default_export_logs_service_response : unit -> export_logs_service_response
 (** {2 Make functions} *)
 
 val make_export_logs_service_request : 
-  resource_logs:Logs.resource_logs list ->
+  ?resource_logs:Logs.resource_logs list ->
   unit ->
   export_logs_service_request
 (** [make_export_logs_service_request … ()] is a builder for type [export_logs_service_request] *)

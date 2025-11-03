@@ -35,8 +35,7 @@ type severity_number =
   | Severity_number_fatal4 
 
 type log_record = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 9 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 9 fields *)
   mutable time_unix_nano : int64;
   mutable observed_time_unix_nano : int64;
   mutable severity_number : severity_number;
@@ -51,16 +50,14 @@ type log_record = private {
 }
 
 type scope_logs = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable scope : Common.instrumentation_scope option;
   mutable log_records : log_record list;
   mutable schema_url : string;
 }
 
 type resource_logs = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable resource : Resource.resource option;
   mutable scope_logs : scope_logs list;
   mutable schema_url : string;
@@ -105,7 +102,7 @@ val make_log_record :
   ?severity_number:severity_number ->
   ?severity_text:string ->
   ?body:Common.any_value ->
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
   ?flags:int32 ->
   ?trace_id:bytes ->
@@ -179,7 +176,7 @@ val set_log_record_event_name : log_record -> string -> unit
 
 val make_scope_logs : 
   ?scope:Common.instrumentation_scope ->
-  log_records:log_record list ->
+  ?log_records:log_record list ->
   ?schema_url:string ->
   unit ->
   scope_logs
@@ -201,7 +198,7 @@ val set_scope_logs_schema_url : scope_logs -> string -> unit
 
 val make_resource_logs : 
   ?resource:Resource.resource ->
-  scope_logs:scope_logs list ->
+  ?scope_logs:scope_logs list ->
   ?schema_url:string ->
   unit ->
   resource_logs
@@ -222,7 +219,7 @@ val set_resource_logs_schema_url : resource_logs -> string -> unit
   (** set field schema_url in resource_logs *)
 
 val make_logs_data : 
-  resource_logs:resource_logs list ->
+  ?resource_logs:resource_logs list ->
   unit ->
   logs_data
 (** [make_logs_data … ()] is a builder for type [logs_data] *)

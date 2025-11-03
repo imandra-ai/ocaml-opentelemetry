@@ -5,8 +5,7 @@ type export_logs_service_request = {
 }
 
 type export_logs_partial_success = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable rejected_log_records : int64;
   mutable error_message : string;
 }
@@ -15,19 +14,19 @@ type export_logs_service_response = {
   mutable partial_success : export_logs_partial_success option;
 }
 
-let default_export_logs_service_request (): export_logs_service_request = 
+let default_export_logs_service_request (): export_logs_service_request =
 {
   resource_logs=[];
 }
 
-let default_export_logs_partial_success (): export_logs_partial_success = 
+let default_export_logs_partial_success (): export_logs_partial_success =
 {
   _presence=Pbrt.Bitfield.empty;
   rejected_log_records=0L;
   error_message="";
 }
 
-let default_export_logs_service_response (): export_logs_service_response = 
+let default_export_logs_service_response (): export_logs_service_response =
 {
   partial_success=None;
 }
@@ -43,7 +42,7 @@ let copy_export_logs_service_request (self:export_logs_service_request) : export
   { self with resource_logs = self.resource_logs }
 
 let make_export_logs_service_request 
-  ~(resource_logs:Logs.resource_logs list) 
+  ?(resource_logs=[])
   () : export_logs_service_request  =
   let _res = default_export_logs_service_request () in
   set_export_logs_service_request_resource_logs _res resource_logs;

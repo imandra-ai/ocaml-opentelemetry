@@ -1,14 +1,13 @@
 [@@@ocaml.warning "-23-27-30-39-44"]
 
 type status = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable code : int32;
   mutable message : bytes;
   mutable details : bytes list;
 }
 
-let default_status (): status = 
+let default_status (): status =
 {
   _presence=Pbrt.Bitfield.empty;
   code=0l;
@@ -35,7 +34,7 @@ let copy_status (self:status) : status =
 let make_status 
   ?(code:int32 option)
   ?(message:bytes option)
-  ~(details:bytes list) 
+  ?(details=[])
   () : status  =
   let _res = default_status () in
   (match code with

@@ -12,8 +12,7 @@ type export_trace_service_request = private {
 }
 
 type export_trace_partial_success = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable rejected_spans : int64;
   mutable error_message : string;
 }
@@ -38,7 +37,7 @@ val default_export_trace_service_response : unit -> export_trace_service_respons
 (** {2 Make functions} *)
 
 val make_export_trace_service_request : 
-  resource_spans:Trace.resource_spans list ->
+  ?resource_spans:Trace.resource_spans list ->
   unit ->
   export_trace_service_request
 (** [make_export_trace_service_request … ()] is a builder for type [export_trace_service_request] *)

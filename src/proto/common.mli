@@ -25,15 +25,13 @@ and key_value_list = private {
 }
 
 and key_value = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable key : string;
   mutable value : any_value option;
 }
 
 type instrumentation_scope = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable name : string;
   mutable version : string;
   mutable attributes : key_value list;
@@ -41,8 +39,7 @@ type instrumentation_scope = private {
 }
 
 type entity_ref = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable schema_url : string;
   mutable type_ : string;
   mutable id_keys : string list;
@@ -75,7 +72,7 @@ val default_entity_ref : unit -> entity_ref
 
 
 val make_array_value : 
-  values:any_value list ->
+  ?values:any_value list ->
   unit ->
   array_value
 (** [make_array_value … ()] is a builder for type [array_value] *)
@@ -86,7 +83,7 @@ val set_array_value_values : array_value -> any_value list -> unit
   (** set field values in array_value *)
 
 val make_key_value_list : 
-  values:key_value list ->
+  ?values:key_value list ->
   unit ->
   key_value_list
 (** [make_key_value_list … ()] is a builder for type [key_value_list] *)
@@ -117,7 +114,7 @@ val set_key_value_value : key_value -> any_value -> unit
 val make_instrumentation_scope : 
   ?name:string ->
   ?version:string ->
-  attributes:key_value list ->
+  ?attributes:key_value list ->
   ?dropped_attributes_count:int32 ->
   unit ->
   instrumentation_scope
@@ -149,8 +146,8 @@ val set_instrumentation_scope_dropped_attributes_count : instrumentation_scope -
 val make_entity_ref : 
   ?schema_url:string ->
   ?type_:string ->
-  id_keys:string list ->
-  description_keys:string list ->
+  ?id_keys:string list ->
+  ?description_keys:string list ->
   unit ->
   entity_ref
 (** [make_entity_ref … ()] is a builder for type [entity_ref] *)

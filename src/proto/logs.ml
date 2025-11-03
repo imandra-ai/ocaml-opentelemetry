@@ -28,8 +28,7 @@ type severity_number =
   | Severity_number_fatal4 
 
 type log_record = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 9 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 9 fields *)
   mutable time_unix_nano : int64;
   mutable observed_time_unix_nano : int64;
   mutable severity_number : severity_number;
@@ -44,16 +43,14 @@ type log_record = {
 }
 
 type scope_logs = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable scope : Common.instrumentation_scope option;
   mutable log_records : log_record list;
   mutable schema_url : string;
 }
 
 type resource_logs = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable resource : Resource.resource option;
   mutable scope_logs : scope_logs list;
   mutable schema_url : string;
@@ -69,7 +66,7 @@ type log_record_flags =
 
 let default_severity_number () = (Severity_number_unspecified:severity_number)
 
-let default_log_record (): log_record = 
+let default_log_record (): log_record =
 {
   _presence=Pbrt.Bitfield.empty;
   time_unix_nano=0L;
@@ -85,7 +82,7 @@ let default_log_record (): log_record =
   event_name="";
 }
 
-let default_scope_logs (): scope_logs = 
+let default_scope_logs (): scope_logs =
 {
   _presence=Pbrt.Bitfield.empty;
   scope=None;
@@ -93,7 +90,7 @@ let default_scope_logs (): scope_logs =
   schema_url="";
 }
 
-let default_resource_logs (): resource_logs = 
+let default_resource_logs (): resource_logs =
 {
   _presence=Pbrt.Bitfield.empty;
   resource=None;
@@ -101,7 +98,7 @@ let default_resource_logs (): resource_logs =
   schema_url="";
 }
 
-let default_logs_data (): logs_data = 
+let default_logs_data (): logs_data =
 {
   resource_logs=[];
 }
@@ -154,7 +151,7 @@ let make_log_record
   ?(severity_number:severity_number option)
   ?(severity_text:string option)
   ?(body:Common.any_value option)
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(dropped_attributes_count:int32 option)
   ?(flags:int32 option)
   ?(trace_id:bytes option)
@@ -209,7 +206,7 @@ let copy_scope_logs (self:scope_logs) : scope_logs =
 
 let make_scope_logs 
   ?(scope:Common.instrumentation_scope option)
-  ~(log_records:log_record list) 
+  ?(log_records=[])
   ?(schema_url:string option)
   () : scope_logs  =
   let _res = default_scope_logs () in
@@ -236,7 +233,7 @@ let copy_resource_logs (self:resource_logs) : resource_logs =
 
 let make_resource_logs 
   ?(resource:Resource.resource option)
-  ~(scope_logs:scope_logs list) 
+  ?(scope_logs=[])
   ?(schema_url:string option)
   () : resource_logs  =
   let _res = default_resource_logs () in
@@ -257,7 +254,7 @@ let copy_logs_data (self:logs_data) : logs_data =
   { self with resource_logs = self.resource_logs }
 
 let make_logs_data 
-  ~(resource_logs:resource_logs list) 
+  ?(resource_logs=[])
   () : logs_data  =
   let _res = default_logs_data () in
   set_logs_data_resource_logs _res resource_logs;

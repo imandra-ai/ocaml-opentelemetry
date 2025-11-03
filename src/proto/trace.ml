@@ -9,8 +9,7 @@ type span_span_kind =
   | Span_kind_consumer 
 
 type span_event = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable time_unix_nano : int64;
   mutable name : string;
   mutable attributes : Common.key_value list;
@@ -18,8 +17,7 @@ type span_event = {
 }
 
 type span_link = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 5 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 5 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
@@ -34,15 +32,13 @@ type status_status_code =
   | Status_code_error 
 
 type status = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable message : string;
   mutable code : status_status_code;
 }
 
 type span = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 12 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 12 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
@@ -62,16 +58,14 @@ type span = {
 }
 
 type scope_spans = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable scope : Common.instrumentation_scope option;
   mutable spans : span list;
   mutable schema_url : string;
 }
 
 type resource_spans = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable resource : Resource.resource option;
   mutable scope_spans : scope_spans list;
   mutable schema_url : string;
@@ -89,7 +83,7 @@ type span_flags =
 
 let default_span_span_kind () = (Span_kind_unspecified:span_span_kind)
 
-let default_span_event (): span_event = 
+let default_span_event (): span_event =
 {
   _presence=Pbrt.Bitfield.empty;
   time_unix_nano=0L;
@@ -98,7 +92,7 @@ let default_span_event (): span_event =
   dropped_attributes_count=0l;
 }
 
-let default_span_link (): span_link = 
+let default_span_link (): span_link =
 {
   _presence=Pbrt.Bitfield.empty;
   trace_id=Bytes.create 0;
@@ -111,14 +105,14 @@ let default_span_link (): span_link =
 
 let default_status_status_code () = (Status_code_unset:status_status_code)
 
-let default_status (): status = 
+let default_status (): status =
 {
   _presence=Pbrt.Bitfield.empty;
   message="";
   code=default_status_status_code ();
 }
 
-let default_span (): span = 
+let default_span (): span =
 {
   _presence=Pbrt.Bitfield.empty;
   trace_id=Bytes.create 0;
@@ -139,7 +133,7 @@ let default_span (): span =
   status=None;
 }
 
-let default_scope_spans (): scope_spans = 
+let default_scope_spans (): scope_spans =
 {
   _presence=Pbrt.Bitfield.empty;
   scope=None;
@@ -147,7 +141,7 @@ let default_scope_spans (): scope_spans =
   schema_url="";
 }
 
-let default_resource_spans (): resource_spans = 
+let default_resource_spans (): resource_spans =
 {
   _presence=Pbrt.Bitfield.empty;
   resource=None;
@@ -155,7 +149,7 @@ let default_resource_spans (): resource_spans =
   schema_url="";
 }
 
-let default_traces_data (): traces_data = 
+let default_traces_data (): traces_data =
 {
   resource_spans=[];
 }
@@ -185,7 +179,7 @@ let copy_span_event (self:span_event) : span_event =
 let make_span_event 
   ?(time_unix_nano:int64 option)
   ?(name:string option)
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(dropped_attributes_count:int32 option)
   () : span_event  =
   let _res = default_span_event () in
@@ -227,7 +221,7 @@ let make_span_link
   ?(trace_id:bytes option)
   ?(span_id:bytes option)
   ?(trace_state:string option)
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(dropped_attributes_count:int32 option)
   ?(flags:int32 option)
   () : span_link  =
@@ -334,11 +328,11 @@ let make_span
   ?(kind:span_span_kind option)
   ?(start_time_unix_nano:int64 option)
   ?(end_time_unix_nano:int64 option)
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(dropped_attributes_count:int32 option)
-  ~(events:span_event list) 
+  ?(events=[])
   ?(dropped_events_count:int32 option)
-  ~(links:span_link list) 
+  ?(links=[])
   ?(dropped_links_count:int32 option)
   ?(status:status option)
   () : span  =
@@ -401,7 +395,7 @@ let copy_scope_spans (self:scope_spans) : scope_spans =
 
 let make_scope_spans 
   ?(scope:Common.instrumentation_scope option)
-  ~(spans:span list) 
+  ?(spans=[])
   ?(schema_url:string option)
   () : scope_spans  =
   let _res = default_scope_spans () in
@@ -428,7 +422,7 @@ let copy_resource_spans (self:resource_spans) : resource_spans =
 
 let make_resource_spans 
   ?(resource:Resource.resource option)
-  ~(scope_spans:scope_spans list) 
+  ?(scope_spans=[])
   ?(schema_url:string option)
   () : resource_spans  =
   let _res = default_resource_spans () in
@@ -449,7 +443,7 @@ let copy_traces_data (self:traces_data) : traces_data =
   { self with resource_spans = self.resource_spans }
 
 let make_traces_data 
-  ~(resource_spans:resource_spans list) 
+  ?(resource_spans=[])
   () : traces_data  =
   let _res = default_traces_data () in
   set_traces_data_resource_spans _res resource_spans;

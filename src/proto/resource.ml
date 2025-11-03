@@ -1,14 +1,13 @@
 [@@@ocaml.warning "-23-27-30-39-44"]
 
 type resource = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable attributes : Common.key_value list;
   mutable dropped_attributes_count : int32;
   mutable entity_refs : Common.entity_ref list;
 }
 
-let default_resource (): resource = 
+let default_resource (): resource =
 {
   _presence=Pbrt.Bitfield.empty;
   attributes=[];
@@ -32,9 +31,9 @@ let copy_resource (self:resource) : resource =
   { self with attributes = self.attributes }
 
 let make_resource 
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(dropped_attributes_count:int32 option)
-  ~(entity_refs:Common.entity_ref list) 
+  ?(entity_refs=[])
   () : resource  =
   let _res = default_resource () in
   set_resource_attributes _res attributes;

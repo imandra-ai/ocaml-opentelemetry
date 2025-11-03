@@ -5,8 +5,7 @@ type export_trace_service_request = {
 }
 
 type export_trace_partial_success = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable rejected_spans : int64;
   mutable error_message : string;
 }
@@ -15,19 +14,19 @@ type export_trace_service_response = {
   mutable partial_success : export_trace_partial_success option;
 }
 
-let default_export_trace_service_request (): export_trace_service_request = 
+let default_export_trace_service_request (): export_trace_service_request =
 {
   resource_spans=[];
 }
 
-let default_export_trace_partial_success (): export_trace_partial_success = 
+let default_export_trace_partial_success (): export_trace_partial_success =
 {
   _presence=Pbrt.Bitfield.empty;
   rejected_spans=0L;
   error_message="";
 }
 
-let default_export_trace_service_response (): export_trace_service_response = 
+let default_export_trace_service_response (): export_trace_service_response =
 {
   partial_success=None;
 }
@@ -43,7 +42,7 @@ let copy_export_trace_service_request (self:export_trace_service_request) : expo
   { self with resource_spans = self.resource_spans }
 
 let make_export_trace_service_request 
-  ~(resource_spans:Trace.resource_spans list) 
+  ?(resource_spans=[])
   () : export_trace_service_request  =
   let _res = default_export_trace_service_request () in
   set_export_trace_service_request_resource_spans _res resource_spans;

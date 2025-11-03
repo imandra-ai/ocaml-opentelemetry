@@ -8,8 +8,7 @@
 (** {2 Types} *)
 
 type status = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable code : int32;
   mutable message : bytes;
   mutable details : bytes list;
@@ -27,7 +26,7 @@ val default_status : unit -> status
 val make_status : 
   ?code:int32 ->
   ?message:bytes ->
-  details:bytes list ->
+  ?details:bytes list ->
   unit ->
   status
 (** [make_status … ()] is a builder for type [status] *)

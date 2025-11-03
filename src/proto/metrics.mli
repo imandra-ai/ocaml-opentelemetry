@@ -12,8 +12,7 @@ type exemplar_value =
   | As_int of int64
 
 and exemplar = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable filtered_attributes : Common.key_value list;
   mutable time_unix_nano : int64;
   mutable value : exemplar_value option;
@@ -26,8 +25,7 @@ type number_data_point_value =
   | As_int of int64
 
 and number_data_point = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -46,16 +44,14 @@ type aggregation_temporality =
   | Aggregation_temporality_cumulative 
 
 type sum = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable data_points : number_data_point list;
   mutable aggregation_temporality : aggregation_temporality;
   mutable is_monotonic : bool;
 }
 
 type histogram_data_point = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 4 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 4 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -70,22 +66,19 @@ type histogram_data_point = private {
 }
 
 type histogram = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable data_points : histogram_data_point list;
   mutable aggregation_temporality : aggregation_temporality;
 }
 
 type exponential_histogram_data_point_buckets = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable offset : int32;
   mutable bucket_counts : int64 list;
 }
 
 type exponential_histogram_data_point = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 7 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 7 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -103,22 +96,19 @@ type exponential_histogram_data_point = private {
 }
 
 type exponential_histogram = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable data_points : exponential_histogram_data_point list;
   mutable aggregation_temporality : aggregation_temporality;
 }
 
 type summary_data_point_value_at_quantile = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable quantile : float;
   mutable value : float;
 }
 
 type summary_data_point = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 5 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 5 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -140,8 +130,7 @@ type metric_data =
   | Summary of summary
 
 and metric = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable name : string;
   mutable description : string;
   mutable unit_ : string;
@@ -150,16 +139,14 @@ and metric = private {
 }
 
 type scope_metrics = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable scope : Common.instrumentation_scope option;
   mutable metrics : metric list;
   mutable schema_url : string;
 }
 
 type resource_metrics = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable resource : Resource.resource option;
   mutable scope_metrics : scope_metrics list;
   mutable schema_url : string;
@@ -244,7 +231,7 @@ val default_data_point_flags : unit -> data_point_flags
 
 
 val make_exemplar : 
-  filtered_attributes:Common.key_value list ->
+  ?filtered_attributes:Common.key_value list ->
   ?time_unix_nano:int64 ->
   ?value:exemplar_value ->
   ?span_id:bytes ->
@@ -281,11 +268,11 @@ val set_exemplar_trace_id : exemplar -> bytes -> unit
 
 
 val make_number_data_point : 
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
   ?value:number_data_point_value ->
-  exemplars:exemplar list ->
+  ?exemplars:exemplar list ->
   ?flags:int32 ->
   unit ->
   number_data_point
@@ -321,7 +308,7 @@ val set_number_data_point_flags : number_data_point -> int32 -> unit
   (** set field flags in number_data_point *)
 
 val make_gauge : 
-  data_points:number_data_point list ->
+  ?data_points:number_data_point list ->
   unit ->
   gauge
 (** [make_gauge … ()] is a builder for type [gauge] *)
@@ -333,7 +320,7 @@ val set_gauge_data_points : gauge -> number_data_point list -> unit
 
 
 val make_sum : 
-  data_points:number_data_point list ->
+  ?data_points:number_data_point list ->
   ?aggregation_temporality:aggregation_temporality ->
   ?is_monotonic:bool ->
   unit ->
@@ -358,14 +345,14 @@ val set_sum_is_monotonic : sum -> bool -> unit
   (** set field is_monotonic in sum *)
 
 val make_histogram_data_point : 
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
   ?count:int64 ->
   ?sum:float ->
-  bucket_counts:int64 list ->
-  explicit_bounds:float list ->
-  exemplars:exemplar list ->
+  ?bucket_counts:int64 list ->
+  ?explicit_bounds:float list ->
+  ?exemplars:exemplar list ->
   ?flags:int32 ->
   ?min:float ->
   ?max:float ->
@@ -421,7 +408,7 @@ val set_histogram_data_point_max : histogram_data_point -> float -> unit
   (** set field max in histogram_data_point *)
 
 val make_histogram : 
-  data_points:histogram_data_point list ->
+  ?data_points:histogram_data_point list ->
   ?aggregation_temporality:aggregation_temporality ->
   unit ->
   histogram
@@ -440,7 +427,7 @@ val set_histogram_aggregation_temporality : histogram -> aggregation_temporality
 
 val make_exponential_histogram_data_point_buckets : 
   ?offset:int32 ->
-  bucket_counts:int64 list ->
+  ?bucket_counts:int64 list ->
   unit ->
   exponential_histogram_data_point_buckets
 (** [make_exponential_histogram_data_point_buckets … ()] is a builder for type [exponential_histogram_data_point_buckets] *)
@@ -457,7 +444,7 @@ val set_exponential_histogram_data_point_buckets_bucket_counts : exponential_his
   (** set field bucket_counts in exponential_histogram_data_point_buckets *)
 
 val make_exponential_histogram_data_point : 
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
   ?count:int64 ->
@@ -467,7 +454,7 @@ val make_exponential_histogram_data_point :
   ?positive:exponential_histogram_data_point_buckets ->
   ?negative:exponential_histogram_data_point_buckets ->
   ?flags:int32 ->
-  exemplars:exemplar list ->
+  ?exemplars:exemplar list ->
   ?min:float ->
   ?max:float ->
   ?zero_threshold:float ->
@@ -541,7 +528,7 @@ val set_exponential_histogram_data_point_zero_threshold : exponential_histogram_
   (** set field zero_threshold in exponential_histogram_data_point *)
 
 val make_exponential_histogram : 
-  data_points:exponential_histogram_data_point list ->
+  ?data_points:exponential_histogram_data_point list ->
   ?aggregation_temporality:aggregation_temporality ->
   unit ->
   exponential_histogram
@@ -580,12 +567,12 @@ val set_summary_data_point_value_at_quantile_value : summary_data_point_value_at
   (** set field value in summary_data_point_value_at_quantile *)
 
 val make_summary_data_point : 
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?start_time_unix_nano:int64 ->
   ?time_unix_nano:int64 ->
   ?count:int64 ->
   ?sum:float ->
-  quantile_values:summary_data_point_value_at_quantile list ->
+  ?quantile_values:summary_data_point_value_at_quantile list ->
   ?flags:int32 ->
   unit ->
   summary_data_point
@@ -630,7 +617,7 @@ val set_summary_data_point_flags : summary_data_point -> int32 -> unit
   (** set field flags in summary_data_point *)
 
 val make_summary : 
-  data_points:summary_data_point list ->
+  ?data_points:summary_data_point list ->
   unit ->
   summary
 (** [make_summary … ()] is a builder for type [summary] *)
@@ -646,7 +633,7 @@ val make_metric :
   ?description:string ->
   ?unit_:string ->
   ?data:metric_data ->
-  metadata:Common.key_value list ->
+  ?metadata:Common.key_value list ->
   unit ->
   metric
 (** [make_metric … ()] is a builder for type [metric] *)
@@ -679,7 +666,7 @@ val set_metric_metadata : metric -> Common.key_value list -> unit
 
 val make_scope_metrics : 
   ?scope:Common.instrumentation_scope ->
-  metrics:metric list ->
+  ?metrics:metric list ->
   ?schema_url:string ->
   unit ->
   scope_metrics
@@ -701,7 +688,7 @@ val set_scope_metrics_schema_url : scope_metrics -> string -> unit
 
 val make_resource_metrics : 
   ?resource:Resource.resource ->
-  scope_metrics:scope_metrics list ->
+  ?scope_metrics:scope_metrics list ->
   ?schema_url:string ->
   unit ->
   resource_metrics
@@ -722,7 +709,7 @@ val set_resource_metrics_schema_url : resource_metrics -> string -> unit
   (** set field schema_url in resource_metrics *)
 
 val make_metrics_data : 
-  resource_metrics:resource_metrics list ->
+  ?resource_metrics:resource_metrics list ->
   unit ->
   metrics_data
 (** [make_metrics_data … ()] is a builder for type [metrics_data] *)

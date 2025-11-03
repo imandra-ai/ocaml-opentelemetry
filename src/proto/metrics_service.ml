@@ -5,8 +5,7 @@ type export_metrics_service_request = {
 }
 
 type export_metrics_partial_success = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable rejected_data_points : int64;
   mutable error_message : string;
 }
@@ -15,19 +14,19 @@ type export_metrics_service_response = {
   mutable partial_success : export_metrics_partial_success option;
 }
 
-let default_export_metrics_service_request (): export_metrics_service_request = 
+let default_export_metrics_service_request (): export_metrics_service_request =
 {
   resource_metrics=[];
 }
 
-let default_export_metrics_partial_success (): export_metrics_partial_success = 
+let default_export_metrics_partial_success (): export_metrics_partial_success =
 {
   _presence=Pbrt.Bitfield.empty;
   rejected_data_points=0L;
   error_message="";
 }
 
-let default_export_metrics_service_response (): export_metrics_service_response = 
+let default_export_metrics_service_response (): export_metrics_service_response =
 {
   partial_success=None;
 }
@@ -43,7 +42,7 @@ let copy_export_metrics_service_request (self:export_metrics_service_request) : 
   { self with resource_metrics = self.resource_metrics }
 
 let make_export_metrics_service_request 
-  ~(resource_metrics:Metrics.resource_metrics list) 
+  ?(resource_metrics=[])
   () : export_metrics_service_request  =
   let _res = default_export_metrics_service_request () in
   set_export_metrics_service_request_resource_metrics _res resource_metrics;

@@ -5,8 +5,7 @@ type exemplar_value =
   | As_int of int64
 
 and exemplar = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable filtered_attributes : Common.key_value list;
   mutable time_unix_nano : int64;
   mutable value : exemplar_value option;
@@ -19,8 +18,7 @@ type number_data_point_value =
   | As_int of int64
 
 and number_data_point = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -39,16 +37,14 @@ type aggregation_temporality =
   | Aggregation_temporality_cumulative 
 
 type sum = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable data_points : number_data_point list;
   mutable aggregation_temporality : aggregation_temporality;
   mutable is_monotonic : bool;
 }
 
 type histogram_data_point = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 4 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 4 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -63,22 +59,19 @@ type histogram_data_point = {
 }
 
 type histogram = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable data_points : histogram_data_point list;
   mutable aggregation_temporality : aggregation_temporality;
 }
 
 type exponential_histogram_data_point_buckets = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable offset : int32;
   mutable bucket_counts : int64 list;
 }
 
 type exponential_histogram_data_point = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 7 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 7 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -96,22 +89,19 @@ type exponential_histogram_data_point = {
 }
 
 type exponential_histogram = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable data_points : exponential_histogram_data_point list;
   mutable aggregation_temporality : aggregation_temporality;
 }
 
 type summary_data_point_value_at_quantile = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable quantile : float;
   mutable value : float;
 }
 
 type summary_data_point = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 5 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 5 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
@@ -133,8 +123,7 @@ type metric_data =
   | Summary of summary
 
 and metric = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable name : string;
   mutable description : string;
   mutable unit_ : string;
@@ -143,16 +132,14 @@ and metric = {
 }
 
 type scope_metrics = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable scope : Common.instrumentation_scope option;
   mutable metrics : metric list;
   mutable schema_url : string;
 }
 
 type resource_metrics = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable resource : Resource.resource option;
   mutable scope_metrics : scope_metrics list;
   mutable schema_url : string;
@@ -168,7 +155,7 @@ type data_point_flags =
 
 let default_exemplar_value (): exemplar_value = As_double (0.)
 
-let default_exemplar (): exemplar = 
+let default_exemplar (): exemplar =
 {
   _presence=Pbrt.Bitfield.empty;
   filtered_attributes=[];
@@ -180,7 +167,7 @@ let default_exemplar (): exemplar =
 
 let default_number_data_point_value (): number_data_point_value = As_double (0.)
 
-let default_number_data_point (): number_data_point = 
+let default_number_data_point (): number_data_point =
 {
   _presence=Pbrt.Bitfield.empty;
   attributes=[];
@@ -191,14 +178,14 @@ let default_number_data_point (): number_data_point =
   flags=0l;
 }
 
-let default_gauge (): gauge = 
+let default_gauge (): gauge =
 {
   data_points=[];
 }
 
 let default_aggregation_temporality () = (Aggregation_temporality_unspecified:aggregation_temporality)
 
-let default_sum (): sum = 
+let default_sum (): sum =
 {
   _presence=Pbrt.Bitfield.empty;
   data_points=[];
@@ -206,7 +193,7 @@ let default_sum (): sum =
   is_monotonic=false;
 }
 
-let default_histogram_data_point (): histogram_data_point = 
+let default_histogram_data_point (): histogram_data_point =
 {
   _presence=Pbrt.Bitfield.empty;
   attributes=[];
@@ -222,21 +209,21 @@ let default_histogram_data_point (): histogram_data_point =
   max=None;
 }
 
-let default_histogram (): histogram = 
+let default_histogram (): histogram =
 {
   _presence=Pbrt.Bitfield.empty;
   data_points=[];
   aggregation_temporality=default_aggregation_temporality ();
 }
 
-let default_exponential_histogram_data_point_buckets (): exponential_histogram_data_point_buckets = 
+let default_exponential_histogram_data_point_buckets (): exponential_histogram_data_point_buckets =
 {
   _presence=Pbrt.Bitfield.empty;
   offset=0l;
   bucket_counts=[];
 }
 
-let default_exponential_histogram_data_point (): exponential_histogram_data_point = 
+let default_exponential_histogram_data_point (): exponential_histogram_data_point =
 {
   _presence=Pbrt.Bitfield.empty;
   attributes=[];
@@ -255,21 +242,21 @@ let default_exponential_histogram_data_point (): exponential_histogram_data_poin
   zero_threshold=0.;
 }
 
-let default_exponential_histogram (): exponential_histogram = 
+let default_exponential_histogram (): exponential_histogram =
 {
   _presence=Pbrt.Bitfield.empty;
   data_points=[];
   aggregation_temporality=default_aggregation_temporality ();
 }
 
-let default_summary_data_point_value_at_quantile (): summary_data_point_value_at_quantile = 
+let default_summary_data_point_value_at_quantile (): summary_data_point_value_at_quantile =
 {
   _presence=Pbrt.Bitfield.empty;
   quantile=0.;
   value=0.;
 }
 
-let default_summary_data_point (): summary_data_point = 
+let default_summary_data_point (): summary_data_point =
 {
   _presence=Pbrt.Bitfield.empty;
   attributes=[];
@@ -281,14 +268,14 @@ let default_summary_data_point (): summary_data_point =
   flags=0l;
 }
 
-let default_summary (): summary = 
+let default_summary (): summary =
 {
   data_points=[];
 }
 
 let default_metric_data (): metric_data = Gauge (default_gauge ())
 
-let default_metric (): metric = 
+let default_metric (): metric =
 {
   _presence=Pbrt.Bitfield.empty;
   name="";
@@ -298,7 +285,7 @@ let default_metric (): metric =
   metadata=[];
 }
 
-let default_scope_metrics (): scope_metrics = 
+let default_scope_metrics (): scope_metrics =
 {
   _presence=Pbrt.Bitfield.empty;
   scope=None;
@@ -306,7 +293,7 @@ let default_scope_metrics (): scope_metrics =
   schema_url="";
 }
 
-let default_resource_metrics (): resource_metrics = 
+let default_resource_metrics (): resource_metrics =
 {
   _presence=Pbrt.Bitfield.empty;
   resource=None;
@@ -314,7 +301,7 @@ let default_resource_metrics (): resource_metrics =
   schema_url="";
 }
 
-let default_metrics_data (): metrics_data = 
+let default_metrics_data (): metrics_data =
 {
   resource_metrics=[];
 }
@@ -344,7 +331,7 @@ let copy_exemplar (self:exemplar) : exemplar =
   { self with filtered_attributes = self.filtered_attributes }
 
 let make_exemplar 
-  ~(filtered_attributes:Common.key_value list) 
+  ?(filtered_attributes=[])
   ?(time_unix_nano:int64 option)
   ?(value:exemplar_value option)
   ?(span_id:bytes option)
@@ -388,11 +375,11 @@ let copy_number_data_point (self:number_data_point) : number_data_point =
   { self with attributes = self.attributes }
 
 let make_number_data_point 
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(start_time_unix_nano:int64 option)
   ?(time_unix_nano:int64 option)
   ?(value:number_data_point_value option)
-  ~(exemplars:exemplar list) 
+  ?(exemplars=[])
   ?(flags:int32 option)
   () : number_data_point  =
   let _res = default_number_data_point () in
@@ -420,7 +407,7 @@ let copy_gauge (self:gauge) : gauge =
   { self with data_points = self.data_points }
 
 let make_gauge 
-  ~(data_points:number_data_point list) 
+  ?(data_points=[])
   () : gauge  =
   let _res = default_gauge () in
   set_gauge_data_points _res data_points;
@@ -441,7 +428,7 @@ let copy_sum (self:sum) : sum =
   { self with data_points = self.data_points }
 
 let make_sum 
-  ~(data_points:number_data_point list) 
+  ?(data_points=[])
   ?(aggregation_temporality:aggregation_temporality option)
   ?(is_monotonic:bool option)
   () : sum  =
@@ -487,14 +474,14 @@ let copy_histogram_data_point (self:histogram_data_point) : histogram_data_point
   { self with attributes = self.attributes }
 
 let make_histogram_data_point 
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(start_time_unix_nano:int64 option)
   ?(time_unix_nano:int64 option)
   ?(count:int64 option)
   ?(sum:float option)
-  ~(bucket_counts:int64 list) 
-  ~(explicit_bounds:float list) 
-  ~(exemplars:exemplar list) 
+  ?(bucket_counts=[])
+  ?(explicit_bounds=[])
+  ?(exemplars=[])
   ?(flags:int32 option)
   ?(min:float option)
   ?(max:float option)
@@ -538,7 +525,7 @@ let copy_histogram (self:histogram) : histogram =
   { self with data_points = self.data_points }
 
 let make_histogram 
-  ~(data_points:histogram_data_point list) 
+  ?(data_points=[])
   ?(aggregation_temporality:aggregation_temporality option)
   () : histogram  =
   let _res = default_histogram () in
@@ -560,7 +547,7 @@ let copy_exponential_histogram_data_point_buckets (self:exponential_histogram_da
 
 let make_exponential_histogram_data_point_buckets 
   ?(offset:int32 option)
-  ~(bucket_counts:int64 list) 
+  ?(bucket_counts=[])
   () : exponential_histogram_data_point_buckets  =
   let _res = default_exponential_histogram_data_point_buckets () in
   (match offset with
@@ -610,7 +597,7 @@ let copy_exponential_histogram_data_point (self:exponential_histogram_data_point
   { self with attributes = self.attributes }
 
 let make_exponential_histogram_data_point 
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(start_time_unix_nano:int64 option)
   ?(time_unix_nano:int64 option)
   ?(count:int64 option)
@@ -620,7 +607,7 @@ let make_exponential_histogram_data_point
   ?(positive:exponential_histogram_data_point_buckets option)
   ?(negative:exponential_histogram_data_point_buckets option)
   ?(flags:int32 option)
-  ~(exemplars:exemplar list) 
+  ?(exemplars=[])
   ?(min:float option)
   ?(max:float option)
   ?(zero_threshold:float option)
@@ -677,7 +664,7 @@ let copy_exponential_histogram (self:exponential_histogram) : exponential_histog
   { self with data_points = self.data_points }
 
 let make_exponential_histogram 
-  ~(data_points:exponential_histogram_data_point list) 
+  ?(data_points=[])
   ?(aggregation_temporality:aggregation_temporality option)
   () : exponential_histogram  =
   let _res = default_exponential_histogram () in
@@ -736,12 +723,12 @@ let copy_summary_data_point (self:summary_data_point) : summary_data_point =
   { self with attributes = self.attributes }
 
 let make_summary_data_point 
-  ~(attributes:Common.key_value list) 
+  ?(attributes=[])
   ?(start_time_unix_nano:int64 option)
   ?(time_unix_nano:int64 option)
   ?(count:int64 option)
   ?(sum:float option)
-  ~(quantile_values:summary_data_point_value_at_quantile list) 
+  ?(quantile_values=[])
   ?(flags:int32 option)
   () : summary_data_point  =
   let _res = default_summary_data_point () in
@@ -772,7 +759,7 @@ let copy_summary (self:summary) : summary =
   { self with data_points = self.data_points }
 
 let make_summary 
-  ~(data_points:summary_data_point list) 
+  ?(data_points=[])
   () : summary  =
   let _res = default_summary () in
   set_summary_data_points _res data_points;
@@ -802,7 +789,7 @@ let make_metric
   ?(description:string option)
   ?(unit_:string option)
   ?(data:metric_data option)
-  ~(metadata:Common.key_value list) 
+  ?(metadata=[])
   () : metric  =
   let _res = default_metric () in
   (match name with
@@ -834,7 +821,7 @@ let copy_scope_metrics (self:scope_metrics) : scope_metrics =
 
 let make_scope_metrics 
   ?(scope:Common.instrumentation_scope option)
-  ~(metrics:metric list) 
+  ?(metrics=[])
   ?(schema_url:string option)
   () : scope_metrics  =
   let _res = default_scope_metrics () in
@@ -861,7 +848,7 @@ let copy_resource_metrics (self:resource_metrics) : resource_metrics =
 
 let make_resource_metrics 
   ?(resource:Resource.resource option)
-  ~(scope_metrics:scope_metrics list) 
+  ?(scope_metrics=[])
   ?(schema_url:string option)
   () : resource_metrics  =
   let _res = default_resource_metrics () in
@@ -882,7 +869,7 @@ let copy_metrics_data (self:metrics_data) : metrics_data =
   { self with resource_metrics = self.resource_metrics }
 
 let make_metrics_data 
-  ~(resource_metrics:resource_metrics list) 
+  ?(resource_metrics=[])
   () : metrics_data  =
   let _res = default_metrics_data () in
   set_metrics_data_resource_metrics _res resource_metrics;

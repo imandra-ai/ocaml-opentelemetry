@@ -12,8 +12,7 @@ type export_metrics_service_request = private {
 }
 
 type export_metrics_partial_success = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable rejected_data_points : int64;
   mutable error_message : string;
 }
@@ -38,7 +37,7 @@ val default_export_metrics_service_response : unit -> export_metrics_service_res
 (** {2 Make functions} *)
 
 val make_export_metrics_service_request : 
-  resource_metrics:Metrics.resource_metrics list ->
+  ?resource_metrics:Metrics.resource_metrics list ->
   unit ->
   export_metrics_service_request
 (** [make_export_metrics_service_request … ()] is a builder for type [export_metrics_service_request] *)

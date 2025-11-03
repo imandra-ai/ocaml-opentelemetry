@@ -8,8 +8,7 @@
 (** {2 Types} *)
 
 type resource = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable attributes : Common.key_value list;
   mutable dropped_attributes_count : int32;
   mutable entity_refs : Common.entity_ref list;
@@ -25,9 +24,9 @@ val default_resource : unit -> resource
 (** {2 Make functions} *)
 
 val make_resource : 
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
-  entity_refs:Common.entity_ref list ->
+  ?entity_refs:Common.entity_ref list ->
   unit ->
   resource
 (** [make_resource … ()] is a builder for type [resource] *)

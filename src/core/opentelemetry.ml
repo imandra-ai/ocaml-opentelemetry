@@ -696,8 +696,7 @@ module Globals = struct
   let service_version = ref None
 
   let instrumentation_library : instrumentation_scope =
-    make_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel"
-      ~attributes:[] ()
+    make_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel" ()
 
   (** Global attributes, initially set via OTEL_RESOURCE_ATTRIBUTES and
       modifiable by the user code. They will be attached to each outgoing
@@ -1223,9 +1222,7 @@ module Trace = struct
       make_scope_spans ~scope:Globals.instrumentation_library ~spans ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource =
-      Proto.Resource.make_resource ~entity_refs:[] ~attributes ()
-    in
+    let resource = Proto.Resource.make_resource ~attributes () in
     make_resource_spans ~resource ~scope_spans:[ ils ] ()
 
   (** Sync emitter.
@@ -1375,7 +1372,7 @@ module Metrics = struct
       number_data_point =
     let attributes = attrs |> List.map _conv_key_value in
     make_number_data_point ~start_time_unix_nano ~time_unix_nano:now ~attributes
-      ~value:(As_double d) ~exemplars:[] ()
+      ~value:(As_double d) ()
 
   (** Number data point, as an int *)
   let int ?(start_time_unix_nano = _program_start)
@@ -1384,12 +1381,12 @@ module Metrics = struct
     let attributes = attrs |> List.map _conv_key_value in
     make_number_data_point ~start_time_unix_nano ~time_unix_nano:now ~attributes
       ~value:(As_int (Int64.of_int i))
-      ~exemplars:[] ()
+      ()
 
   (** Aggregation of a scalar metric, always with the current value *)
   let gauge ~name ?description ?unit_ (l : number_data_point list) : t =
     let data = Gauge (make_gauge ~data_points:l ()) in
-    make_metric ~metadata:[] ~name ?description ?unit_ ~data ()
+    make_metric ~name ?description ?unit_ ~data ()
 
   type aggregation_temporality = Metrics.aggregation_temporality =
     | Aggregation_temporality_unspecified
@@ -1403,7 +1400,7 @@ module Metrics = struct
     let data =
       Sum (make_sum ~data_points:l ?is_monotonic ~aggregation_temporality ())
     in
-    make_metric ~metadata:[] ~name ?description ?unit_ ~data ()
+    make_metric ~name ?description ?unit_ ~data ()
 
   (** Histogram data
       @param count number of values in population (non negative)
@@ -1426,7 +1423,7 @@ module Metrics = struct
     let data =
       Histogram (make_histogram ~data_points:l ?aggregation_temporality ())
     in
-    make_metric ~metadata:[] ~name ?description ?unit_ ~data ()
+    make_metric ~name ?description ?unit_ ~data ()
 
   (* TODO: exponential history *)
   (* TODO: summary *)
@@ -1439,9 +1436,7 @@ module Metrics = struct
       make_scope_metrics ~scope:Globals.instrumentation_library ~metrics:l ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource =
-      Proto.Resource.make_resource ~entity_refs:[] ~attributes ()
-    in
+    let resource = Proto.Resource.make_resource ~attributes () in
     make_resource_metrics ~scope_metrics:[ lm ] ~resource ()
 
   (** Emit some metrics to the collector (sync). This blocks until the backend
@@ -1546,7 +1541,7 @@ module Logs = struct
     let trace_id = Option.map Trace_id.to_bytes trace_id in
     let span_id = Option.map Span_id.to_bytes span_id in
     let body = _conv_value body in
-    make_log_record ~time_unix_nano ~observed_time_unix_nano ~attributes:[]
+    make_log_record ~time_unix_nano ~observed_time_unix_nano
       ?severity_number:severity ?severity_text:log_level ?flags ?trace_id
       ?span_id ?body ()
 
@@ -1572,9 +1567,7 @@ module Logs = struct
       cause deadlocks. *)
   let emit ?service_name ?attrs (l : t list) : unit =
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource =
-      Proto.Resource.make_resource ~entity_refs:[] ~attributes ()
-    in
+    let resource = Proto.Resource.make_resource ~attributes () in
     let ll =
       make_scope_logs ~scope:Globals.instrumentation_library ~log_records:l ()
     in

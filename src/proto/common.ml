@@ -18,15 +18,13 @@ and key_value_list = {
 }
 
 and key_value = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable key : string;
   mutable value : any_value option;
 }
 
 type instrumentation_scope = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable name : string;
   mutable version : string;
   mutable attributes : key_value list;
@@ -34,8 +32,7 @@ type instrumentation_scope = {
 }
 
 type entity_ref = {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable schema_url : string;
   mutable type_ : string;
   mutable id_keys : string list;
@@ -44,24 +41,24 @@ type entity_ref = {
 
 let default_any_value (): any_value = String_value ("")
 
-let default_array_value (): array_value = 
+let default_array_value (): array_value =
 {
   values=[];
 }
 
-let default_key_value_list (): key_value_list = 
+let default_key_value_list (): key_value_list =
 {
   values=[];
 }
 
-let default_key_value (): key_value = 
+let default_key_value (): key_value =
 {
   _presence=Pbrt.Bitfield.empty;
   key="";
   value=None;
 }
 
-let default_instrumentation_scope (): instrumentation_scope = 
+let default_instrumentation_scope (): instrumentation_scope =
 {
   _presence=Pbrt.Bitfield.empty;
   name="";
@@ -70,7 +67,7 @@ let default_instrumentation_scope (): instrumentation_scope =
   dropped_attributes_count=0l;
 }
 
-let default_entity_ref (): entity_ref = 
+let default_entity_ref (): entity_ref =
 {
   _presence=Pbrt.Bitfield.empty;
   schema_url="";
@@ -91,7 +88,7 @@ let copy_array_value (self:array_value) : array_value =
   { self with values = self.values }
 
 let make_array_value 
-  ~(values:any_value list) 
+  ?(values=[])
   () : array_value  =
   let _res = default_array_value () in
   set_array_value_values _res values;
@@ -105,7 +102,7 @@ let copy_key_value_list (self:key_value_list) : key_value_list =
   { self with values = self.values }
 
 let make_key_value_list 
-  ~(values:key_value list) 
+  ?(values=[])
   () : key_value_list  =
   let _res = default_key_value_list () in
   set_key_value_list_values _res values;
@@ -153,7 +150,7 @@ let copy_instrumentation_scope (self:instrumentation_scope) : instrumentation_sc
 let make_instrumentation_scope 
   ?(name:string option)
   ?(version:string option)
-  ~(attributes:key_value list) 
+  ?(attributes=[])
   ?(dropped_attributes_count:int32 option)
   () : instrumentation_scope  =
   let _res = default_instrumentation_scope () in
@@ -187,8 +184,8 @@ let copy_entity_ref (self:entity_ref) : entity_ref =
 let make_entity_ref 
   ?(schema_url:string option)
   ?(type_:string option)
-  ~(id_keys:string list) 
-  ~(description_keys:string list) 
+  ?(id_keys=[])
+  ?(description_keys=[])
   () : entity_ref  =
   let _res = default_entity_ref () in
   (match schema_url with

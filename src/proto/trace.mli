@@ -16,8 +16,7 @@ type span_span_kind =
   | Span_kind_consumer 
 
 type span_event = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 3 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
   mutable time_unix_nano : int64;
   mutable name : string;
   mutable attributes : Common.key_value list;
@@ -25,8 +24,7 @@ type span_event = private {
 }
 
 type span_link = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 5 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 5 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
@@ -41,15 +39,13 @@ type status_status_code =
   | Status_code_error 
 
 type status = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 2 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable message : string;
   mutable code : status_status_code;
 }
 
 type span = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 12 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 12 fields *)
   mutable trace_id : bytes;
   mutable span_id : bytes;
   mutable trace_state : string;
@@ -69,16 +65,14 @@ type span = private {
 }
 
 type scope_spans = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable scope : Common.instrumentation_scope option;
   mutable spans : span list;
   mutable schema_url : string;
 }
 
 type resource_spans = private {
-  mutable _presence: Pbrt.Bitfield.t;
-  (** tracking presence for 1 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
   mutable resource : Resource.resource option;
   mutable scope_spans : scope_spans list;
   mutable schema_url : string;
@@ -134,7 +128,7 @@ val default_span_flags : unit -> span_flags
 val make_span_event : 
   ?time_unix_nano:int64 ->
   ?name:string ->
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
   unit ->
   span_event
@@ -167,7 +161,7 @@ val make_span_link :
   ?trace_id:bytes ->
   ?span_id:bytes ->
   ?trace_state:string ->
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
   ?flags:int32 ->
   unit ->
@@ -241,11 +235,11 @@ val make_span :
   ?kind:span_span_kind ->
   ?start_time_unix_nano:int64 ->
   ?end_time_unix_nano:int64 ->
-  attributes:Common.key_value list ->
+  ?attributes:Common.key_value list ->
   ?dropped_attributes_count:int32 ->
-  events:span_event list ->
+  ?events:span_event list ->
   ?dropped_events_count:int32 ->
-  links:span_link list ->
+  ?links:span_link list ->
   ?dropped_links_count:int32 ->
   ?status:status ->
   unit ->
@@ -340,7 +334,7 @@ val set_span_status : span -> status -> unit
 
 val make_scope_spans : 
   ?scope:Common.instrumentation_scope ->
-  spans:span list ->
+  ?spans:span list ->
   ?schema_url:string ->
   unit ->
   scope_spans
@@ -362,7 +356,7 @@ val set_scope_spans_schema_url : scope_spans -> string -> unit
 
 val make_resource_spans : 
   ?resource:Resource.resource ->
-  scope_spans:scope_spans list ->
+  ?scope_spans:scope_spans list ->
   ?schema_url:string ->
   unit ->
   resource_spans
@@ -383,7 +377,7 @@ val set_resource_spans_schema_url : resource_spans -> string -> unit
   (** set field schema_url in resource_spans *)
 
 val make_traces_data : 
-  resource_spans:resource_spans list ->
+  ?resource_spans:resource_spans list ->
   unit ->
   traces_data
 (** [make_traces_data … ()] is a builder for type [traces_data] *)
