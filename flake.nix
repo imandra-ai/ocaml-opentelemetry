@@ -27,7 +27,7 @@
               src = pkgs.fetchgit {
                 url = "https://github.com/mransan/ocaml-protoc.git";
                 rev = "ad297983ff7f253f309ed77f38c2a93d0d01bfdf";
-                sha256 = "sha256-FY4WEBIOwiZGawB9wBbmUFynNkOvdumc2oUV2Aj3mOk=";
+                sha256 = "sha256-KPctDwJIGi2W3HJEZBPwu9qRUrqK0azfW7VKCPxzCOU=";
               };
             });
           };
