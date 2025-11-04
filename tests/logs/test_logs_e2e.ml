@@ -24,18 +24,18 @@ let tests (signal_batches : Client.Signal.t list) =
                        List.map
                          (fun (lr : L.log_record) ->
                            let lr = L.copy_log_record lr in
-                           L.set_log_record_time_unix_nano lr 0L;
-                           L.set_log_record_observed_time_unix_nano lr 0L;
+                           L.log_record_set_time_unix_nano lr 0L;
+                           L.log_record_set_observed_time_unix_nano lr 0L;
                            lr)
                          sl.log_records
                      in
                      let sl = L.copy_scope_logs sl in
-                     L.set_scope_logs_log_records sl masked_log_records;
+                     L.scope_logs_set_log_records sl masked_log_records;
                      sl)
                    l.scope_logs
                in
                let l = L.copy_resource_logs l in
-               L.set_resource_logs_scope_logs l masked_scope_logs;
+               L.resource_logs_set_scope_logs l masked_scope_logs;
                l)
         |> List.iter (Format.printf "%a\n" L.pp_resource_logs)
       | _ -> ())
