@@ -51,18 +51,18 @@ type sum = private {
 }
 
 type histogram_data_point = private {
-  mutable _presence: Pbrt.Bitfield.t; (** presence for 4 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 7 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
   mutable count : int64;
-  mutable sum : float option;
+  mutable sum : float;
   mutable bucket_counts : int64 list;
   mutable explicit_bounds : float list;
   mutable exemplars : exemplar list;
   mutable flags : int32;
-  mutable min : float option;
-  mutable max : float option;
+  mutable min : float;
+  mutable max : float;
 }
 
 type histogram = private {
@@ -78,20 +78,20 @@ type exponential_histogram_data_point_buckets = private {
 }
 
 type exponential_histogram_data_point = private {
-  mutable _presence: Pbrt.Bitfield.t; (** presence for 7 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 10 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
   mutable count : int64;
-  mutable sum : float option;
+  mutable sum : float;
   mutable scale : int32;
   mutable zero_count : int64;
   mutable positive : exponential_histogram_data_point_buckets option;
   mutable negative : exponential_histogram_data_point_buckets option;
   mutable flags : int32;
   mutable exemplars : exemplar list;
-  mutable min : float option;
-  mutable max : float option;
+  mutable min : float;
+  mutable max : float;
   mutable zero_threshold : float;
 }
 
@@ -229,7 +229,6 @@ val default_data_point_flags : unit -> data_point_flags
 
 (** {2 Make functions} *)
 
-
 val make_exemplar : 
   ?filtered_attributes:Common.key_value list ->
   ?time_unix_nano:int64 ->
@@ -265,7 +264,6 @@ val exemplar_has_trace_id : exemplar -> bool
 
 val exemplar_set_trace_id : exemplar -> bytes -> unit
   (** set field trace_id in exemplar *)
-
 
 val make_number_data_point : 
   ?attributes:Common.key_value list ->
@@ -317,7 +315,6 @@ val copy_gauge : gauge -> gauge
 
 val gauge_set_data_points : gauge -> number_data_point list -> unit
   (** set field data_points in gauge *)
-
 
 val make_sum : 
   ?data_points:number_data_point list ->
@@ -383,6 +380,9 @@ val histogram_data_point_has_count : histogram_data_point -> bool
 val histogram_data_point_set_count : histogram_data_point -> int64 -> unit
   (** set field count in histogram_data_point *)
 
+val histogram_data_point_has_sum : histogram_data_point -> bool
+  (** presence of field "sum" in [histogram_data_point] *)
+
 val histogram_data_point_set_sum : histogram_data_point -> float -> unit
   (** set field sum in histogram_data_point *)
 
@@ -401,8 +401,14 @@ val histogram_data_point_has_flags : histogram_data_point -> bool
 val histogram_data_point_set_flags : histogram_data_point -> int32 -> unit
   (** set field flags in histogram_data_point *)
 
+val histogram_data_point_has_min : histogram_data_point -> bool
+  (** presence of field "min" in [histogram_data_point] *)
+
 val histogram_data_point_set_min : histogram_data_point -> float -> unit
   (** set field min in histogram_data_point *)
+
+val histogram_data_point_has_max : histogram_data_point -> bool
+  (** presence of field "max" in [histogram_data_point] *)
 
 val histogram_data_point_set_max : histogram_data_point -> float -> unit
   (** set field max in histogram_data_point *)
@@ -485,6 +491,9 @@ val exponential_histogram_data_point_has_count : exponential_histogram_data_poin
 val exponential_histogram_data_point_set_count : exponential_histogram_data_point -> int64 -> unit
   (** set field count in exponential_histogram_data_point *)
 
+val exponential_histogram_data_point_has_sum : exponential_histogram_data_point -> bool
+  (** presence of field "sum" in [exponential_histogram_data_point] *)
+
 val exponential_histogram_data_point_set_sum : exponential_histogram_data_point -> float -> unit
   (** set field sum in exponential_histogram_data_point *)
 
@@ -515,8 +524,14 @@ val exponential_histogram_data_point_set_flags : exponential_histogram_data_poin
 val exponential_histogram_data_point_set_exemplars : exponential_histogram_data_point -> exemplar list -> unit
   (** set field exemplars in exponential_histogram_data_point *)
 
+val exponential_histogram_data_point_has_min : exponential_histogram_data_point -> bool
+  (** presence of field "min" in [exponential_histogram_data_point] *)
+
 val exponential_histogram_data_point_set_min : exponential_histogram_data_point -> float -> unit
   (** set field min in exponential_histogram_data_point *)
+
+val exponential_histogram_data_point_has_max : exponential_histogram_data_point -> bool
+  (** presence of field "max" in [exponential_histogram_data_point] *)
 
 val exponential_histogram_data_point_set_max : exponential_histogram_data_point -> float -> unit
   (** set field max in exponential_histogram_data_point *)
@@ -627,7 +642,6 @@ val copy_summary : summary -> summary
 val summary_set_data_points : summary -> summary_data_point list -> unit
   (** set field data_points in summary *)
 
-
 val make_metric : 
   ?name:string ->
   ?description:string ->
@@ -718,7 +732,6 @@ val copy_metrics_data : metrics_data -> metrics_data
 
 val metrics_data_set_resource_metrics : metrics_data -> resource_metrics list -> unit
   (** set field resource_metrics in metrics_data *)
-
 
 
 (** {2 Formatters} *)

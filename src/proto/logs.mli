@@ -95,7 +95,6 @@ val default_log_record_flags : unit -> log_record_flags
 
 (** {2 Make functions} *)
 
-
 val make_log_record : 
   ?time_unix_nano:int64 ->
   ?observed_time_unix_nano:int64 ->
@@ -228,7 +227,6 @@ val copy_logs_data : logs_data -> logs_data
 
 val logs_data_set_resource_logs : logs_data -> resource_logs list -> unit
   (** set field resource_logs in logs_data *)
-
 
 
 (** {2 Formatters} *)

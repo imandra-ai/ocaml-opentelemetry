@@ -52,10 +52,8 @@ let make_status
 
 let rec pp_status fmt (v:status) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "code" Pbrt.Pp.pp_int32 fmt v.code;
-    if not (status_has_code v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "message" Pbrt.Pp.pp_bytes fmt v.message;
-    if not (status_has_message v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (status_has_code v)) ~first:true "code" Pbrt.Pp.pp_int32 fmt v.code;
+    Pbrt.Pp.pp_record_field ~absent:(not (status_has_message v)) ~first:false "message" Pbrt.Pp.pp_bytes fmt v.message;
     Pbrt.Pp.pp_record_field ~first:false "details" (Pbrt.Pp.pp_list Pbrt.Pp.pp_bytes) fmt v.details;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -96,17 +94,17 @@ let rec decode_pb_status d =
       status_set_code v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(status), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "status" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       status_set_message v (Pbrt.Decoder.bytes d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(status), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "status" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       status_set_details v ((Pbrt.Decoder.bytes d) :: v.details);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(status), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "status" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : status)

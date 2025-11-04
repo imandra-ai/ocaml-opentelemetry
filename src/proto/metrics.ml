@@ -44,18 +44,18 @@ type sum = {
 }
 
 type histogram_data_point = {
-  mutable _presence: Pbrt.Bitfield.t; (** presence for 4 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 7 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
   mutable count : int64;
-  mutable sum : float option;
+  mutable sum : float;
   mutable bucket_counts : int64 list;
   mutable explicit_bounds : float list;
   mutable exemplars : exemplar list;
   mutable flags : int32;
-  mutable min : float option;
-  mutable max : float option;
+  mutable min : float;
+  mutable max : float;
 }
 
 type histogram = {
@@ -71,20 +71,20 @@ type exponential_histogram_data_point_buckets = {
 }
 
 type exponential_histogram_data_point = {
-  mutable _presence: Pbrt.Bitfield.t; (** presence for 7 fields *)
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 10 fields *)
   mutable attributes : Common.key_value list;
   mutable start_time_unix_nano : int64;
   mutable time_unix_nano : int64;
   mutable count : int64;
-  mutable sum : float option;
+  mutable sum : float;
   mutable scale : int32;
   mutable zero_count : int64;
   mutable positive : exponential_histogram_data_point_buckets option;
   mutable negative : exponential_histogram_data_point_buckets option;
   mutable flags : int32;
   mutable exemplars : exemplar list;
-  mutable min : float option;
-  mutable max : float option;
+  mutable min : float;
+  mutable max : float;
   mutable zero_threshold : float;
 }
 
@@ -200,13 +200,13 @@ let default_histogram_data_point (): histogram_data_point =
   start_time_unix_nano=0L;
   time_unix_nano=0L;
   count=0L;
-  sum=None;
+  sum=0.;
   bucket_counts=[];
   explicit_bounds=[];
   exemplars=[];
   flags=0l;
-  min=None;
-  max=None;
+  min=0.;
+  max=0.;
 }
 
 let default_histogram (): histogram =
@@ -230,15 +230,15 @@ let default_exponential_histogram_data_point (): exponential_histogram_data_poin
   start_time_unix_nano=0L;
   time_unix_nano=0L;
   count=0L;
-  sum=None;
+  sum=0.;
   scale=0l;
   zero_count=0L;
   positive=None;
   negative=None;
   flags=0l;
   exemplars=[];
-  min=None;
-  max=None;
+  min=0.;
+  max=0.;
   zero_threshold=0.;
 }
 
@@ -311,7 +311,6 @@ let default_data_point_flags () = (Data_point_flags_do_not_use:data_point_flags)
 
 (** {2 Make functions} *)
 
-
 let[@inline] exemplar_has_time_unix_nano (self:exemplar) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] exemplar_has_span_id (self:exemplar) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] exemplar_has_trace_id (self:exemplar) : bool = (Pbrt.Bitfield.get self._presence 2)
@@ -352,7 +351,6 @@ let make_exemplar
   | None -> ()
   | Some v -> exemplar_set_trace_id _res v);
   _res
-
 
 let[@inline] number_data_point_has_start_time_unix_nano (self:number_data_point) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] number_data_point_has_time_unix_nano (self:number_data_point) : bool = (Pbrt.Bitfield.get self._presence 1)
@@ -413,7 +411,6 @@ let make_gauge
   gauge_set_data_points _res data_points;
   _res
 
-
 let[@inline] sum_has_aggregation_temporality (self:sum) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] sum_has_is_monotonic (self:sum) : bool = (Pbrt.Bitfield.get self._presence 1)
 
@@ -445,7 +442,10 @@ let make_sum
 let[@inline] histogram_data_point_has_start_time_unix_nano (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] histogram_data_point_has_time_unix_nano (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] histogram_data_point_has_count (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 2)
-let[@inline] histogram_data_point_has_flags (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 3)
+let[@inline] histogram_data_point_has_sum (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 3)
+let[@inline] histogram_data_point_has_flags (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 4)
+let[@inline] histogram_data_point_has_min (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 5)
+let[@inline] histogram_data_point_has_max (self:histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 6)
 
 let[@inline] histogram_data_point_set_attributes (self:histogram_data_point) (x:Common.key_value list) : unit =
   self.attributes <- x
@@ -456,7 +456,7 @@ let[@inline] histogram_data_point_set_time_unix_nano (self:histogram_data_point)
 let[@inline] histogram_data_point_set_count (self:histogram_data_point) (x:int64) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 2); self.count <- x
 let[@inline] histogram_data_point_set_sum (self:histogram_data_point) (x:float) : unit =
-  self.sum <- Some x
+  self._presence <- (Pbrt.Bitfield.set self._presence 3); self.sum <- x
 let[@inline] histogram_data_point_set_bucket_counts (self:histogram_data_point) (x:int64 list) : unit =
   self.bucket_counts <- x
 let[@inline] histogram_data_point_set_explicit_bounds (self:histogram_data_point) (x:float list) : unit =
@@ -464,11 +464,11 @@ let[@inline] histogram_data_point_set_explicit_bounds (self:histogram_data_point
 let[@inline] histogram_data_point_set_exemplars (self:histogram_data_point) (x:exemplar list) : unit =
   self.exemplars <- x
 let[@inline] histogram_data_point_set_flags (self:histogram_data_point) (x:int32) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 3); self.flags <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 4); self.flags <- x
 let[@inline] histogram_data_point_set_min (self:histogram_data_point) (x:float) : unit =
-  self.min <- Some x
+  self._presence <- (Pbrt.Bitfield.set self._presence 5); self.min <- x
 let[@inline] histogram_data_point_set_max (self:histogram_data_point) (x:float) : unit =
-  self.max <- Some x
+  self._presence <- (Pbrt.Bitfield.set self._presence 6); self.max <- x
 
 let copy_histogram_data_point (self:histogram_data_point) : histogram_data_point =
   { self with attributes = self.attributes }
@@ -559,10 +559,13 @@ let make_exponential_histogram_data_point_buckets
 let[@inline] exponential_histogram_data_point_has_start_time_unix_nano (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] exponential_histogram_data_point_has_time_unix_nano (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] exponential_histogram_data_point_has_count (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 2)
-let[@inline] exponential_histogram_data_point_has_scale (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 3)
-let[@inline] exponential_histogram_data_point_has_zero_count (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 4)
-let[@inline] exponential_histogram_data_point_has_flags (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 5)
-let[@inline] exponential_histogram_data_point_has_zero_threshold (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 6)
+let[@inline] exponential_histogram_data_point_has_sum (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 3)
+let[@inline] exponential_histogram_data_point_has_scale (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 4)
+let[@inline] exponential_histogram_data_point_has_zero_count (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 5)
+let[@inline] exponential_histogram_data_point_has_flags (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 6)
+let[@inline] exponential_histogram_data_point_has_min (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 7)
+let[@inline] exponential_histogram_data_point_has_max (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 8)
+let[@inline] exponential_histogram_data_point_has_zero_threshold (self:exponential_histogram_data_point) : bool = (Pbrt.Bitfield.get self._presence 9)
 
 let[@inline] exponential_histogram_data_point_set_attributes (self:exponential_histogram_data_point) (x:Common.key_value list) : unit =
   self.attributes <- x
@@ -573,25 +576,25 @@ let[@inline] exponential_histogram_data_point_set_time_unix_nano (self:exponenti
 let[@inline] exponential_histogram_data_point_set_count (self:exponential_histogram_data_point) (x:int64) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 2); self.count <- x
 let[@inline] exponential_histogram_data_point_set_sum (self:exponential_histogram_data_point) (x:float) : unit =
-  self.sum <- Some x
+  self._presence <- (Pbrt.Bitfield.set self._presence 3); self.sum <- x
 let[@inline] exponential_histogram_data_point_set_scale (self:exponential_histogram_data_point) (x:int32) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 3); self.scale <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 4); self.scale <- x
 let[@inline] exponential_histogram_data_point_set_zero_count (self:exponential_histogram_data_point) (x:int64) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 4); self.zero_count <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 5); self.zero_count <- x
 let[@inline] exponential_histogram_data_point_set_positive (self:exponential_histogram_data_point) (x:exponential_histogram_data_point_buckets) : unit =
   self.positive <- Some x
 let[@inline] exponential_histogram_data_point_set_negative (self:exponential_histogram_data_point) (x:exponential_histogram_data_point_buckets) : unit =
   self.negative <- Some x
 let[@inline] exponential_histogram_data_point_set_flags (self:exponential_histogram_data_point) (x:int32) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 5); self.flags <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 6); self.flags <- x
 let[@inline] exponential_histogram_data_point_set_exemplars (self:exponential_histogram_data_point) (x:exemplar list) : unit =
   self.exemplars <- x
 let[@inline] exponential_histogram_data_point_set_min (self:exponential_histogram_data_point) (x:float) : unit =
-  self.min <- Some x
+  self._presence <- (Pbrt.Bitfield.set self._presence 7); self.min <- x
 let[@inline] exponential_histogram_data_point_set_max (self:exponential_histogram_data_point) (x:float) : unit =
-  self.max <- Some x
+  self._presence <- (Pbrt.Bitfield.set self._presence 8); self.max <- x
 let[@inline] exponential_histogram_data_point_set_zero_threshold (self:exponential_histogram_data_point) (x:float) : unit =
-  self._presence <- (Pbrt.Bitfield.set self._presence 6); self.zero_threshold <- x
+  self._presence <- (Pbrt.Bitfield.set self._presence 9); self.zero_threshold <- x
 
 let copy_exponential_histogram_data_point (self:exponential_histogram_data_point) : exponential_histogram_data_point =
   { self with attributes = self.attributes }
@@ -765,7 +768,6 @@ let make_summary
   summary_set_data_points _res data_points;
   _res
 
-
 let[@inline] metric_has_name (self:metric) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] metric_has_description (self:metric) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] metric_has_unit_ (self:metric) : bool = (Pbrt.Bitfield.get self._presence 2)
@@ -875,7 +877,6 @@ let make_metrics_data
   metrics_data_set_resource_metrics _res resource_metrics;
   _res
 
-
 [@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Formatters} *)
@@ -888,13 +889,10 @@ let rec pp_exemplar_value fmt (v:exemplar_value) =
 and pp_exemplar fmt (v:exemplar) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "filtered_attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.filtered_attributes;
-    Pbrt.Pp.pp_record_field ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (exemplar_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (exemplar_has_time_unix_nano v)) ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "value" (Pbrt.Pp.pp_option pp_exemplar_value) fmt v.value;
-    Pbrt.Pp.pp_record_field ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
-    if not (exemplar_has_span_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
-    if not (exemplar_has_trace_id v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (exemplar_has_span_id v)) ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (exemplar_has_trace_id v)) ~first:false "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -906,14 +904,11 @@ let rec pp_number_data_point_value fmt (v:number_data_point_value) =
 and pp_number_data_point fmt (v:number_data_point) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
-    if not (number_data_point_has_start_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (number_data_point_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (number_data_point_has_start_time_unix_nano v)) ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (number_data_point_has_time_unix_nano v)) ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "value" (Pbrt.Pp.pp_option pp_number_data_point_value) fmt v.value;
     Pbrt.Pp.pp_record_field ~first:false "exemplars" (Pbrt.Pp.pp_list pp_exemplar) fmt v.exemplars;
-    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (number_data_point_has_flags v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (number_data_point_has_flags v)) ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -932,45 +927,37 @@ let rec pp_aggregation_temporality fmt (v:aggregation_temporality) =
 let rec pp_sum fmt (v:sum) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "data_points" (Pbrt.Pp.pp_list pp_number_data_point) fmt v.data_points;
-    Pbrt.Pp.pp_record_field ~first:false "aggregation_temporality" pp_aggregation_temporality fmt v.aggregation_temporality;
-    if not (sum_has_aggregation_temporality v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "is_monotonic" Pbrt.Pp.pp_bool fmt v.is_monotonic;
-    if not (sum_has_is_monotonic v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (sum_has_aggregation_temporality v)) ~first:false "aggregation_temporality" pp_aggregation_temporality fmt v.aggregation_temporality;
+    Pbrt.Pp.pp_record_field ~absent:(not (sum_has_is_monotonic v)) ~first:false "is_monotonic" Pbrt.Pp.pp_bool fmt v.is_monotonic;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_histogram_data_point fmt (v:histogram_data_point) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
-    if not (histogram_data_point_has_start_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (histogram_data_point_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "count" Pbrt.Pp.pp_int64 fmt v.count;
-    if not (histogram_data_point_has_count v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "sum" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.sum;
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_data_point_has_start_time_unix_nano v)) ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_data_point_has_time_unix_nano v)) ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_data_point_has_count v)) ~first:false "count" Pbrt.Pp.pp_int64 fmt v.count;
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_data_point_has_sum v)) ~first:false "sum" Pbrt.Pp.pp_float fmt v.sum;
     Pbrt.Pp.pp_record_field ~first:false "bucket_counts" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int64) fmt v.bucket_counts;
     Pbrt.Pp.pp_record_field ~first:false "explicit_bounds" (Pbrt.Pp.pp_list Pbrt.Pp.pp_float) fmt v.explicit_bounds;
     Pbrt.Pp.pp_record_field ~first:false "exemplars" (Pbrt.Pp.pp_list pp_exemplar) fmt v.exemplars;
-    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (histogram_data_point_has_flags v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "min" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.min;
-    Pbrt.Pp.pp_record_field ~first:false "max" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.max;
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_data_point_has_flags v)) ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_data_point_has_min v)) ~first:false "min" Pbrt.Pp.pp_float fmt v.min;
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_data_point_has_max v)) ~first:false "max" Pbrt.Pp.pp_float fmt v.max;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_histogram fmt (v:histogram) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "data_points" (Pbrt.Pp.pp_list pp_histogram_data_point) fmt v.data_points;
-    Pbrt.Pp.pp_record_field ~first:false "aggregation_temporality" pp_aggregation_temporality fmt v.aggregation_temporality;
-    if not (histogram_has_aggregation_temporality v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (histogram_has_aggregation_temporality v)) ~first:false "aggregation_temporality" pp_aggregation_temporality fmt v.aggregation_temporality;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_exponential_histogram_data_point_buckets fmt (v:exponential_histogram_data_point_buckets) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "offset" Pbrt.Pp.pp_int32 fmt v.offset;
-    if not (exponential_histogram_data_point_buckets_has_offset v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_buckets_has_offset v)) ~first:true "offset" Pbrt.Pp.pp_int32 fmt v.offset;
     Pbrt.Pp.pp_record_field ~first:false "bucket_counts" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int64) fmt v.bucket_counts;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -978,60 +965,45 @@ let rec pp_exponential_histogram_data_point_buckets fmt (v:exponential_histogram
 let rec pp_exponential_histogram_data_point fmt (v:exponential_histogram_data_point) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
-    if not (exponential_histogram_data_point_has_start_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (exponential_histogram_data_point_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "count" Pbrt.Pp.pp_int64 fmt v.count;
-    if not (exponential_histogram_data_point_has_count v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "sum" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.sum;
-    Pbrt.Pp.pp_record_field ~first:false "scale" Pbrt.Pp.pp_int32 fmt v.scale;
-    if not (exponential_histogram_data_point_has_scale v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "zero_count" Pbrt.Pp.pp_int64 fmt v.zero_count;
-    if not (exponential_histogram_data_point_has_zero_count v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_start_time_unix_nano v)) ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_time_unix_nano v)) ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_count v)) ~first:false "count" Pbrt.Pp.pp_int64 fmt v.count;
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_sum v)) ~first:false "sum" Pbrt.Pp.pp_float fmt v.sum;
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_scale v)) ~first:false "scale" Pbrt.Pp.pp_int32 fmt v.scale;
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_zero_count v)) ~first:false "zero_count" Pbrt.Pp.pp_int64 fmt v.zero_count;
     Pbrt.Pp.pp_record_field ~first:false "positive" (Pbrt.Pp.pp_option pp_exponential_histogram_data_point_buckets) fmt v.positive;
     Pbrt.Pp.pp_record_field ~first:false "negative" (Pbrt.Pp.pp_option pp_exponential_histogram_data_point_buckets) fmt v.negative;
-    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (exponential_histogram_data_point_has_flags v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_flags v)) ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
     Pbrt.Pp.pp_record_field ~first:false "exemplars" (Pbrt.Pp.pp_list pp_exemplar) fmt v.exemplars;
-    Pbrt.Pp.pp_record_field ~first:false "min" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.min;
-    Pbrt.Pp.pp_record_field ~first:false "max" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.max;
-    Pbrt.Pp.pp_record_field ~first:false "zero_threshold" Pbrt.Pp.pp_float fmt v.zero_threshold;
-    if not (exponential_histogram_data_point_has_zero_threshold v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_min v)) ~first:false "min" Pbrt.Pp.pp_float fmt v.min;
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_max v)) ~first:false "max" Pbrt.Pp.pp_float fmt v.max;
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_data_point_has_zero_threshold v)) ~first:false "zero_threshold" Pbrt.Pp.pp_float fmt v.zero_threshold;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_exponential_histogram fmt (v:exponential_histogram) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "data_points" (Pbrt.Pp.pp_list pp_exponential_histogram_data_point) fmt v.data_points;
-    Pbrt.Pp.pp_record_field ~first:false "aggregation_temporality" pp_aggregation_temporality fmt v.aggregation_temporality;
-    if not (exponential_histogram_has_aggregation_temporality v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (exponential_histogram_has_aggregation_temporality v)) ~first:false "aggregation_temporality" pp_aggregation_temporality fmt v.aggregation_temporality;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_summary_data_point_value_at_quantile fmt (v:summary_data_point_value_at_quantile) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "quantile" Pbrt.Pp.pp_float fmt v.quantile;
-    if not (summary_data_point_value_at_quantile_has_quantile v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "value" Pbrt.Pp.pp_float fmt v.value;
-    if not (summary_data_point_value_at_quantile_has_value v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (summary_data_point_value_at_quantile_has_quantile v)) ~first:true "quantile" Pbrt.Pp.pp_float fmt v.quantile;
+    Pbrt.Pp.pp_record_field ~absent:(not (summary_data_point_value_at_quantile_has_value v)) ~first:false "value" Pbrt.Pp.pp_float fmt v.value;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_summary_data_point fmt (v:summary_data_point) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
-    if not (summary_data_point_has_start_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (summary_data_point_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "count" Pbrt.Pp.pp_int64 fmt v.count;
-    if not (summary_data_point_has_count v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "sum" Pbrt.Pp.pp_float fmt v.sum;
-    if not (summary_data_point_has_sum v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (summary_data_point_has_start_time_unix_nano v)) ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (summary_data_point_has_time_unix_nano v)) ~first:false "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (summary_data_point_has_count v)) ~first:false "count" Pbrt.Pp.pp_int64 fmt v.count;
+    Pbrt.Pp.pp_record_field ~absent:(not (summary_data_point_has_sum v)) ~first:false "sum" Pbrt.Pp.pp_float fmt v.sum;
     Pbrt.Pp.pp_record_field ~first:false "quantile_values" (Pbrt.Pp.pp_list pp_summary_data_point_value_at_quantile) fmt v.quantile_values;
-    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (summary_data_point_has_flags v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (summary_data_point_has_flags v)) ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -1051,12 +1023,9 @@ let rec pp_metric_data fmt (v:metric_data) =
 
 and pp_metric fmt (v:metric) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "name" Pbrt.Pp.pp_string fmt v.name;
-    if not (metric_has_name v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "description" Pbrt.Pp.pp_string fmt v.description;
-    if not (metric_has_description v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "unit_" Pbrt.Pp.pp_string fmt v.unit_;
-    if not (metric_has_unit_ v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (metric_has_name v)) ~first:true "name" Pbrt.Pp.pp_string fmt v.name;
+    Pbrt.Pp.pp_record_field ~absent:(not (metric_has_description v)) ~first:false "description" Pbrt.Pp.pp_string fmt v.description;
+    Pbrt.Pp.pp_record_field ~absent:(not (metric_has_unit_ v)) ~first:false "unit_" Pbrt.Pp.pp_string fmt v.unit_;
     Pbrt.Pp.pp_record_field ~first:false "data" (Pbrt.Pp.pp_option pp_metric_data) fmt v.data;
     Pbrt.Pp.pp_record_field ~first:false "metadata" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.metadata;
   in
@@ -1066,8 +1035,7 @@ let rec pp_scope_metrics fmt (v:scope_metrics) =
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "scope" (Pbrt.Pp.pp_option Common.pp_instrumentation_scope) fmt v.scope;
     Pbrt.Pp.pp_record_field ~first:false "metrics" (Pbrt.Pp.pp_list pp_metric) fmt v.metrics;
-    Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (scope_metrics_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (scope_metrics_has_schema_url v)) ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -1075,8 +1043,7 @@ let rec pp_resource_metrics fmt (v:resource_metrics) =
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "resource" (Pbrt.Pp.pp_option Resource.pp_resource) fmt v.resource;
     Pbrt.Pp.pp_record_field ~first:false "scope_metrics" (Pbrt.Pp.pp_list pp_scope_metrics) fmt v.scope_metrics;
-    Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (resource_metrics_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (resource_metrics_has_schema_url v)) ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -1220,12 +1187,10 @@ let rec encode_pb_histogram_data_point (v:histogram_data_point) encoder =
     Pbrt.Encoder.int64_as_bits64 v.count encoder;
     Pbrt.Encoder.key 4 Pbrt.Bits64 encoder; 
   );
-  begin match v.sum with
-  | Some x -> 
-    Pbrt.Encoder.float_as_bits64 x encoder;
+  if histogram_data_point_has_sum v then (
+    Pbrt.Encoder.float_as_bits64 v.sum encoder;
     Pbrt.Encoder.key 5 Pbrt.Bits64 encoder; 
-  | None -> ();
-  end;
+  );
   Pbrt.Encoder.nested (fun lst encoder ->
     Pbrt.List_util.rev_iter_with (fun x encoder ->
       Pbrt.Encoder.int64_as_bits64 x encoder;
@@ -1246,18 +1211,14 @@ let rec encode_pb_histogram_data_point (v:histogram_data_point) encoder =
     Pbrt.Encoder.int32_as_varint v.flags encoder;
     Pbrt.Encoder.key 10 Pbrt.Varint encoder; 
   );
-  begin match v.min with
-  | Some x -> 
-    Pbrt.Encoder.float_as_bits64 x encoder;
+  if histogram_data_point_has_min v then (
+    Pbrt.Encoder.float_as_bits64 v.min encoder;
     Pbrt.Encoder.key 11 Pbrt.Bits64 encoder; 
-  | None -> ();
-  end;
-  begin match v.max with
-  | Some x -> 
-    Pbrt.Encoder.float_as_bits64 x encoder;
+  );
+  if histogram_data_point_has_max v then (
+    Pbrt.Encoder.float_as_bits64 v.max encoder;
     Pbrt.Encoder.key 12 Pbrt.Bits64 encoder; 
-  | None -> ();
-  end;
+  );
   ()
 
 let rec encode_pb_histogram (v:histogram) encoder = 
@@ -1301,12 +1262,10 @@ let rec encode_pb_exponential_histogram_data_point (v:exponential_histogram_data
     Pbrt.Encoder.int64_as_bits64 v.count encoder;
     Pbrt.Encoder.key 4 Pbrt.Bits64 encoder; 
   );
-  begin match v.sum with
-  | Some x -> 
-    Pbrt.Encoder.float_as_bits64 x encoder;
+  if exponential_histogram_data_point_has_sum v then (
+    Pbrt.Encoder.float_as_bits64 v.sum encoder;
     Pbrt.Encoder.key 5 Pbrt.Bits64 encoder; 
-  | None -> ();
-  end;
+  );
   if exponential_histogram_data_point_has_scale v then (
     Pbrt.Encoder.int32_as_zigzag v.scale encoder;
     Pbrt.Encoder.key 6 Pbrt.Varint encoder; 
@@ -1335,18 +1294,14 @@ let rec encode_pb_exponential_histogram_data_point (v:exponential_histogram_data
     Pbrt.Encoder.nested encode_pb_exemplar x encoder;
     Pbrt.Encoder.key 11 Pbrt.Bytes encoder; 
   ) v.exemplars encoder;
-  begin match v.min with
-  | Some x -> 
-    Pbrt.Encoder.float_as_bits64 x encoder;
+  if exponential_histogram_data_point_has_min v then (
+    Pbrt.Encoder.float_as_bits64 v.min encoder;
     Pbrt.Encoder.key 12 Pbrt.Bits64 encoder; 
-  | None -> ();
-  end;
-  begin match v.max with
-  | Some x -> 
-    Pbrt.Encoder.float_as_bits64 x encoder;
+  );
+  if exponential_histogram_data_point_has_max v then (
+    Pbrt.Encoder.float_as_bits64 v.max encoder;
     Pbrt.Encoder.key 13 Pbrt.Bits64 encoder; 
-  | None -> ();
-  end;
+  );
   if exponential_histogram_data_point_has_zero_threshold v then (
     Pbrt.Encoder.float_as_bits64 v.zero_threshold encoder;
     Pbrt.Encoder.key 14 Pbrt.Bits64 encoder; 
@@ -1547,32 +1502,32 @@ and decode_pb_exemplar d =
       exemplar_set_filtered_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.filtered_attributes);
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exemplar), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "exemplar" 7 pk
     | Some (2, Pbrt.Bits64) -> begin
       exemplar_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exemplar), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "exemplar" 2 pk
     | Some (3, Pbrt.Bits64) -> begin
       exemplar_set_value v (As_double (Pbrt.Decoder.float_as_bits64 d));
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exemplar), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "exemplar" 3 pk
     | Some (6, Pbrt.Bits64) -> begin
       exemplar_set_value v (As_int (Pbrt.Decoder.int64_as_bits64 d));
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exemplar), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "exemplar" 6 pk
     | Some (4, Pbrt.Bytes) -> begin
       exemplar_set_span_id v (Pbrt.Decoder.bytes d);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exemplar), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "exemplar" 4 pk
     | Some (5, Pbrt.Bytes) -> begin
       exemplar_set_trace_id v (Pbrt.Decoder.bytes d);
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exemplar), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "exemplar" 5 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : exemplar)
@@ -1606,37 +1561,37 @@ and decode_pb_number_data_point d =
       number_data_point_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(number_data_point), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "number_data_point" 7 pk
     | Some (2, Pbrt.Bits64) -> begin
       number_data_point_set_start_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(number_data_point), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "number_data_point" 2 pk
     | Some (3, Pbrt.Bits64) -> begin
       number_data_point_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(number_data_point), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "number_data_point" 3 pk
     | Some (4, Pbrt.Bits64) -> begin
       number_data_point_set_value v (As_double (Pbrt.Decoder.float_as_bits64 d));
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(number_data_point), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "number_data_point" 4 pk
     | Some (6, Pbrt.Bits64) -> begin
       number_data_point_set_value v (As_int (Pbrt.Decoder.int64_as_bits64 d));
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(number_data_point), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "number_data_point" 6 pk
     | Some (5, Pbrt.Bytes) -> begin
       number_data_point_set_exemplars v ((decode_pb_exemplar (Pbrt.Decoder.nested d)) :: v.exemplars);
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(number_data_point), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "number_data_point" 5 pk
     | Some (8, Pbrt.Varint) -> begin
       number_data_point_set_flags v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (8, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(number_data_point), field(8)" pk
+      Pbrt.Decoder.unexpected_payload_message "number_data_point" 8 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : number_data_point)
@@ -1654,16 +1609,16 @@ let rec decode_pb_gauge d =
       gauge_set_data_points v ((decode_pb_number_data_point (Pbrt.Decoder.nested d)) :: v.data_points);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(gauge), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "gauge" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : gauge)
 
-let rec decode_pb_aggregation_temporality d = 
+let rec decode_pb_aggregation_temporality d : aggregation_temporality = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Aggregation_temporality_unspecified:aggregation_temporality)
-  | 1 -> (Aggregation_temporality_delta:aggregation_temporality)
-  | 2 -> (Aggregation_temporality_cumulative:aggregation_temporality)
+  | 0 -> Aggregation_temporality_unspecified
+  | 1 -> Aggregation_temporality_delta
+  | 2 -> Aggregation_temporality_cumulative
   | _ -> Pbrt.Decoder.malformed_variant "aggregation_temporality"
 
 let rec decode_pb_sum d =
@@ -1679,17 +1634,17 @@ let rec decode_pb_sum d =
       sum_set_data_points v ((decode_pb_number_data_point (Pbrt.Decoder.nested d)) :: v.data_points);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(sum), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "sum" 1 pk
     | Some (2, Pbrt.Varint) -> begin
       sum_set_aggregation_temporality v (decode_pb_aggregation_temporality d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(sum), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "sum" 2 pk
     | Some (3, Pbrt.Varint) -> begin
       sum_set_is_monotonic v (Pbrt.Decoder.bool d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(sum), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "sum" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : sum)
@@ -1710,57 +1665,57 @@ let rec decode_pb_histogram_data_point d =
       histogram_data_point_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (9, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(9)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 9 pk
     | Some (2, Pbrt.Bits64) -> begin
       histogram_data_point_set_start_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 2 pk
     | Some (3, Pbrt.Bits64) -> begin
       histogram_data_point_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 3 pk
     | Some (4, Pbrt.Bits64) -> begin
       histogram_data_point_set_count v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 4 pk
     | Some (5, Pbrt.Bits64) -> begin
       histogram_data_point_set_sum v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 5 pk
     | Some (6, Pbrt.Bytes) -> begin
       histogram_data_point_set_bucket_counts v @@ Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int64_as_bits64 d)::l) [] d;
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 6 pk
     | Some (7, Pbrt.Bytes) -> begin
       histogram_data_point_set_explicit_bounds v @@ Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.float_as_bits64 d)::l) [] d;
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 7 pk
     | Some (8, Pbrt.Bytes) -> begin
       histogram_data_point_set_exemplars v ((decode_pb_exemplar (Pbrt.Decoder.nested d)) :: v.exemplars);
     end
     | Some (8, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(8)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 8 pk
     | Some (10, Pbrt.Varint) -> begin
       histogram_data_point_set_flags v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (10, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(10)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 10 pk
     | Some (11, Pbrt.Bits64) -> begin
       histogram_data_point_set_min v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (11, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(11)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 11 pk
     | Some (12, Pbrt.Bits64) -> begin
       histogram_data_point_set_max v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (12, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram_data_point), field(12)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram_data_point" 12 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : histogram_data_point)
@@ -1778,12 +1733,12 @@ let rec decode_pb_histogram d =
       histogram_set_data_points v ((decode_pb_histogram_data_point (Pbrt.Decoder.nested d)) :: v.data_points);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram" 1 pk
     | Some (2, Pbrt.Varint) -> begin
       histogram_set_aggregation_temporality v (decode_pb_aggregation_temporality d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(histogram), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "histogram" 2 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : histogram)
@@ -1801,12 +1756,12 @@ let rec decode_pb_exponential_histogram_data_point_buckets d =
       exponential_histogram_data_point_buckets_set_offset v (Pbrt.Decoder.int32_as_zigzag d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point_buckets), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point_buckets" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       exponential_histogram_data_point_buckets_set_bucket_counts v @@ Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int64_as_varint d)::l) [] d;
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point_buckets), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point_buckets" 2 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : exponential_histogram_data_point_buckets)
@@ -1825,72 +1780,72 @@ let rec decode_pb_exponential_histogram_data_point d =
       exponential_histogram_data_point_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 1 pk
     | Some (2, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_start_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 2 pk
     | Some (3, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 3 pk
     | Some (4, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_count v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 4 pk
     | Some (5, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_sum v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 5 pk
     | Some (6, Pbrt.Varint) -> begin
       exponential_histogram_data_point_set_scale v (Pbrt.Decoder.int32_as_zigzag d);
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 6 pk
     | Some (7, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_zero_count v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 7 pk
     | Some (8, Pbrt.Bytes) -> begin
       exponential_histogram_data_point_set_positive v (decode_pb_exponential_histogram_data_point_buckets (Pbrt.Decoder.nested d));
     end
     | Some (8, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(8)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 8 pk
     | Some (9, Pbrt.Bytes) -> begin
       exponential_histogram_data_point_set_negative v (decode_pb_exponential_histogram_data_point_buckets (Pbrt.Decoder.nested d));
     end
     | Some (9, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(9)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 9 pk
     | Some (10, Pbrt.Varint) -> begin
       exponential_histogram_data_point_set_flags v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (10, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(10)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 10 pk
     | Some (11, Pbrt.Bytes) -> begin
       exponential_histogram_data_point_set_exemplars v ((decode_pb_exemplar (Pbrt.Decoder.nested d)) :: v.exemplars);
     end
     | Some (11, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(11)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 11 pk
     | Some (12, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_min v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (12, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(12)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 12 pk
     | Some (13, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_max v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (13, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(13)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 13 pk
     | Some (14, Pbrt.Bits64) -> begin
       exponential_histogram_data_point_set_zero_threshold v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (14, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram_data_point), field(14)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram_data_point" 14 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : exponential_histogram_data_point)
@@ -1908,12 +1863,12 @@ let rec decode_pb_exponential_histogram d =
       exponential_histogram_set_data_points v ((decode_pb_exponential_histogram_data_point (Pbrt.Decoder.nested d)) :: v.data_points);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram" 1 pk
     | Some (2, Pbrt.Varint) -> begin
       exponential_histogram_set_aggregation_temporality v (decode_pb_aggregation_temporality d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(exponential_histogram), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "exponential_histogram" 2 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : exponential_histogram)
@@ -1929,12 +1884,12 @@ let rec decode_pb_summary_data_point_value_at_quantile d =
       summary_data_point_value_at_quantile_set_quantile v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point_value_at_quantile), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point_value_at_quantile" 1 pk
     | Some (2, Pbrt.Bits64) -> begin
       summary_data_point_value_at_quantile_set_value v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point_value_at_quantile), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point_value_at_quantile" 2 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : summary_data_point_value_at_quantile)
@@ -1953,37 +1908,37 @@ let rec decode_pb_summary_data_point d =
       summary_data_point_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point" 7 pk
     | Some (2, Pbrt.Bits64) -> begin
       summary_data_point_set_start_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point" 2 pk
     | Some (3, Pbrt.Bits64) -> begin
       summary_data_point_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point" 3 pk
     | Some (4, Pbrt.Bits64) -> begin
       summary_data_point_set_count v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point" 4 pk
     | Some (5, Pbrt.Bits64) -> begin
       summary_data_point_set_sum v (Pbrt.Decoder.float_as_bits64 d);
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point" 5 pk
     | Some (6, Pbrt.Bytes) -> begin
       summary_data_point_set_quantile_values v ((decode_pb_summary_data_point_value_at_quantile (Pbrt.Decoder.nested d)) :: v.quantile_values);
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point" 6 pk
     | Some (8, Pbrt.Varint) -> begin
       summary_data_point_set_flags v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (8, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary_data_point), field(8)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary_data_point" 8 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : summary_data_point)
@@ -2001,7 +1956,7 @@ let rec decode_pb_summary d =
       summary_set_data_points v ((decode_pb_summary_data_point (Pbrt.Decoder.nested d)) :: v.data_points);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(summary), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "summary" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : summary)
@@ -2037,47 +1992,47 @@ and decode_pb_metric d =
       metric_set_name v (Pbrt.Decoder.string d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       metric_set_description v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       metric_set_unit_ v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 3 pk
     | Some (5, Pbrt.Bytes) -> begin
       metric_set_data v (Gauge (decode_pb_gauge (Pbrt.Decoder.nested d)));
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 5 pk
     | Some (7, Pbrt.Bytes) -> begin
       metric_set_data v (Sum (decode_pb_sum (Pbrt.Decoder.nested d)));
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 7 pk
     | Some (9, Pbrt.Bytes) -> begin
       metric_set_data v (Histogram (decode_pb_histogram (Pbrt.Decoder.nested d)));
     end
     | Some (9, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(9)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 9 pk
     | Some (10, Pbrt.Bytes) -> begin
       metric_set_data v (Exponential_histogram (decode_pb_exponential_histogram (Pbrt.Decoder.nested d)));
     end
     | Some (10, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(10)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 10 pk
     | Some (11, Pbrt.Bytes) -> begin
       metric_set_data v (Summary (decode_pb_summary (Pbrt.Decoder.nested d)));
     end
     | Some (11, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(11)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 11 pk
     | Some (12, Pbrt.Bytes) -> begin
       metric_set_metadata v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.metadata);
     end
     | Some (12, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metric), field(12)" pk
+      Pbrt.Decoder.unexpected_payload_message "metric" 12 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : metric)
@@ -2095,17 +2050,17 @@ let rec decode_pb_scope_metrics d =
       scope_metrics_set_scope v (Common.decode_pb_instrumentation_scope (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_metrics), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_metrics" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       scope_metrics_set_metrics v ((decode_pb_metric (Pbrt.Decoder.nested d)) :: v.metrics);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_metrics), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_metrics" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       scope_metrics_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_metrics), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_metrics" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : scope_metrics)
@@ -2123,17 +2078,17 @@ let rec decode_pb_resource_metrics d =
       resource_metrics_set_resource v (Resource.decode_pb_resource (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_metrics), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_metrics" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       resource_metrics_set_scope_metrics v ((decode_pb_scope_metrics (Pbrt.Decoder.nested d)) :: v.scope_metrics);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_metrics), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_metrics" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       resource_metrics_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_metrics), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_metrics" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : resource_metrics)
@@ -2151,13 +2106,13 @@ let rec decode_pb_metrics_data d =
       metrics_data_set_resource_metrics v ((decode_pb_resource_metrics (Pbrt.Decoder.nested d)) :: v.resource_metrics);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(metrics_data), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "metrics_data" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : metrics_data)
 
-let rec decode_pb_data_point_flags d = 
+let rec decode_pb_data_point_flags d : data_point_flags = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Data_point_flags_do_not_use:data_point_flags)
-  | 1 -> (Data_point_flags_no_recorded_value_mask:data_point_flags)
+  | 0 -> Data_point_flags_do_not_use
+  | 1 -> Data_point_flags_no_recorded_value_mask
   | _ -> Pbrt.Decoder.malformed_variant "data_point_flags"

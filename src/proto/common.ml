@@ -80,7 +80,6 @@ let default_entity_ref (): entity_ref =
 (** {2 Make functions} *)
 
 
-
 let[@inline] array_value_set_values (self:array_value) (x:any_value list) : unit =
   self.values <- x
 
@@ -226,30 +225,24 @@ and pp_key_value_list fmt (v:key_value_list) =
 
 and pp_key_value fmt (v:key_value) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "key" Pbrt.Pp.pp_string fmt v.key;
-    if not (key_value_has_key v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (key_value_has_key v)) ~first:true "key" Pbrt.Pp.pp_string fmt v.key;
     Pbrt.Pp.pp_record_field ~first:false "value" (Pbrt.Pp.pp_option pp_any_value) fmt v.value;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_instrumentation_scope fmt (v:instrumentation_scope) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "name" Pbrt.Pp.pp_string fmt v.name;
-    if not (instrumentation_scope_has_name v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "version" Pbrt.Pp.pp_string fmt v.version;
-    if not (instrumentation_scope_has_version v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (instrumentation_scope_has_name v)) ~first:true "name" Pbrt.Pp.pp_string fmt v.name;
+    Pbrt.Pp.pp_record_field ~absent:(not (instrumentation_scope_has_version v)) ~first:false "version" Pbrt.Pp.pp_string fmt v.version;
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (instrumentation_scope_has_dropped_attributes_count v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (instrumentation_scope_has_dropped_attributes_count v)) ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_entity_ref fmt (v:entity_ref) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (entity_ref_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "type_" Pbrt.Pp.pp_string fmt v.type_;
-    if not (entity_ref_has_type_ v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (entity_ref_has_schema_url v)) ~first:true "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
+    Pbrt.Pp.pp_record_field ~absent:(not (entity_ref_has_type_ v)) ~first:false "type_" Pbrt.Pp.pp_string fmt v.type_;
     Pbrt.Pp.pp_record_field ~first:false "id_keys" (Pbrt.Pp.pp_list Pbrt.Pp.pp_string) fmt v.id_keys;
     Pbrt.Pp.pp_record_field ~first:false "description_keys" (Pbrt.Pp.pp_list Pbrt.Pp.pp_string) fmt v.description_keys;
   in
@@ -386,7 +379,7 @@ and decode_pb_array_value d =
       array_value_set_values v ((decode_pb_any_value (Pbrt.Decoder.nested d)) :: v.values);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(array_value), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "array_value" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : array_value)
@@ -404,7 +397,7 @@ and decode_pb_key_value_list d =
       key_value_list_set_values v ((decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.values);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(key_value_list), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "key_value_list" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : key_value_list)
@@ -420,12 +413,12 @@ and decode_pb_key_value d =
       key_value_set_key v (Pbrt.Decoder.string d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(key_value), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "key_value" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       key_value_set_value v (decode_pb_any_value (Pbrt.Decoder.nested d));
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(key_value), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "key_value" 2 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : key_value)
@@ -443,22 +436,22 @@ let rec decode_pb_instrumentation_scope d =
       instrumentation_scope_set_name v (Pbrt.Decoder.string d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "instrumentation_scope" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       instrumentation_scope_set_version v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "instrumentation_scope" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       instrumentation_scope_set_attributes v ((decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "instrumentation_scope" 3 pk
     | Some (4, Pbrt.Varint) -> begin
       instrumentation_scope_set_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(instrumentation_scope), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "instrumentation_scope" 4 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : instrumentation_scope)
@@ -477,22 +470,22 @@ let rec decode_pb_entity_ref d =
       entity_ref_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "entity_ref" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       entity_ref_set_type_ v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "entity_ref" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       entity_ref_set_id_keys v ((Pbrt.Decoder.string d) :: v.id_keys);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "entity_ref" 3 pk
     | Some (4, Pbrt.Bytes) -> begin
       entity_ref_set_description_keys v ((Pbrt.Decoder.string d) :: v.description_keys);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(entity_ref), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "entity_ref" 4 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : entity_ref)

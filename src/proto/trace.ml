@@ -159,7 +159,6 @@ let default_span_flags () = (Span_flags_do_not_use:span_flags)
 
 (** {2 Make functions} *)
 
-
 let[@inline] span_event_has_time_unix_nano (self:span_event) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] span_event_has_name (self:span_event) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] span_event_has_dropped_attributes_count (self:span_event) : bool = (Pbrt.Bitfield.get self._presence 2)
@@ -243,7 +242,6 @@ let make_span_link
   | None -> ()
   | Some v -> span_link_set_flags _res v);
   _res
-
 
 let[@inline] status_has_message (self:status) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] status_has_code (self:status) : bool = (Pbrt.Bitfield.get self._presence 1)
@@ -449,7 +447,6 @@ let make_traces_data
   traces_data_set_resource_spans _res resource_spans;
   _res
 
-
 [@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Formatters} *)
@@ -465,29 +462,21 @@ let rec pp_span_span_kind fmt (v:span_span_kind) =
 
 let rec pp_span_event fmt (v:span_event) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (span_event_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "name" Pbrt.Pp.pp_string fmt v.name;
-    if not (span_event_has_name v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_event_has_time_unix_nano v)) ~first:true "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_event_has_name v)) ~first:false "name" Pbrt.Pp.pp_string fmt v.name;
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (span_event_has_dropped_attributes_count v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_event_has_dropped_attributes_count v)) ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_span_link fmt (v:span_link) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
-    if not (span_link_has_trace_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
-    if not (span_link_has_span_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "trace_state" Pbrt.Pp.pp_string fmt v.trace_state;
-    if not (span_link_has_trace_state v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_link_has_trace_id v)) ~first:true "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_link_has_span_id v)) ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_link_has_trace_state v)) ~first:false "trace_state" Pbrt.Pp.pp_string fmt v.trace_state;
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (span_link_has_dropped_attributes_count v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (span_link_has_flags v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_link_has_dropped_attributes_count v)) ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_link_has_flags v)) ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -499,42 +488,28 @@ let rec pp_status_status_code fmt (v:status_status_code) =
 
 let rec pp_status fmt (v:status) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "message" Pbrt.Pp.pp_string fmt v.message;
-    if not (status_has_message v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "code" pp_status_status_code fmt v.code;
-    if not (status_has_code v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (status_has_message v)) ~first:true "message" Pbrt.Pp.pp_string fmt v.message;
+    Pbrt.Pp.pp_record_field ~absent:(not (status_has_code v)) ~first:false "code" pp_status_status_code fmt v.code;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
 let rec pp_span fmt (v:span) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
-    if not (span_has_trace_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
-    if not (span_has_span_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "trace_state" Pbrt.Pp.pp_string fmt v.trace_state;
-    if not (span_has_trace_state v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "parent_span_id" Pbrt.Pp.pp_bytes fmt v.parent_span_id;
-    if not (span_has_parent_span_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (span_has_flags v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "name" Pbrt.Pp.pp_string fmt v.name;
-    if not (span_has_name v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "kind" pp_span_span_kind fmt v.kind;
-    if not (span_has_kind v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
-    if not (span_has_start_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "end_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.end_time_unix_nano;
-    if not (span_has_end_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_trace_id v)) ~first:true "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_span_id v)) ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_trace_state v)) ~first:false "trace_state" Pbrt.Pp.pp_string fmt v.trace_state;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_parent_span_id v)) ~first:false "parent_span_id" Pbrt.Pp.pp_bytes fmt v.parent_span_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_flags v)) ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_name v)) ~first:false "name" Pbrt.Pp.pp_string fmt v.name;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_kind v)) ~first:false "kind" pp_span_span_kind fmt v.kind;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_start_time_unix_nano v)) ~first:false "start_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.start_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_end_time_unix_nano v)) ~first:false "end_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.end_time_unix_nano;
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (span_has_dropped_attributes_count v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_dropped_attributes_count v)) ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
     Pbrt.Pp.pp_record_field ~first:false "events" (Pbrt.Pp.pp_list pp_span_event) fmt v.events;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_events_count" Pbrt.Pp.pp_int32 fmt v.dropped_events_count;
-    if not (span_has_dropped_events_count v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_dropped_events_count v)) ~first:false "dropped_events_count" Pbrt.Pp.pp_int32 fmt v.dropped_events_count;
     Pbrt.Pp.pp_record_field ~first:false "links" (Pbrt.Pp.pp_list pp_span_link) fmt v.links;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_links_count" Pbrt.Pp.pp_int32 fmt v.dropped_links_count;
-    if not (span_has_dropped_links_count v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (span_has_dropped_links_count v)) ~first:false "dropped_links_count" Pbrt.Pp.pp_int32 fmt v.dropped_links_count;
     Pbrt.Pp.pp_record_field ~first:false "status" (Pbrt.Pp.pp_option pp_status) fmt v.status;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -543,8 +518,7 @@ let rec pp_scope_spans fmt (v:scope_spans) =
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "scope" (Pbrt.Pp.pp_option Common.pp_instrumentation_scope) fmt v.scope;
     Pbrt.Pp.pp_record_field ~first:false "spans" (Pbrt.Pp.pp_list pp_span) fmt v.spans;
-    Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (scope_spans_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (scope_spans_has_schema_url v)) ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -552,8 +526,7 @@ let rec pp_resource_spans fmt (v:resource_spans) =
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "resource" (Pbrt.Pp.pp_option Resource.pp_resource) fmt v.resource;
     Pbrt.Pp.pp_record_field ~first:false "scope_spans" (Pbrt.Pp.pp_list pp_scope_spans) fmt v.scope_spans;
-    Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (resource_spans_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (resource_spans_has_schema_url v)) ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -767,14 +740,14 @@ let rec encode_pb_span_flags (v:span_flags) encoder =
 
 (** {2 Protobuf Decoding} *)
 
-let rec decode_pb_span_span_kind d = 
+let rec decode_pb_span_span_kind d : span_span_kind = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Span_kind_unspecified:span_span_kind)
-  | 1 -> (Span_kind_internal:span_span_kind)
-  | 2 -> (Span_kind_server:span_span_kind)
-  | 3 -> (Span_kind_client:span_span_kind)
-  | 4 -> (Span_kind_producer:span_span_kind)
-  | 5 -> (Span_kind_consumer:span_span_kind)
+  | 0 -> Span_kind_unspecified
+  | 1 -> Span_kind_internal
+  | 2 -> Span_kind_server
+  | 3 -> Span_kind_client
+  | 4 -> Span_kind_producer
+  | 5 -> Span_kind_consumer
   | _ -> Pbrt.Decoder.malformed_variant "span_span_kind"
 
 let rec decode_pb_span_event d =
@@ -790,22 +763,22 @@ let rec decode_pb_span_event d =
       span_event_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_event), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_event" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       span_event_set_name v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_event), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_event" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       span_event_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_event), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_event" 3 pk
     | Some (4, Pbrt.Varint) -> begin
       span_event_set_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_event), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_event" 4 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : span_event)
@@ -823,41 +796,41 @@ let rec decode_pb_span_link d =
       span_link_set_trace_id v (Pbrt.Decoder.bytes d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_link), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_link" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       span_link_set_span_id v (Pbrt.Decoder.bytes d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_link), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_link" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       span_link_set_trace_state v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_link), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_link" 3 pk
     | Some (4, Pbrt.Bytes) -> begin
       span_link_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_link), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_link" 4 pk
     | Some (5, Pbrt.Varint) -> begin
       span_link_set_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_link), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_link" 5 pk
     | Some (6, Pbrt.Bits32) -> begin
       span_link_set_flags v (Pbrt.Decoder.int32_as_bits32 d);
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span_link), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "span_link" 6 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : span_link)
 
-let rec decode_pb_status_status_code d = 
+let rec decode_pb_status_status_code d : status_status_code = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Status_code_unset:status_status_code)
-  | 1 -> (Status_code_ok:status_status_code)
-  | 2 -> (Status_code_error:status_status_code)
+  | 0 -> Status_code_unset
+  | 1 -> Status_code_ok
+  | 2 -> Status_code_error
   | _ -> Pbrt.Decoder.malformed_variant "status_status_code"
 
 let rec decode_pb_status d =
@@ -871,12 +844,12 @@ let rec decode_pb_status d =
       status_set_message v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(status), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "status" 2 pk
     | Some (3, Pbrt.Varint) -> begin
       status_set_code v (decode_pb_status_status_code d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(status), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "status" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : status)
@@ -896,82 +869,82 @@ let rec decode_pb_span d =
       span_set_trace_id v (Pbrt.Decoder.bytes d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       span_set_span_id v (Pbrt.Decoder.bytes d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       span_set_trace_state v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 3 pk
     | Some (4, Pbrt.Bytes) -> begin
       span_set_parent_span_id v (Pbrt.Decoder.bytes d);
     end
     | Some (4, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(4)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 4 pk
     | Some (16, Pbrt.Bits32) -> begin
       span_set_flags v (Pbrt.Decoder.int32_as_bits32 d);
     end
     | Some (16, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(16)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 16 pk
     | Some (5, Pbrt.Bytes) -> begin
       span_set_name v (Pbrt.Decoder.string d);
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 5 pk
     | Some (6, Pbrt.Varint) -> begin
       span_set_kind v (decode_pb_span_span_kind d);
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 6 pk
     | Some (7, Pbrt.Bits64) -> begin
       span_set_start_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 7 pk
     | Some (8, Pbrt.Bits64) -> begin
       span_set_end_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (8, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(8)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 8 pk
     | Some (9, Pbrt.Bytes) -> begin
       span_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (9, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(9)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 9 pk
     | Some (10, Pbrt.Varint) -> begin
       span_set_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (10, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(10)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 10 pk
     | Some (11, Pbrt.Bytes) -> begin
       span_set_events v ((decode_pb_span_event (Pbrt.Decoder.nested d)) :: v.events);
     end
     | Some (11, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(11)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 11 pk
     | Some (12, Pbrt.Varint) -> begin
       span_set_dropped_events_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (12, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(12)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 12 pk
     | Some (13, Pbrt.Bytes) -> begin
       span_set_links v ((decode_pb_span_link (Pbrt.Decoder.nested d)) :: v.links);
     end
     | Some (13, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(13)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 13 pk
     | Some (14, Pbrt.Varint) -> begin
       span_set_dropped_links_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (14, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(14)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 14 pk
     | Some (15, Pbrt.Bytes) -> begin
       span_set_status v (decode_pb_status (Pbrt.Decoder.nested d));
     end
     | Some (15, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(span), field(15)" pk
+      Pbrt.Decoder.unexpected_payload_message "span" 15 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : span)
@@ -989,17 +962,17 @@ let rec decode_pb_scope_spans d =
       scope_spans_set_scope v (Common.decode_pb_instrumentation_scope (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_spans), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_spans" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       scope_spans_set_spans v ((decode_pb_span (Pbrt.Decoder.nested d)) :: v.spans);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_spans), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_spans" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       scope_spans_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_spans), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_spans" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : scope_spans)
@@ -1017,17 +990,17 @@ let rec decode_pb_resource_spans d =
       resource_spans_set_resource v (Resource.decode_pb_resource (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_spans), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_spans" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       resource_spans_set_scope_spans v ((decode_pb_scope_spans (Pbrt.Decoder.nested d)) :: v.scope_spans);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_spans), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_spans" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       resource_spans_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_spans), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_spans" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : resource_spans)
@@ -1045,15 +1018,15 @@ let rec decode_pb_traces_data d =
       traces_data_set_resource_spans v ((decode_pb_resource_spans (Pbrt.Decoder.nested d)) :: v.resource_spans);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(traces_data), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "traces_data" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : traces_data)
 
-let rec decode_pb_span_flags d = 
+let rec decode_pb_span_flags d : span_flags = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Span_flags_do_not_use:span_flags)
-  | 255 -> (Span_flags_trace_flags_mask:span_flags)
-  | 256 -> (Span_flags_context_has_is_remote_mask:span_flags)
-  | 512 -> (Span_flags_context_is_remote_mask:span_flags)
+  | 0 -> Span_flags_do_not_use
+  | 255 -> Span_flags_trace_flags_mask
+  | 256 -> Span_flags_context_has_is_remote_mask
+  | 512 -> Span_flags_context_is_remote_mask
   | _ -> Pbrt.Decoder.malformed_variant "span_flags"

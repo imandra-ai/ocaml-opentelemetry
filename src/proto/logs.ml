@@ -108,7 +108,6 @@ let default_log_record_flags () = (Log_record_flags_do_not_use:log_record_flags)
 
 (** {2 Make functions} *)
 
-
 let[@inline] log_record_has_time_unix_nano (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 0)
 let[@inline] log_record_has_observed_time_unix_nano (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 1)
 let[@inline] log_record_has_severity_number (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 2)
@@ -260,7 +259,6 @@ let make_logs_data
   logs_data_set_resource_logs _res resource_logs;
   _res
 
-
 [@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Formatters} *)
@@ -295,26 +293,17 @@ let rec pp_severity_number fmt (v:severity_number) =
 
 let rec pp_log_record fmt (v:log_record) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (log_record_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "observed_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.observed_time_unix_nano;
-    if not (log_record_has_observed_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "severity_number" pp_severity_number fmt v.severity_number;
-    if not (log_record_has_severity_number v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "severity_text" Pbrt.Pp.pp_string fmt v.severity_text;
-    if not (log_record_has_severity_text v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_time_unix_nano v)) ~first:true "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_observed_time_unix_nano v)) ~first:false "observed_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.observed_time_unix_nano;
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_severity_number v)) ~first:false "severity_number" pp_severity_number fmt v.severity_number;
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_severity_text v)) ~first:false "severity_text" Pbrt.Pp.pp_string fmt v.severity_text;
     Pbrt.Pp.pp_record_field ~first:false "body" (Pbrt.Pp.pp_option Common.pp_any_value) fmt v.body;
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (log_record_has_dropped_attributes_count v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (log_record_has_flags v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
-    if not (log_record_has_trace_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
-    if not (log_record_has_span_id v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "event_name" Pbrt.Pp.pp_string fmt v.event_name;
-    if not (log_record_has_event_name v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_dropped_attributes_count v)) ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_flags v)) ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_trace_id v)) ~first:false "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_span_id v)) ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
+    Pbrt.Pp.pp_record_field ~absent:(not (log_record_has_event_name v)) ~first:false "event_name" Pbrt.Pp.pp_string fmt v.event_name;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -322,8 +311,7 @@ let rec pp_scope_logs fmt (v:scope_logs) =
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "scope" (Pbrt.Pp.pp_option Common.pp_instrumentation_scope) fmt v.scope;
     Pbrt.Pp.pp_record_field ~first:false "log_records" (Pbrt.Pp.pp_list pp_log_record) fmt v.log_records;
-    Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (scope_logs_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (scope_logs_has_schema_url v)) ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -331,8 +319,7 @@ let rec pp_resource_logs fmt (v:resource_logs) =
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "resource" (Pbrt.Pp.pp_option Resource.pp_resource) fmt v.resource;
     Pbrt.Pp.pp_record_field ~first:false "scope_logs" (Pbrt.Pp.pp_list pp_scope_logs) fmt v.scope_logs;
-    Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (resource_logs_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (resource_logs_has_schema_url v)) ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -478,33 +465,33 @@ let rec encode_pb_log_record_flags (v:log_record_flags) encoder =
 
 (** {2 Protobuf Decoding} *)
 
-let rec decode_pb_severity_number d = 
+let rec decode_pb_severity_number d : severity_number = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Severity_number_unspecified:severity_number)
-  | 1 -> (Severity_number_trace:severity_number)
-  | 2 -> (Severity_number_trace2:severity_number)
-  | 3 -> (Severity_number_trace3:severity_number)
-  | 4 -> (Severity_number_trace4:severity_number)
-  | 5 -> (Severity_number_debug:severity_number)
-  | 6 -> (Severity_number_debug2:severity_number)
-  | 7 -> (Severity_number_debug3:severity_number)
-  | 8 -> (Severity_number_debug4:severity_number)
-  | 9 -> (Severity_number_info:severity_number)
-  | 10 -> (Severity_number_info2:severity_number)
-  | 11 -> (Severity_number_info3:severity_number)
-  | 12 -> (Severity_number_info4:severity_number)
-  | 13 -> (Severity_number_warn:severity_number)
-  | 14 -> (Severity_number_warn2:severity_number)
-  | 15 -> (Severity_number_warn3:severity_number)
-  | 16 -> (Severity_number_warn4:severity_number)
-  | 17 -> (Severity_number_error:severity_number)
-  | 18 -> (Severity_number_error2:severity_number)
-  | 19 -> (Severity_number_error3:severity_number)
-  | 20 -> (Severity_number_error4:severity_number)
-  | 21 -> (Severity_number_fatal:severity_number)
-  | 22 -> (Severity_number_fatal2:severity_number)
-  | 23 -> (Severity_number_fatal3:severity_number)
-  | 24 -> (Severity_number_fatal4:severity_number)
+  | 0 -> Severity_number_unspecified
+  | 1 -> Severity_number_trace
+  | 2 -> Severity_number_trace2
+  | 3 -> Severity_number_trace3
+  | 4 -> Severity_number_trace4
+  | 5 -> Severity_number_debug
+  | 6 -> Severity_number_debug2
+  | 7 -> Severity_number_debug3
+  | 8 -> Severity_number_debug4
+  | 9 -> Severity_number_info
+  | 10 -> Severity_number_info2
+  | 11 -> Severity_number_info3
+  | 12 -> Severity_number_info4
+  | 13 -> Severity_number_warn
+  | 14 -> Severity_number_warn2
+  | 15 -> Severity_number_warn3
+  | 16 -> Severity_number_warn4
+  | 17 -> Severity_number_error
+  | 18 -> Severity_number_error2
+  | 19 -> Severity_number_error3
+  | 20 -> Severity_number_error4
+  | 21 -> Severity_number_fatal
+  | 22 -> Severity_number_fatal2
+  | 23 -> Severity_number_fatal3
+  | 24 -> Severity_number_fatal4
   | _ -> Pbrt.Decoder.malformed_variant "severity_number"
 
 let rec decode_pb_log_record d =
@@ -520,57 +507,57 @@ let rec decode_pb_log_record d =
       log_record_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 1 pk
     | Some (11, Pbrt.Bits64) -> begin
       log_record_set_observed_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (11, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(11)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 11 pk
     | Some (2, Pbrt.Varint) -> begin
       log_record_set_severity_number v (decode_pb_severity_number d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       log_record_set_severity_text v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 3 pk
     | Some (5, Pbrt.Bytes) -> begin
       log_record_set_body v (Common.decode_pb_any_value (Pbrt.Decoder.nested d));
     end
     | Some (5, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(5)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 5 pk
     | Some (6, Pbrt.Bytes) -> begin
       log_record_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (6, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(6)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 6 pk
     | Some (7, Pbrt.Varint) -> begin
       log_record_set_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (7, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(7)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 7 pk
     | Some (8, Pbrt.Bits32) -> begin
       log_record_set_flags v (Pbrt.Decoder.int32_as_bits32 d);
     end
     | Some (8, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(8)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 8 pk
     | Some (9, Pbrt.Bytes) -> begin
       log_record_set_trace_id v (Pbrt.Decoder.bytes d);
     end
     | Some (9, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(9)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 9 pk
     | Some (10, Pbrt.Bytes) -> begin
       log_record_set_span_id v (Pbrt.Decoder.bytes d);
     end
     | Some (10, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(10)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 10 pk
     | Some (12, Pbrt.Bytes) -> begin
       log_record_set_event_name v (Pbrt.Decoder.string d);
     end
     | Some (12, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(log_record), field(12)" pk
+      Pbrt.Decoder.unexpected_payload_message "log_record" 12 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : log_record)
@@ -588,17 +575,17 @@ let rec decode_pb_scope_logs d =
       scope_logs_set_scope v (Common.decode_pb_instrumentation_scope (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_logs" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       scope_logs_set_log_records v ((decode_pb_log_record (Pbrt.Decoder.nested d)) :: v.log_records);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_logs" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       scope_logs_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "scope_logs" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : scope_logs)
@@ -616,17 +603,17 @@ let rec decode_pb_resource_logs d =
       resource_logs_set_resource v (Resource.decode_pb_resource (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_logs" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       resource_logs_set_scope_logs v ((decode_pb_scope_logs (Pbrt.Decoder.nested d)) :: v.scope_logs);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_logs" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       resource_logs_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource_logs" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : resource_logs)
@@ -644,13 +631,13 @@ let rec decode_pb_logs_data d =
       logs_data_set_resource_logs v ((decode_pb_resource_logs (Pbrt.Decoder.nested d)) :: v.resource_logs);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(logs_data), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "logs_data" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : logs_data)
 
-let rec decode_pb_log_record_flags d = 
+let rec decode_pb_log_record_flags d : log_record_flags = 
   match Pbrt.Decoder.int_as_varint d with
-  | 0 -> (Log_record_flags_do_not_use:log_record_flags)
-  | 255 -> (Log_record_flags_trace_flags_mask:log_record_flags)
+  | 0 -> Log_record_flags_do_not_use
+  | 255 -> Log_record_flags_trace_flags_mask
   | _ -> Pbrt.Decoder.malformed_variant "log_record_flags"

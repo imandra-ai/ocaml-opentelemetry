@@ -50,8 +50,7 @@ let make_resource
 let rec pp_resource fmt (v:resource) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
-    Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (resource_has_dropped_attributes_count v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (resource_has_dropped_attributes_count v)) ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
     Pbrt.Pp.pp_record_field ~first:false "entity_refs" (Pbrt.Pp.pp_list Common.pp_entity_ref) fmt v.entity_refs;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -93,17 +92,17 @@ let rec decode_pb_resource d =
       resource_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource" 1 pk
     | Some (2, Pbrt.Varint) -> begin
       resource_set_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource" 2 pk
     | Some (3, Pbrt.Bytes) -> begin
       resource_set_entity_refs v ((Common.decode_pb_entity_ref (Pbrt.Decoder.nested d)) :: v.entity_refs);
     end
     | Some (3, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(resource), field(3)" pk
+      Pbrt.Decoder.unexpected_payload_message "resource" 3 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : resource)

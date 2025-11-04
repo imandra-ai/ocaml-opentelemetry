@@ -100,10 +100,8 @@ let rec pp_export_trace_service_request fmt (v:export_trace_service_request) =
 
 let rec pp_export_trace_partial_success fmt (v:export_trace_partial_success) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "rejected_spans" Pbrt.Pp.pp_int64 fmt v.rejected_spans;
-    if not (export_trace_partial_success_has_rejected_spans v) then Format.pp_print_string fmt "(* absent *)";
-    Pbrt.Pp.pp_record_field ~first:false "error_message" Pbrt.Pp.pp_string fmt v.error_message;
-    if not (export_trace_partial_success_has_error_message v) then Format.pp_print_string fmt "(* absent *)";
+    Pbrt.Pp.pp_record_field ~absent:(not (export_trace_partial_success_has_rejected_spans v)) ~first:true "rejected_spans" Pbrt.Pp.pp_int64 fmt v.rejected_spans;
+    Pbrt.Pp.pp_record_field ~absent:(not (export_trace_partial_success_has_error_message v)) ~first:false "error_message" Pbrt.Pp.pp_string fmt v.error_message;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -161,7 +159,7 @@ let rec decode_pb_export_trace_service_request d =
       export_trace_service_request_set_resource_spans v ((Trace.decode_pb_resource_spans (Pbrt.Decoder.nested d)) :: v.resource_spans);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_service_request), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_service_request" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : export_trace_service_request)
@@ -177,12 +175,12 @@ let rec decode_pb_export_trace_partial_success d =
       export_trace_partial_success_set_rejected_spans v (Pbrt.Decoder.int64_as_varint d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_partial_success), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_partial_success" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
       export_trace_partial_success_set_error_message v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_partial_success), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_partial_success" 2 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : export_trace_partial_success)
@@ -198,7 +196,7 @@ let rec decode_pb_export_trace_service_response d =
       export_trace_service_response_set_partial_success v (decode_pb_export_trace_partial_success (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_service_response), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_service_response" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
   (v : export_trace_service_response)

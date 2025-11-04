@@ -124,7 +124,6 @@ val default_span_flags : unit -> span_flags
 
 (** {2 Make functions} *)
 
-
 val make_span_event : 
   ?time_unix_nano:int64 ->
   ?name:string ->
@@ -202,7 +201,6 @@ val span_link_has_flags : span_link -> bool
 
 val span_link_set_flags : span_link -> int32 -> unit
   (** set field flags in span_link *)
-
 
 val make_status : 
   ?message:string ->
@@ -386,7 +384,6 @@ val copy_traces_data : traces_data -> traces_data
 
 val traces_data_set_resource_spans : traces_data -> resource_spans list -> unit
   (** set field resource_spans in traces_data *)
-
 
 
 (** {2 Formatters} *)
