@@ -26,7 +26,7 @@
             pbrt = prev.pbrt.overrideAttrs (oldAttrs: {
               src = pkgs.fetchgit {
                 url = "https://github.com/mransan/ocaml-protoc.git";
-                rev = "ad297983ff7f253f309ed77f38c2a93d0d01bfdf";
+                rev = "82f345027a2ff2e8f09f6882fe9a93e0b863731d";
                 sha256 = "sha256-KPctDwJIGi2W3HJEZBPwu9qRUrqK0azfW7VKCPxzCOU=";
               };
             });
