@@ -8,7 +8,7 @@
            { key = "src"; value = Some(String_value("application")); };
            { key = "my_reporter_attr"; value = Some(String_value("foo")); }
            ];
-        dropped_attributes_count = 0;(* absent *)
+        dropped_attributes_count = 0 (* absent *);
         entity_refs = [];
       });
   scope_logs =
@@ -17,7 +17,7 @@
            { name = "ocaml-otel";
              version = "%%VERSION_NUM%%";
              attributes = [];
-             dropped_attributes_count = 0;(* absent *)
+             dropped_attributes_count = 0 (* absent *);
            });
        log_records =
          [{ time_unix_nano = 0;
@@ -26,17 +26,17 @@
             severity_text = "debug";
             body = Some(String_value("emit_logs: starting"));
             attributes = [];
-            dropped_attributes_count = 0;(* absent *)
-            flags = 0;(* absent *)
-            trace_id = <bytes len=0>;(* absent *)
-            span_id = <bytes len=0>;(* absent *)
-            event_name = "";(* absent *)
+            dropped_attributes_count = 0 (* absent *);
+            flags = 0 (* absent *);
+            trace_id = <bytes len=0> (* absent *);
+            span_id = <bytes len=0> (* absent *);
+            event_name = "" (* absent *);
           }
           ];
-       schema_url = "";(* absent *)
+       schema_url = "" (* absent *);
      }
      ];
-  schema_url = "";(* absent *)
+  schema_url = "" (* absent *);
 }
 { resource =
       Some(
@@ -48,7 +48,7 @@
              { key = "src"; value = Some(String_value("application")); };
              { key = "my_reporter_attr"; value = Some(String_value("foo")); }
              ];
-          dropped_attributes_count = 0;(* absent *)
+          dropped_attributes_count = 0 (* absent *);
           entity_refs = [];
         });
     scope_logs =
@@ -57,7 +57,7 @@
              { name = "ocaml-otel";
                version = "%%VERSION_NUM%%";
                attributes = [];
-               dropped_attributes_count = 0;(* absent *)
+               dropped_attributes_count = 0 (* absent *);
              });
          log_records =
            [{ time_unix_nano = 0;
@@ -66,17 +66,17 @@
               severity_text = "info";
               body = Some(String_value("emit_logs: info log"));
               attributes = [];
-              dropped_attributes_count = 0;(* absent *)
-              flags = 0;(* absent *)
-              trace_id = <bytes len=0>;(* absent *)
-              span_id = <bytes len=0>;(* absent *)
-              event_name = "";(* absent *)
+              dropped_attributes_count = 0 (* absent *);
+              flags = 0 (* absent *);
+              trace_id = <bytes len=0> (* absent *);
+              span_id = <bytes len=0> (* absent *);
+              event_name = "" (* absent *);
             }
             ];
-         schema_url = "";(* absent *)
+         schema_url = "" (* absent *);
        }
        ];
-    schema_url = "";(* absent *)
+    schema_url = "" (* absent *);
   }
 { resource =
         Some(
@@ -90,7 +90,7 @@
                { key = "src"; value = Some(String_value("application")); };
                { key = "my_reporter_attr"; value = Some(String_value("foo")); }
                ];
-            dropped_attributes_count = 0;(* absent *)
+            dropped_attributes_count = 0 (* absent *);
             entity_refs = [];
           });
       scope_logs =
@@ -99,7 +99,7 @@
                { name = "ocaml-otel";
                  version = "%%VERSION_NUM%%";
                  attributes = [];
-                 dropped_attributes_count = 0;(* absent *)
+                 dropped_attributes_count = 0 (* absent *);
                });
            log_records =
              [{ time_unix_nano = 0;
@@ -108,17 +108,17 @@
                 severity_text = "warning";
                 body = Some(String_value("emit_logs: warn log"));
                 attributes = [];
-                dropped_attributes_count = 0;(* absent *)
-                flags = 0;(* absent *)
-                trace_id = <bytes len=0>;(* absent *)
-                span_id = <bytes len=0>;(* absent *)
-                event_name = "";(* absent *)
+                dropped_attributes_count = 0 (* absent *);
+                flags = 0 (* absent *);
+                trace_id = <bytes len=0> (* absent *);
+                span_id = <bytes len=0> (* absent *);
+                event_name = "" (* absent *);
               }
               ];
-           schema_url = "";(* absent *)
+           schema_url = "" (* absent *);
          }
          ];
-      schema_url = "";(* absent *)
+      schema_url = "" (* absent *);
     }
 { resource =
           Some(
@@ -134,7 +134,7 @@
                    value = Some(String_value("foo"));
                  }
                  ];
-              dropped_attributes_count = 0;(* absent *)
+              dropped_attributes_count = 0 (* absent *);
               entity_refs = [];
             });
         scope_logs =
@@ -143,7 +143,7 @@
                  { name = "ocaml-otel";
                    version = "%%VERSION_NUM%%";
                    attributes = [];
-                   dropped_attributes_count = 0;(* absent *)
+                   dropped_attributes_count = 0 (* absent *);
                  });
              log_records =
                [{ time_unix_nano = 0;
@@ -152,17 +152,17 @@
                   severity_text = "error";
                   body = Some(String_value("emit_logs: error log"));
                   attributes = [];
-                  dropped_attributes_count = 0;(* absent *)
-                  flags = 0;(* absent *)
-                  trace_id = <bytes len=0>;(* absent *)
-                  span_id = <bytes len=0>;(* absent *)
-                  event_name = "";(* absent *)
+                  dropped_attributes_count = 0 (* absent *);
+                  flags = 0 (* absent *);
+                  trace_id = <bytes len=0> (* absent *);
+                  span_id = <bytes len=0> (* absent *);
+                  event_name = "" (* absent *);
                 }
                 ];
-             schema_url = "";(* absent *)
+             schema_url = "" (* absent *);
            }
            ];
-        schema_url = "";(* absent *)
+        schema_url = "" (* absent *);
       }
 { resource =
             Some(
@@ -178,7 +178,7 @@
                      value = Some(String_value("foo"));
                    }
                    ];
-                dropped_attributes_count = 0;(* absent *)
+                dropped_attributes_count = 0 (* absent *);
                 entity_refs = [];
               });
           scope_logs =
@@ -187,7 +187,7 @@
                    { name = "ocaml-otel";
                      version = "%%VERSION_NUM%%";
                      attributes = [];
-                     dropped_attributes_count = 0;(* absent *)
+                     dropped_attributes_count = 0 (* absent *);
                    });
                log_records =
                  [{ time_unix_nano = 0;
@@ -196,17 +196,17 @@
                     severity_text = "app";
                     body = Some(String_value("emit_logs: app log"));
                     attributes = [];
-                    dropped_attributes_count = 0;(* absent *)
-                    flags = 0;(* absent *)
-                    trace_id = <bytes len=0>;(* absent *)
-                    span_id = <bytes len=0>;(* absent *)
-                    event_name = "";(* absent *)
+                    dropped_attributes_count = 0 (* absent *);
+                    flags = 0 (* absent *);
+                    trace_id = <bytes len=0> (* absent *);
+                    span_id = <bytes len=0> (* absent *);
+                    event_name = "" (* absent *);
                   }
                   ];
-               schema_url = "";(* absent *)
+               schema_url = "" (* absent *);
              }
              ];
-          schema_url = "";(* absent *)
+          schema_url = "" (* absent *);
         }
 { resource =
               Some(
@@ -231,7 +231,7 @@
                        value = Some(String_value("foo"));
                      }
                      ];
-                  dropped_attributes_count = 0;(* absent *)
+                  dropped_attributes_count = 0 (* absent *);
                   entity_refs = [];
                 });
             scope_logs =
@@ -240,7 +240,7 @@
                      { name = "ocaml-otel";
                        version = "%%VERSION_NUM%%";
                        attributes = [];
-                       dropped_attributes_count = 0;(* absent *)
+                       dropped_attributes_count = 0 (* absent *);
                      });
                  log_records =
                    [{ time_unix_nano = 0;
@@ -252,17 +252,17 @@
                           String_value(
                             "emit_logs: this log is emitted with varied tags from a span"));
                       attributes = [];
-                      dropped_attributes_count = 0;(* absent *)
-                      flags = 0;(* absent *)
+                      dropped_attributes_count = 0 (* absent *);
+                      flags = 0 (* absent *);
                       trace_id = <bytes len=16>;
                       span_id = <bytes len=8>;
-                      event_name = "";(* absent *)
+                      event_name = "" (* absent *);
                     }
                     ];
-                 schema_url = "";(* absent *)
+                 schema_url = "" (* absent *);
                }
                ];
-            schema_url = "";(* absent *)
+            schema_url = "" (* absent *);
           }
 { resource =
                 Some(
@@ -287,7 +287,7 @@
                          value = Some(String_value("foo"));
                        }
                        ];
-                    dropped_attributes_count = 0;(* absent *)
+                    dropped_attributes_count = 0 (* absent *);
                     entity_refs = [];
                   });
               scope_logs =
@@ -296,7 +296,7 @@
                        { name = "ocaml-otel";
                          version = "%%VERSION_NUM%%";
                          attributes = [];
-                         dropped_attributes_count = 0;(* absent *)
+                         dropped_attributes_count = 0 (* absent *);
                        });
                    log_records =
                      [{ time_unix_nano = 0;
@@ -308,17 +308,17 @@
                             String_value(
                               "emit_logs: this log will be emitted with varied tags"));
                         attributes = [];
-                        dropped_attributes_count = 0;(* absent *)
-                        flags = 0;(* absent *)
-                        trace_id = <bytes len=0>;(* absent *)
-                        span_id = <bytes len=0>;(* absent *)
-                        event_name = "";(* absent *)
+                        dropped_attributes_count = 0 (* absent *);
+                        flags = 0 (* absent *);
+                        trace_id = <bytes len=0> (* absent *);
+                        span_id = <bytes len=0> (* absent *);
+                        event_name = "" (* absent *);
                       }
                       ];
-                   schema_url = "";(* absent *)
+                   schema_url = "" (* absent *);
                  }
                  ];
-              schema_url = "";(* absent *)
+              schema_url = "" (* absent *);
             }
 { resource =
                   Some(
@@ -336,7 +336,7 @@
                            value = Some(String_value("bar"));
                          }
                          ];
-                      dropped_attributes_count = 0;(* absent *)
+                      dropped_attributes_count = 0 (* absent *);
                       entity_refs = [];
                     });
                 scope_logs =
@@ -345,7 +345,7 @@
                          { name = "ocaml-otel";
                            version = "%%VERSION_NUM%%";
                            attributes = [];
-                           dropped_attributes_count = 0;(* absent *)
+                           dropped_attributes_count = 0 (* absent *);
                          });
                      log_records =
                        [{ time_unix_nano = 0;
@@ -357,15 +357,15 @@
                               String_value(
                                 "emit_logs: this log will be emitted from otel and fmt reporter"));
                           attributes = [];
-                          dropped_attributes_count = 0;(* absent *)
-                          flags = 0;(* absent *)
-                          trace_id = <bytes len=0>;(* absent *)
-                          span_id = <bytes len=0>;(* absent *)
-                          event_name = "";(* absent *)
+                          dropped_attributes_count = 0 (* absent *);
+                          flags = 0 (* absent *);
+                          trace_id = <bytes len=0> (* absent *);
+                          span_id = <bytes len=0> (* absent *);
+                          event_name = "" (* absent *);
                         }
                         ];
-                     schema_url = "";(* absent *)
+                     schema_url = "" (* absent *);
                    }
                    ];
-                schema_url = "";(* absent *)
+                schema_url = "" (* absent *);
               }
