@@ -136,25 +136,25 @@ val make_span_event :
 
 val copy_span_event : span_event -> span_event
 
-val has_span_event_time_unix_nano : span_event -> bool
+val span_event_has_time_unix_nano : span_event -> bool
   (** presence of field "time_unix_nano" in [span_event] *)
 
-val set_span_event_time_unix_nano : span_event -> int64 -> unit
+val span_event_set_time_unix_nano : span_event -> int64 -> unit
   (** set field time_unix_nano in span_event *)
 
-val has_span_event_name : span_event -> bool
+val span_event_has_name : span_event -> bool
   (** presence of field "name" in [span_event] *)
 
-val set_span_event_name : span_event -> string -> unit
+val span_event_set_name : span_event -> string -> unit
   (** set field name in span_event *)
 
-val set_span_event_attributes : span_event -> Common.key_value list -> unit
+val span_event_set_attributes : span_event -> Common.key_value list -> unit
   (** set field attributes in span_event *)
 
-val has_span_event_dropped_attributes_count : span_event -> bool
+val span_event_has_dropped_attributes_count : span_event -> bool
   (** presence of field "dropped_attributes_count" in [span_event] *)
 
-val set_span_event_dropped_attributes_count : span_event -> int32 -> unit
+val span_event_set_dropped_attributes_count : span_event -> int32 -> unit
   (** set field dropped_attributes_count in span_event *)
 
 val make_span_link : 
@@ -170,37 +170,37 @@ val make_span_link :
 
 val copy_span_link : span_link -> span_link
 
-val has_span_link_trace_id : span_link -> bool
+val span_link_has_trace_id : span_link -> bool
   (** presence of field "trace_id" in [span_link] *)
 
-val set_span_link_trace_id : span_link -> bytes -> unit
+val span_link_set_trace_id : span_link -> bytes -> unit
   (** set field trace_id in span_link *)
 
-val has_span_link_span_id : span_link -> bool
+val span_link_has_span_id : span_link -> bool
   (** presence of field "span_id" in [span_link] *)
 
-val set_span_link_span_id : span_link -> bytes -> unit
+val span_link_set_span_id : span_link -> bytes -> unit
   (** set field span_id in span_link *)
 
-val has_span_link_trace_state : span_link -> bool
+val span_link_has_trace_state : span_link -> bool
   (** presence of field "trace_state" in [span_link] *)
 
-val set_span_link_trace_state : span_link -> string -> unit
+val span_link_set_trace_state : span_link -> string -> unit
   (** set field trace_state in span_link *)
 
-val set_span_link_attributes : span_link -> Common.key_value list -> unit
+val span_link_set_attributes : span_link -> Common.key_value list -> unit
   (** set field attributes in span_link *)
 
-val has_span_link_dropped_attributes_count : span_link -> bool
+val span_link_has_dropped_attributes_count : span_link -> bool
   (** presence of field "dropped_attributes_count" in [span_link] *)
 
-val set_span_link_dropped_attributes_count : span_link -> int32 -> unit
+val span_link_set_dropped_attributes_count : span_link -> int32 -> unit
   (** set field dropped_attributes_count in span_link *)
 
-val has_span_link_flags : span_link -> bool
+val span_link_has_flags : span_link -> bool
   (** presence of field "flags" in [span_link] *)
 
-val set_span_link_flags : span_link -> int32 -> unit
+val span_link_set_flags : span_link -> int32 -> unit
   (** set field flags in span_link *)
 
 
@@ -213,16 +213,16 @@ val make_status :
 
 val copy_status : status -> status
 
-val has_status_message : status -> bool
+val status_has_message : status -> bool
   (** presence of field "message" in [status] *)
 
-val set_status_message : status -> string -> unit
+val status_set_message : status -> string -> unit
   (** set field message in status *)
 
-val has_status_code : status -> bool
+val status_has_code : status -> bool
   (** presence of field "code" in [status] *)
 
-val set_status_code : status -> status_status_code -> unit
+val status_set_code : status -> status_status_code -> unit
   (** set field code in status *)
 
 val make_span : 
@@ -248,88 +248,88 @@ val make_span :
 
 val copy_span : span -> span
 
-val has_span_trace_id : span -> bool
+val span_has_trace_id : span -> bool
   (** presence of field "trace_id" in [span] *)
 
-val set_span_trace_id : span -> bytes -> unit
+val span_set_trace_id : span -> bytes -> unit
   (** set field trace_id in span *)
 
-val has_span_span_id : span -> bool
+val span_has_span_id : span -> bool
   (** presence of field "span_id" in [span] *)
 
-val set_span_span_id : span -> bytes -> unit
+val span_set_span_id : span -> bytes -> unit
   (** set field span_id in span *)
 
-val has_span_trace_state : span -> bool
+val span_has_trace_state : span -> bool
   (** presence of field "trace_state" in [span] *)
 
-val set_span_trace_state : span -> string -> unit
+val span_set_trace_state : span -> string -> unit
   (** set field trace_state in span *)
 
-val has_span_parent_span_id : span -> bool
+val span_has_parent_span_id : span -> bool
   (** presence of field "parent_span_id" in [span] *)
 
-val set_span_parent_span_id : span -> bytes -> unit
+val span_set_parent_span_id : span -> bytes -> unit
   (** set field parent_span_id in span *)
 
-val has_span_flags : span -> bool
+val span_has_flags : span -> bool
   (** presence of field "flags" in [span] *)
 
-val set_span_flags : span -> int32 -> unit
+val span_set_flags : span -> int32 -> unit
   (** set field flags in span *)
 
-val has_span_name : span -> bool
+val span_has_name : span -> bool
   (** presence of field "name" in [span] *)
 
-val set_span_name : span -> string -> unit
+val span_set_name : span -> string -> unit
   (** set field name in span *)
 
-val has_span_kind : span -> bool
+val span_has_kind : span -> bool
   (** presence of field "kind" in [span] *)
 
-val set_span_kind : span -> span_span_kind -> unit
+val span_set_kind : span -> span_span_kind -> unit
   (** set field kind in span *)
 
-val has_span_start_time_unix_nano : span -> bool
+val span_has_start_time_unix_nano : span -> bool
   (** presence of field "start_time_unix_nano" in [span] *)
 
-val set_span_start_time_unix_nano : span -> int64 -> unit
+val span_set_start_time_unix_nano : span -> int64 -> unit
   (** set field start_time_unix_nano in span *)
 
-val has_span_end_time_unix_nano : span -> bool
+val span_has_end_time_unix_nano : span -> bool
   (** presence of field "end_time_unix_nano" in [span] *)
 
-val set_span_end_time_unix_nano : span -> int64 -> unit
+val span_set_end_time_unix_nano : span -> int64 -> unit
   (** set field end_time_unix_nano in span *)
 
-val set_span_attributes : span -> Common.key_value list -> unit
+val span_set_attributes : span -> Common.key_value list -> unit
   (** set field attributes in span *)
 
-val has_span_dropped_attributes_count : span -> bool
+val span_has_dropped_attributes_count : span -> bool
   (** presence of field "dropped_attributes_count" in [span] *)
 
-val set_span_dropped_attributes_count : span -> int32 -> unit
+val span_set_dropped_attributes_count : span -> int32 -> unit
   (** set field dropped_attributes_count in span *)
 
-val set_span_events : span -> span_event list -> unit
+val span_set_events : span -> span_event list -> unit
   (** set field events in span *)
 
-val has_span_dropped_events_count : span -> bool
+val span_has_dropped_events_count : span -> bool
   (** presence of field "dropped_events_count" in [span] *)
 
-val set_span_dropped_events_count : span -> int32 -> unit
+val span_set_dropped_events_count : span -> int32 -> unit
   (** set field dropped_events_count in span *)
 
-val set_span_links : span -> span_link list -> unit
+val span_set_links : span -> span_link list -> unit
   (** set field links in span *)
 
-val has_span_dropped_links_count : span -> bool
+val span_has_dropped_links_count : span -> bool
   (** presence of field "dropped_links_count" in [span] *)
 
-val set_span_dropped_links_count : span -> int32 -> unit
+val span_set_dropped_links_count : span -> int32 -> unit
   (** set field dropped_links_count in span *)
 
-val set_span_status : span -> status -> unit
+val span_set_status : span -> status -> unit
   (** set field status in span *)
 
 val make_scope_spans : 
@@ -342,16 +342,16 @@ val make_scope_spans :
 
 val copy_scope_spans : scope_spans -> scope_spans
 
-val set_scope_spans_scope : scope_spans -> Common.instrumentation_scope -> unit
+val scope_spans_set_scope : scope_spans -> Common.instrumentation_scope -> unit
   (** set field scope in scope_spans *)
 
-val set_scope_spans_spans : scope_spans -> span list -> unit
+val scope_spans_set_spans : scope_spans -> span list -> unit
   (** set field spans in scope_spans *)
 
-val has_scope_spans_schema_url : scope_spans -> bool
+val scope_spans_has_schema_url : scope_spans -> bool
   (** presence of field "schema_url" in [scope_spans] *)
 
-val set_scope_spans_schema_url : scope_spans -> string -> unit
+val scope_spans_set_schema_url : scope_spans -> string -> unit
   (** set field schema_url in scope_spans *)
 
 val make_resource_spans : 
@@ -364,16 +364,16 @@ val make_resource_spans :
 
 val copy_resource_spans : resource_spans -> resource_spans
 
-val set_resource_spans_resource : resource_spans -> Resource.resource -> unit
+val resource_spans_set_resource : resource_spans -> Resource.resource -> unit
   (** set field resource in resource_spans *)
 
-val set_resource_spans_scope_spans : resource_spans -> scope_spans list -> unit
+val resource_spans_set_scope_spans : resource_spans -> scope_spans list -> unit
   (** set field scope_spans in resource_spans *)
 
-val has_resource_spans_schema_url : resource_spans -> bool
+val resource_spans_has_schema_url : resource_spans -> bool
   (** presence of field "schema_url" in [resource_spans] *)
 
-val set_resource_spans_schema_url : resource_spans -> string -> unit
+val resource_spans_set_schema_url : resource_spans -> string -> unit
   (** set field schema_url in resource_spans *)
 
 val make_traces_data : 
@@ -384,7 +384,7 @@ val make_traces_data :
 
 val copy_traces_data : traces_data -> traces_data
 
-val set_traces_data_resource_spans : traces_data -> resource_spans list -> unit
+val traces_data_set_resource_spans : traces_data -> resource_spans list -> unit
   (** set field resource_spans in traces_data *)
 
 

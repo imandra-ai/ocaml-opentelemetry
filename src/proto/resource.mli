@@ -33,16 +33,16 @@ val make_resource :
 
 val copy_resource : resource -> resource
 
-val set_resource_attributes : resource -> Common.key_value list -> unit
+val resource_set_attributes : resource -> Common.key_value list -> unit
   (** set field attributes in resource *)
 
-val has_resource_dropped_attributes_count : resource -> bool
+val resource_has_dropped_attributes_count : resource -> bool
   (** presence of field "dropped_attributes_count" in [resource] *)
 
-val set_resource_dropped_attributes_count : resource -> int32 -> unit
+val resource_set_dropped_attributes_count : resource -> int32 -> unit
   (** set field dropped_attributes_count in resource *)
 
-val set_resource_entity_refs : resource -> Common.entity_ref list -> unit
+val resource_set_entity_refs : resource -> Common.entity_ref list -> unit
   (** set field entity_refs in resource *)
 
 

@@ -33,19 +33,19 @@ val make_status :
 
 val copy_status : status -> status
 
-val has_status_code : status -> bool
+val status_has_code : status -> bool
   (** presence of field "code" in [status] *)
 
-val set_status_code : status -> int32 -> unit
+val status_set_code : status -> int32 -> unit
   (** set field code in status *)
 
-val has_status_message : status -> bool
+val status_has_message : status -> bool
   (** presence of field "message" in [status] *)
 
-val set_status_message : status -> bytes -> unit
+val status_set_message : status -> bytes -> unit
   (** set field message in status *)
 
-val set_status_details : status -> bytes list -> unit
+val status_set_details : status -> bytes list -> unit
   (** set field details in status *)
 
 

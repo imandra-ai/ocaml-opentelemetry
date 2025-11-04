@@ -242,28 +242,28 @@ val make_exemplar :
 
 val copy_exemplar : exemplar -> exemplar
 
-val set_exemplar_filtered_attributes : exemplar -> Common.key_value list -> unit
+val exemplar_set_filtered_attributes : exemplar -> Common.key_value list -> unit
   (** set field filtered_attributes in exemplar *)
 
-val has_exemplar_time_unix_nano : exemplar -> bool
+val exemplar_has_time_unix_nano : exemplar -> bool
   (** presence of field "time_unix_nano" in [exemplar] *)
 
-val set_exemplar_time_unix_nano : exemplar -> int64 -> unit
+val exemplar_set_time_unix_nano : exemplar -> int64 -> unit
   (** set field time_unix_nano in exemplar *)
 
-val set_exemplar_value : exemplar -> exemplar_value -> unit
+val exemplar_set_value : exemplar -> exemplar_value -> unit
   (** set field value in exemplar *)
 
-val has_exemplar_span_id : exemplar -> bool
+val exemplar_has_span_id : exemplar -> bool
   (** presence of field "span_id" in [exemplar] *)
 
-val set_exemplar_span_id : exemplar -> bytes -> unit
+val exemplar_set_span_id : exemplar -> bytes -> unit
   (** set field span_id in exemplar *)
 
-val has_exemplar_trace_id : exemplar -> bool
+val exemplar_has_trace_id : exemplar -> bool
   (** presence of field "trace_id" in [exemplar] *)
 
-val set_exemplar_trace_id : exemplar -> bytes -> unit
+val exemplar_set_trace_id : exemplar -> bytes -> unit
   (** set field trace_id in exemplar *)
 
 
@@ -280,31 +280,31 @@ val make_number_data_point :
 
 val copy_number_data_point : number_data_point -> number_data_point
 
-val set_number_data_point_attributes : number_data_point -> Common.key_value list -> unit
+val number_data_point_set_attributes : number_data_point -> Common.key_value list -> unit
   (** set field attributes in number_data_point *)
 
-val has_number_data_point_start_time_unix_nano : number_data_point -> bool
+val number_data_point_has_start_time_unix_nano : number_data_point -> bool
   (** presence of field "start_time_unix_nano" in [number_data_point] *)
 
-val set_number_data_point_start_time_unix_nano : number_data_point -> int64 -> unit
+val number_data_point_set_start_time_unix_nano : number_data_point -> int64 -> unit
   (** set field start_time_unix_nano in number_data_point *)
 
-val has_number_data_point_time_unix_nano : number_data_point -> bool
+val number_data_point_has_time_unix_nano : number_data_point -> bool
   (** presence of field "time_unix_nano" in [number_data_point] *)
 
-val set_number_data_point_time_unix_nano : number_data_point -> int64 -> unit
+val number_data_point_set_time_unix_nano : number_data_point -> int64 -> unit
   (** set field time_unix_nano in number_data_point *)
 
-val set_number_data_point_value : number_data_point -> number_data_point_value -> unit
+val number_data_point_set_value : number_data_point -> number_data_point_value -> unit
   (** set field value in number_data_point *)
 
-val set_number_data_point_exemplars : number_data_point -> exemplar list -> unit
+val number_data_point_set_exemplars : number_data_point -> exemplar list -> unit
   (** set field exemplars in number_data_point *)
 
-val has_number_data_point_flags : number_data_point -> bool
+val number_data_point_has_flags : number_data_point -> bool
   (** presence of field "flags" in [number_data_point] *)
 
-val set_number_data_point_flags : number_data_point -> int32 -> unit
+val number_data_point_set_flags : number_data_point -> int32 -> unit
   (** set field flags in number_data_point *)
 
 val make_gauge : 
@@ -315,7 +315,7 @@ val make_gauge :
 
 val copy_gauge : gauge -> gauge
 
-val set_gauge_data_points : gauge -> number_data_point list -> unit
+val gauge_set_data_points : gauge -> number_data_point list -> unit
   (** set field data_points in gauge *)
 
 
@@ -329,19 +329,19 @@ val make_sum :
 
 val copy_sum : sum -> sum
 
-val set_sum_data_points : sum -> number_data_point list -> unit
+val sum_set_data_points : sum -> number_data_point list -> unit
   (** set field data_points in sum *)
 
-val has_sum_aggregation_temporality : sum -> bool
+val sum_has_aggregation_temporality : sum -> bool
   (** presence of field "aggregation_temporality" in [sum] *)
 
-val set_sum_aggregation_temporality : sum -> aggregation_temporality -> unit
+val sum_set_aggregation_temporality : sum -> aggregation_temporality -> unit
   (** set field aggregation_temporality in sum *)
 
-val has_sum_is_monotonic : sum -> bool
+val sum_has_is_monotonic : sum -> bool
   (** presence of field "is_monotonic" in [sum] *)
 
-val set_sum_is_monotonic : sum -> bool -> unit
+val sum_set_is_monotonic : sum -> bool -> unit
   (** set field is_monotonic in sum *)
 
 val make_histogram_data_point : 
@@ -362,49 +362,49 @@ val make_histogram_data_point :
 
 val copy_histogram_data_point : histogram_data_point -> histogram_data_point
 
-val set_histogram_data_point_attributes : histogram_data_point -> Common.key_value list -> unit
+val histogram_data_point_set_attributes : histogram_data_point -> Common.key_value list -> unit
   (** set field attributes in histogram_data_point *)
 
-val has_histogram_data_point_start_time_unix_nano : histogram_data_point -> bool
+val histogram_data_point_has_start_time_unix_nano : histogram_data_point -> bool
   (** presence of field "start_time_unix_nano" in [histogram_data_point] *)
 
-val set_histogram_data_point_start_time_unix_nano : histogram_data_point -> int64 -> unit
+val histogram_data_point_set_start_time_unix_nano : histogram_data_point -> int64 -> unit
   (** set field start_time_unix_nano in histogram_data_point *)
 
-val has_histogram_data_point_time_unix_nano : histogram_data_point -> bool
+val histogram_data_point_has_time_unix_nano : histogram_data_point -> bool
   (** presence of field "time_unix_nano" in [histogram_data_point] *)
 
-val set_histogram_data_point_time_unix_nano : histogram_data_point -> int64 -> unit
+val histogram_data_point_set_time_unix_nano : histogram_data_point -> int64 -> unit
   (** set field time_unix_nano in histogram_data_point *)
 
-val has_histogram_data_point_count : histogram_data_point -> bool
+val histogram_data_point_has_count : histogram_data_point -> bool
   (** presence of field "count" in [histogram_data_point] *)
 
-val set_histogram_data_point_count : histogram_data_point -> int64 -> unit
+val histogram_data_point_set_count : histogram_data_point -> int64 -> unit
   (** set field count in histogram_data_point *)
 
-val set_histogram_data_point_sum : histogram_data_point -> float -> unit
+val histogram_data_point_set_sum : histogram_data_point -> float -> unit
   (** set field sum in histogram_data_point *)
 
-val set_histogram_data_point_bucket_counts : histogram_data_point -> int64 list -> unit
+val histogram_data_point_set_bucket_counts : histogram_data_point -> int64 list -> unit
   (** set field bucket_counts in histogram_data_point *)
 
-val set_histogram_data_point_explicit_bounds : histogram_data_point -> float list -> unit
+val histogram_data_point_set_explicit_bounds : histogram_data_point -> float list -> unit
   (** set field explicit_bounds in histogram_data_point *)
 
-val set_histogram_data_point_exemplars : histogram_data_point -> exemplar list -> unit
+val histogram_data_point_set_exemplars : histogram_data_point -> exemplar list -> unit
   (** set field exemplars in histogram_data_point *)
 
-val has_histogram_data_point_flags : histogram_data_point -> bool
+val histogram_data_point_has_flags : histogram_data_point -> bool
   (** presence of field "flags" in [histogram_data_point] *)
 
-val set_histogram_data_point_flags : histogram_data_point -> int32 -> unit
+val histogram_data_point_set_flags : histogram_data_point -> int32 -> unit
   (** set field flags in histogram_data_point *)
 
-val set_histogram_data_point_min : histogram_data_point -> float -> unit
+val histogram_data_point_set_min : histogram_data_point -> float -> unit
   (** set field min in histogram_data_point *)
 
-val set_histogram_data_point_max : histogram_data_point -> float -> unit
+val histogram_data_point_set_max : histogram_data_point -> float -> unit
   (** set field max in histogram_data_point *)
 
 val make_histogram : 
@@ -416,13 +416,13 @@ val make_histogram :
 
 val copy_histogram : histogram -> histogram
 
-val set_histogram_data_points : histogram -> histogram_data_point list -> unit
+val histogram_set_data_points : histogram -> histogram_data_point list -> unit
   (** set field data_points in histogram *)
 
-val has_histogram_aggregation_temporality : histogram -> bool
+val histogram_has_aggregation_temporality : histogram -> bool
   (** presence of field "aggregation_temporality" in [histogram] *)
 
-val set_histogram_aggregation_temporality : histogram -> aggregation_temporality -> unit
+val histogram_set_aggregation_temporality : histogram -> aggregation_temporality -> unit
   (** set field aggregation_temporality in histogram *)
 
 val make_exponential_histogram_data_point_buckets : 
@@ -434,13 +434,13 @@ val make_exponential_histogram_data_point_buckets :
 
 val copy_exponential_histogram_data_point_buckets : exponential_histogram_data_point_buckets -> exponential_histogram_data_point_buckets
 
-val has_exponential_histogram_data_point_buckets_offset : exponential_histogram_data_point_buckets -> bool
+val exponential_histogram_data_point_buckets_has_offset : exponential_histogram_data_point_buckets -> bool
   (** presence of field "offset" in [exponential_histogram_data_point_buckets] *)
 
-val set_exponential_histogram_data_point_buckets_offset : exponential_histogram_data_point_buckets -> int32 -> unit
+val exponential_histogram_data_point_buckets_set_offset : exponential_histogram_data_point_buckets -> int32 -> unit
   (** set field offset in exponential_histogram_data_point_buckets *)
 
-val set_exponential_histogram_data_point_buckets_bucket_counts : exponential_histogram_data_point_buckets -> int64 list -> unit
+val exponential_histogram_data_point_buckets_set_bucket_counts : exponential_histogram_data_point_buckets -> int64 list -> unit
   (** set field bucket_counts in exponential_histogram_data_point_buckets *)
 
 val make_exponential_histogram_data_point : 
@@ -464,67 +464,67 @@ val make_exponential_histogram_data_point :
 
 val copy_exponential_histogram_data_point : exponential_histogram_data_point -> exponential_histogram_data_point
 
-val set_exponential_histogram_data_point_attributes : exponential_histogram_data_point -> Common.key_value list -> unit
+val exponential_histogram_data_point_set_attributes : exponential_histogram_data_point -> Common.key_value list -> unit
   (** set field attributes in exponential_histogram_data_point *)
 
-val has_exponential_histogram_data_point_start_time_unix_nano : exponential_histogram_data_point -> bool
+val exponential_histogram_data_point_has_start_time_unix_nano : exponential_histogram_data_point -> bool
   (** presence of field "start_time_unix_nano" in [exponential_histogram_data_point] *)
 
-val set_exponential_histogram_data_point_start_time_unix_nano : exponential_histogram_data_point -> int64 -> unit
+val exponential_histogram_data_point_set_start_time_unix_nano : exponential_histogram_data_point -> int64 -> unit
   (** set field start_time_unix_nano in exponential_histogram_data_point *)
 
-val has_exponential_histogram_data_point_time_unix_nano : exponential_histogram_data_point -> bool
+val exponential_histogram_data_point_has_time_unix_nano : exponential_histogram_data_point -> bool
   (** presence of field "time_unix_nano" in [exponential_histogram_data_point] *)
 
-val set_exponential_histogram_data_point_time_unix_nano : exponential_histogram_data_point -> int64 -> unit
+val exponential_histogram_data_point_set_time_unix_nano : exponential_histogram_data_point -> int64 -> unit
   (** set field time_unix_nano in exponential_histogram_data_point *)
 
-val has_exponential_histogram_data_point_count : exponential_histogram_data_point -> bool
+val exponential_histogram_data_point_has_count : exponential_histogram_data_point -> bool
   (** presence of field "count" in [exponential_histogram_data_point] *)
 
-val set_exponential_histogram_data_point_count : exponential_histogram_data_point -> int64 -> unit
+val exponential_histogram_data_point_set_count : exponential_histogram_data_point -> int64 -> unit
   (** set field count in exponential_histogram_data_point *)
 
-val set_exponential_histogram_data_point_sum : exponential_histogram_data_point -> float -> unit
+val exponential_histogram_data_point_set_sum : exponential_histogram_data_point -> float -> unit
   (** set field sum in exponential_histogram_data_point *)
 
-val has_exponential_histogram_data_point_scale : exponential_histogram_data_point -> bool
+val exponential_histogram_data_point_has_scale : exponential_histogram_data_point -> bool
   (** presence of field "scale" in [exponential_histogram_data_point] *)
 
-val set_exponential_histogram_data_point_scale : exponential_histogram_data_point -> int32 -> unit
+val exponential_histogram_data_point_set_scale : exponential_histogram_data_point -> int32 -> unit
   (** set field scale in exponential_histogram_data_point *)
 
-val has_exponential_histogram_data_point_zero_count : exponential_histogram_data_point -> bool
+val exponential_histogram_data_point_has_zero_count : exponential_histogram_data_point -> bool
   (** presence of field "zero_count" in [exponential_histogram_data_point] *)
 
-val set_exponential_histogram_data_point_zero_count : exponential_histogram_data_point -> int64 -> unit
+val exponential_histogram_data_point_set_zero_count : exponential_histogram_data_point -> int64 -> unit
   (** set field zero_count in exponential_histogram_data_point *)
 
-val set_exponential_histogram_data_point_positive : exponential_histogram_data_point -> exponential_histogram_data_point_buckets -> unit
+val exponential_histogram_data_point_set_positive : exponential_histogram_data_point -> exponential_histogram_data_point_buckets -> unit
   (** set field positive in exponential_histogram_data_point *)
 
-val set_exponential_histogram_data_point_negative : exponential_histogram_data_point -> exponential_histogram_data_point_buckets -> unit
+val exponential_histogram_data_point_set_negative : exponential_histogram_data_point -> exponential_histogram_data_point_buckets -> unit
   (** set field negative in exponential_histogram_data_point *)
 
-val has_exponential_histogram_data_point_flags : exponential_histogram_data_point -> bool
+val exponential_histogram_data_point_has_flags : exponential_histogram_data_point -> bool
   (** presence of field "flags" in [exponential_histogram_data_point] *)
 
-val set_exponential_histogram_data_point_flags : exponential_histogram_data_point -> int32 -> unit
+val exponential_histogram_data_point_set_flags : exponential_histogram_data_point -> int32 -> unit
   (** set field flags in exponential_histogram_data_point *)
 
-val set_exponential_histogram_data_point_exemplars : exponential_histogram_data_point -> exemplar list -> unit
+val exponential_histogram_data_point_set_exemplars : exponential_histogram_data_point -> exemplar list -> unit
   (** set field exemplars in exponential_histogram_data_point *)
 
-val set_exponential_histogram_data_point_min : exponential_histogram_data_point -> float -> unit
+val exponential_histogram_data_point_set_min : exponential_histogram_data_point -> float -> unit
   (** set field min in exponential_histogram_data_point *)
 
-val set_exponential_histogram_data_point_max : exponential_histogram_data_point -> float -> unit
+val exponential_histogram_data_point_set_max : exponential_histogram_data_point -> float -> unit
   (** set field max in exponential_histogram_data_point *)
 
-val has_exponential_histogram_data_point_zero_threshold : exponential_histogram_data_point -> bool
+val exponential_histogram_data_point_has_zero_threshold : exponential_histogram_data_point -> bool
   (** presence of field "zero_threshold" in [exponential_histogram_data_point] *)
 
-val set_exponential_histogram_data_point_zero_threshold : exponential_histogram_data_point -> float -> unit
+val exponential_histogram_data_point_set_zero_threshold : exponential_histogram_data_point -> float -> unit
   (** set field zero_threshold in exponential_histogram_data_point *)
 
 val make_exponential_histogram : 
@@ -536,13 +536,13 @@ val make_exponential_histogram :
 
 val copy_exponential_histogram : exponential_histogram -> exponential_histogram
 
-val set_exponential_histogram_data_points : exponential_histogram -> exponential_histogram_data_point list -> unit
+val exponential_histogram_set_data_points : exponential_histogram -> exponential_histogram_data_point list -> unit
   (** set field data_points in exponential_histogram *)
 
-val has_exponential_histogram_aggregation_temporality : exponential_histogram -> bool
+val exponential_histogram_has_aggregation_temporality : exponential_histogram -> bool
   (** presence of field "aggregation_temporality" in [exponential_histogram] *)
 
-val set_exponential_histogram_aggregation_temporality : exponential_histogram -> aggregation_temporality -> unit
+val exponential_histogram_set_aggregation_temporality : exponential_histogram -> aggregation_temporality -> unit
   (** set field aggregation_temporality in exponential_histogram *)
 
 val make_summary_data_point_value_at_quantile : 
@@ -554,16 +554,16 @@ val make_summary_data_point_value_at_quantile :
 
 val copy_summary_data_point_value_at_quantile : summary_data_point_value_at_quantile -> summary_data_point_value_at_quantile
 
-val has_summary_data_point_value_at_quantile_quantile : summary_data_point_value_at_quantile -> bool
+val summary_data_point_value_at_quantile_has_quantile : summary_data_point_value_at_quantile -> bool
   (** presence of field "quantile" in [summary_data_point_value_at_quantile] *)
 
-val set_summary_data_point_value_at_quantile_quantile : summary_data_point_value_at_quantile -> float -> unit
+val summary_data_point_value_at_quantile_set_quantile : summary_data_point_value_at_quantile -> float -> unit
   (** set field quantile in summary_data_point_value_at_quantile *)
 
-val has_summary_data_point_value_at_quantile_value : summary_data_point_value_at_quantile -> bool
+val summary_data_point_value_at_quantile_has_value : summary_data_point_value_at_quantile -> bool
   (** presence of field "value" in [summary_data_point_value_at_quantile] *)
 
-val set_summary_data_point_value_at_quantile_value : summary_data_point_value_at_quantile -> float -> unit
+val summary_data_point_value_at_quantile_set_value : summary_data_point_value_at_quantile -> float -> unit
   (** set field value in summary_data_point_value_at_quantile *)
 
 val make_summary_data_point : 
@@ -580,40 +580,40 @@ val make_summary_data_point :
 
 val copy_summary_data_point : summary_data_point -> summary_data_point
 
-val set_summary_data_point_attributes : summary_data_point -> Common.key_value list -> unit
+val summary_data_point_set_attributes : summary_data_point -> Common.key_value list -> unit
   (** set field attributes in summary_data_point *)
 
-val has_summary_data_point_start_time_unix_nano : summary_data_point -> bool
+val summary_data_point_has_start_time_unix_nano : summary_data_point -> bool
   (** presence of field "start_time_unix_nano" in [summary_data_point] *)
 
-val set_summary_data_point_start_time_unix_nano : summary_data_point -> int64 -> unit
+val summary_data_point_set_start_time_unix_nano : summary_data_point -> int64 -> unit
   (** set field start_time_unix_nano in summary_data_point *)
 
-val has_summary_data_point_time_unix_nano : summary_data_point -> bool
+val summary_data_point_has_time_unix_nano : summary_data_point -> bool
   (** presence of field "time_unix_nano" in [summary_data_point] *)
 
-val set_summary_data_point_time_unix_nano : summary_data_point -> int64 -> unit
+val summary_data_point_set_time_unix_nano : summary_data_point -> int64 -> unit
   (** set field time_unix_nano in summary_data_point *)
 
-val has_summary_data_point_count : summary_data_point -> bool
+val summary_data_point_has_count : summary_data_point -> bool
   (** presence of field "count" in [summary_data_point] *)
 
-val set_summary_data_point_count : summary_data_point -> int64 -> unit
+val summary_data_point_set_count : summary_data_point -> int64 -> unit
   (** set field count in summary_data_point *)
 
-val has_summary_data_point_sum : summary_data_point -> bool
+val summary_data_point_has_sum : summary_data_point -> bool
   (** presence of field "sum" in [summary_data_point] *)
 
-val set_summary_data_point_sum : summary_data_point -> float -> unit
+val summary_data_point_set_sum : summary_data_point -> float -> unit
   (** set field sum in summary_data_point *)
 
-val set_summary_data_point_quantile_values : summary_data_point -> summary_data_point_value_at_quantile list -> unit
+val summary_data_point_set_quantile_values : summary_data_point -> summary_data_point_value_at_quantile list -> unit
   (** set field quantile_values in summary_data_point *)
 
-val has_summary_data_point_flags : summary_data_point -> bool
+val summary_data_point_has_flags : summary_data_point -> bool
   (** presence of field "flags" in [summary_data_point] *)
 
-val set_summary_data_point_flags : summary_data_point -> int32 -> unit
+val summary_data_point_set_flags : summary_data_point -> int32 -> unit
   (** set field flags in summary_data_point *)
 
 val make_summary : 
@@ -624,7 +624,7 @@ val make_summary :
 
 val copy_summary : summary -> summary
 
-val set_summary_data_points : summary -> summary_data_point list -> unit
+val summary_set_data_points : summary -> summary_data_point list -> unit
   (** set field data_points in summary *)
 
 
@@ -640,28 +640,28 @@ val make_metric :
 
 val copy_metric : metric -> metric
 
-val has_metric_name : metric -> bool
+val metric_has_name : metric -> bool
   (** presence of field "name" in [metric] *)
 
-val set_metric_name : metric -> string -> unit
+val metric_set_name : metric -> string -> unit
   (** set field name in metric *)
 
-val has_metric_description : metric -> bool
+val metric_has_description : metric -> bool
   (** presence of field "description" in [metric] *)
 
-val set_metric_description : metric -> string -> unit
+val metric_set_description : metric -> string -> unit
   (** set field description in metric *)
 
-val has_metric_unit_ : metric -> bool
+val metric_has_unit_ : metric -> bool
   (** presence of field "unit_" in [metric] *)
 
-val set_metric_unit_ : metric -> string -> unit
+val metric_set_unit_ : metric -> string -> unit
   (** set field unit_ in metric *)
 
-val set_metric_data : metric -> metric_data -> unit
+val metric_set_data : metric -> metric_data -> unit
   (** set field data in metric *)
 
-val set_metric_metadata : metric -> Common.key_value list -> unit
+val metric_set_metadata : metric -> Common.key_value list -> unit
   (** set field metadata in metric *)
 
 val make_scope_metrics : 
@@ -674,16 +674,16 @@ val make_scope_metrics :
 
 val copy_scope_metrics : scope_metrics -> scope_metrics
 
-val set_scope_metrics_scope : scope_metrics -> Common.instrumentation_scope -> unit
+val scope_metrics_set_scope : scope_metrics -> Common.instrumentation_scope -> unit
   (** set field scope in scope_metrics *)
 
-val set_scope_metrics_metrics : scope_metrics -> metric list -> unit
+val scope_metrics_set_metrics : scope_metrics -> metric list -> unit
   (** set field metrics in scope_metrics *)
 
-val has_scope_metrics_schema_url : scope_metrics -> bool
+val scope_metrics_has_schema_url : scope_metrics -> bool
   (** presence of field "schema_url" in [scope_metrics] *)
 
-val set_scope_metrics_schema_url : scope_metrics -> string -> unit
+val scope_metrics_set_schema_url : scope_metrics -> string -> unit
   (** set field schema_url in scope_metrics *)
 
 val make_resource_metrics : 
@@ -696,16 +696,16 @@ val make_resource_metrics :
 
 val copy_resource_metrics : resource_metrics -> resource_metrics
 
-val set_resource_metrics_resource : resource_metrics -> Resource.resource -> unit
+val resource_metrics_set_resource : resource_metrics -> Resource.resource -> unit
   (** set field resource in resource_metrics *)
 
-val set_resource_metrics_scope_metrics : resource_metrics -> scope_metrics list -> unit
+val resource_metrics_set_scope_metrics : resource_metrics -> scope_metrics list -> unit
   (** set field scope_metrics in resource_metrics *)
 
-val has_resource_metrics_schema_url : resource_metrics -> bool
+val resource_metrics_has_schema_url : resource_metrics -> bool
   (** presence of field "schema_url" in [resource_metrics] *)
 
-val set_resource_metrics_schema_url : resource_metrics -> string -> unit
+val resource_metrics_set_schema_url : resource_metrics -> string -> unit
   (** set field schema_url in resource_metrics *)
 
 val make_metrics_data : 
@@ -716,7 +716,7 @@ val make_metrics_data :
 
 val copy_metrics_data : metrics_data -> metrics_data
 
-val set_metrics_data_resource_metrics : metrics_data -> resource_metrics list -> unit
+val metrics_data_set_resource_metrics : metrics_data -> resource_metrics list -> unit
   (** set field resource_metrics in metrics_data *)
 
 

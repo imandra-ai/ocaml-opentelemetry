@@ -35,7 +35,7 @@ let default_export_metrics_service_response (): export_metrics_service_response 
 (** {2 Make functions} *)
 
 
-let[@inline] set_export_metrics_service_request_resource_metrics (self:export_metrics_service_request) (x:Metrics.resource_metrics list) : unit =
+let[@inline] export_metrics_service_request_set_resource_metrics (self:export_metrics_service_request) (x:Metrics.resource_metrics list) : unit =
   self.resource_metrics <- x
 
 let copy_export_metrics_service_request (self:export_metrics_service_request) : export_metrics_service_request =
@@ -45,15 +45,15 @@ let make_export_metrics_service_request
   ?(resource_metrics=[])
   () : export_metrics_service_request  =
   let _res = default_export_metrics_service_request () in
-  set_export_metrics_service_request_resource_metrics _res resource_metrics;
+  export_metrics_service_request_set_resource_metrics _res resource_metrics;
   _res
 
-let[@inline] has_export_metrics_partial_success_rejected_data_points (self:export_metrics_partial_success) : bool = (Pbrt.Bitfield.get self._presence 0)
-let[@inline] has_export_metrics_partial_success_error_message (self:export_metrics_partial_success) : bool = (Pbrt.Bitfield.get self._presence 1)
+let[@inline] export_metrics_partial_success_has_rejected_data_points (self:export_metrics_partial_success) : bool = (Pbrt.Bitfield.get self._presence 0)
+let[@inline] export_metrics_partial_success_has_error_message (self:export_metrics_partial_success) : bool = (Pbrt.Bitfield.get self._presence 1)
 
-let[@inline] set_export_metrics_partial_success_rejected_data_points (self:export_metrics_partial_success) (x:int64) : unit =
+let[@inline] export_metrics_partial_success_set_rejected_data_points (self:export_metrics_partial_success) (x:int64) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.rejected_data_points <- x
-let[@inline] set_export_metrics_partial_success_error_message (self:export_metrics_partial_success) (x:string) : unit =
+let[@inline] export_metrics_partial_success_set_error_message (self:export_metrics_partial_success) (x:string) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 1); self.error_message <- x
 
 let copy_export_metrics_partial_success (self:export_metrics_partial_success) : export_metrics_partial_success =
@@ -66,14 +66,14 @@ let make_export_metrics_partial_success
   let _res = default_export_metrics_partial_success () in
   (match rejected_data_points with
   | None -> ()
-  | Some v -> set_export_metrics_partial_success_rejected_data_points _res v);
+  | Some v -> export_metrics_partial_success_set_rejected_data_points _res v);
   (match error_message with
   | None -> ()
-  | Some v -> set_export_metrics_partial_success_error_message _res v);
+  | Some v -> export_metrics_partial_success_set_error_message _res v);
   _res
 
 
-let[@inline] set_export_metrics_service_response_partial_success (self:export_metrics_service_response) (x:export_metrics_partial_success) : unit =
+let[@inline] export_metrics_service_response_set_partial_success (self:export_metrics_service_response) (x:export_metrics_partial_success) : unit =
   self.partial_success <- Some x
 
 let copy_export_metrics_service_response (self:export_metrics_service_response) : export_metrics_service_response =
@@ -85,7 +85,7 @@ let make_export_metrics_service_response
   let _res = default_export_metrics_service_response () in
   (match partial_success with
   | None -> ()
-  | Some v -> set_export_metrics_service_response_partial_success _res v);
+  | Some v -> export_metrics_service_response_set_partial_success _res v);
   _res
 
 [@@@ocaml.warning "-23-27-30-39"]
@@ -101,9 +101,9 @@ let rec pp_export_metrics_service_request fmt (v:export_metrics_service_request)
 let rec pp_export_metrics_partial_success fmt (v:export_metrics_partial_success) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "rejected_data_points" Pbrt.Pp.pp_int64 fmt v.rejected_data_points;
-    if not (Pbrt.Bitfield.get v._presence 0) then Format.pp_print_string fmt "(* absent *)";
+    if not (export_metrics_partial_success_has_rejected_data_points v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "error_message" Pbrt.Pp.pp_string fmt v.error_message;
-    if not (Pbrt.Bitfield.get v._presence 1) then Format.pp_print_string fmt "(* absent *)";
+    if not (export_metrics_partial_success_has_error_message v) then Format.pp_print_string fmt "(* absent *)";
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -125,11 +125,11 @@ let rec encode_pb_export_metrics_service_request (v:export_metrics_service_reque
   ()
 
 let rec encode_pb_export_metrics_partial_success (v:export_metrics_partial_success) encoder = 
-  if (Pbrt.Bitfield.get v._presence 0) then (
+  if export_metrics_partial_success_has_rejected_data_points v then (
     Pbrt.Encoder.int64_as_varint v.rejected_data_points encoder;
     Pbrt.Encoder.key 1 Pbrt.Varint encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 1) then (
+  if export_metrics_partial_success_has_error_message v then (
     Pbrt.Encoder.string v.error_message encoder;
     Pbrt.Encoder.key 2 Pbrt.Bytes encoder; 
   );
@@ -155,10 +155,10 @@ let rec decode_pb_export_metrics_service_request d =
     match Pbrt.Decoder.key d with
     | None -> (
       (* put lists in the correct order *)
-      set_export_metrics_service_request_resource_metrics v (List.rev v.resource_metrics);
+      export_metrics_service_request_set_resource_metrics v (List.rev v.resource_metrics);
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      set_export_metrics_service_request_resource_metrics v ((Metrics.decode_pb_resource_metrics (Pbrt.Decoder.nested d)) :: v.resource_metrics);
+      export_metrics_service_request_set_resource_metrics v ((Metrics.decode_pb_resource_metrics (Pbrt.Decoder.nested d)) :: v.resource_metrics);
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(export_metrics_service_request), field(1)" pk
@@ -174,12 +174,12 @@ let rec decode_pb_export_metrics_partial_success d =
     | None -> (
     ); continue__ := false
     | Some (1, Pbrt.Varint) -> begin
-      set_export_metrics_partial_success_rejected_data_points v (Pbrt.Decoder.int64_as_varint d);
+      export_metrics_partial_success_set_rejected_data_points v (Pbrt.Decoder.int64_as_varint d);
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(export_metrics_partial_success), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      set_export_metrics_partial_success_error_message v (Pbrt.Decoder.string d);
+      export_metrics_partial_success_set_error_message v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(export_metrics_partial_success), field(2)" pk
@@ -195,7 +195,7 @@ let rec decode_pb_export_metrics_service_response d =
     | None -> (
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      set_export_metrics_service_response_partial_success v (decode_pb_export_metrics_partial_success (Pbrt.Decoder.nested d));
+      export_metrics_service_response_set_partial_success v (decode_pb_export_metrics_partial_success (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(export_metrics_service_response), field(1)" pk

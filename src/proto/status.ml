@@ -18,14 +18,14 @@ let default_status (): status =
 
 (** {2 Make functions} *)
 
-let[@inline] has_status_code (self:status) : bool = (Pbrt.Bitfield.get self._presence 0)
-let[@inline] has_status_message (self:status) : bool = (Pbrt.Bitfield.get self._presence 1)
+let[@inline] status_has_code (self:status) : bool = (Pbrt.Bitfield.get self._presence 0)
+let[@inline] status_has_message (self:status) : bool = (Pbrt.Bitfield.get self._presence 1)
 
-let[@inline] set_status_code (self:status) (x:int32) : unit =
+let[@inline] status_set_code (self:status) (x:int32) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.code <- x
-let[@inline] set_status_message (self:status) (x:bytes) : unit =
+let[@inline] status_set_message (self:status) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 1); self.message <- x
-let[@inline] set_status_details (self:status) (x:bytes list) : unit =
+let[@inline] status_set_details (self:status) (x:bytes list) : unit =
   self.details <- x
 
 let copy_status (self:status) : status =
@@ -39,11 +39,11 @@ let make_status
   let _res = default_status () in
   (match code with
   | None -> ()
-  | Some v -> set_status_code _res v);
+  | Some v -> status_set_code _res v);
   (match message with
   | None -> ()
-  | Some v -> set_status_message _res v);
-  set_status_details _res details;
+  | Some v -> status_set_message _res v);
+  status_set_details _res details;
   _res
 
 [@@@ocaml.warning "-23-27-30-39"]
@@ -53,9 +53,9 @@ let make_status
 let rec pp_status fmt (v:status) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "code" Pbrt.Pp.pp_int32 fmt v.code;
-    if not (Pbrt.Bitfield.get v._presence 0) then Format.pp_print_string fmt "(* absent *)";
+    if not (status_has_code v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "message" Pbrt.Pp.pp_bytes fmt v.message;
-    if not (Pbrt.Bitfield.get v._presence 1) then Format.pp_print_string fmt "(* absent *)";
+    if not (status_has_message v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "details" (Pbrt.Pp.pp_list Pbrt.Pp.pp_bytes) fmt v.details;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -65,11 +65,11 @@ let rec pp_status fmt (v:status) =
 (** {2 Protobuf Encoding} *)
 
 let rec encode_pb_status (v:status) encoder = 
-  if (Pbrt.Bitfield.get v._presence 0) then (
+  if status_has_code v then (
     Pbrt.Encoder.int32_as_varint v.code encoder;
     Pbrt.Encoder.key 1 Pbrt.Varint encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 1) then (
+  if status_has_message v then (
     Pbrt.Encoder.bytes v.message encoder;
     Pbrt.Encoder.key 2 Pbrt.Bytes encoder; 
   );
@@ -90,20 +90,20 @@ let rec decode_pb_status d =
     match Pbrt.Decoder.key d with
     | None -> (
       (* put lists in the correct order *)
-      set_status_details v (List.rev v.details);
+      status_set_details v (List.rev v.details);
     ); continue__ := false
     | Some (1, Pbrt.Varint) -> begin
-      set_status_code v (Pbrt.Decoder.int32_as_varint d);
+      status_set_code v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(status), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      set_status_message v (Pbrt.Decoder.bytes d);
+      status_set_message v (Pbrt.Decoder.bytes d);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(status), field(2)" pk
     | Some (3, Pbrt.Bytes) -> begin
-      set_status_details v ((Pbrt.Decoder.bytes d) :: v.details);
+      status_set_details v ((Pbrt.Decoder.bytes d) :: v.details);
     end
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(status), field(3)" pk

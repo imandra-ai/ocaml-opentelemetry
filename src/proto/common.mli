@@ -79,7 +79,7 @@ val make_array_value :
 
 val copy_array_value : array_value -> array_value
 
-val set_array_value_values : array_value -> any_value list -> unit
+val array_value_set_values : array_value -> any_value list -> unit
   (** set field values in array_value *)
 
 val make_key_value_list : 
@@ -90,7 +90,7 @@ val make_key_value_list :
 
 val copy_key_value_list : key_value_list -> key_value_list
 
-val set_key_value_list_values : key_value_list -> key_value list -> unit
+val key_value_list_set_values : key_value_list -> key_value list -> unit
   (** set field values in key_value_list *)
 
 val make_key_value : 
@@ -102,13 +102,13 @@ val make_key_value :
 
 val copy_key_value : key_value -> key_value
 
-val has_key_value_key : key_value -> bool
+val key_value_has_key : key_value -> bool
   (** presence of field "key" in [key_value] *)
 
-val set_key_value_key : key_value -> string -> unit
+val key_value_set_key : key_value -> string -> unit
   (** set field key in key_value *)
 
-val set_key_value_value : key_value -> any_value -> unit
+val key_value_set_value : key_value -> any_value -> unit
   (** set field value in key_value *)
 
 val make_instrumentation_scope : 
@@ -122,25 +122,25 @@ val make_instrumentation_scope :
 
 val copy_instrumentation_scope : instrumentation_scope -> instrumentation_scope
 
-val has_instrumentation_scope_name : instrumentation_scope -> bool
+val instrumentation_scope_has_name : instrumentation_scope -> bool
   (** presence of field "name" in [instrumentation_scope] *)
 
-val set_instrumentation_scope_name : instrumentation_scope -> string -> unit
+val instrumentation_scope_set_name : instrumentation_scope -> string -> unit
   (** set field name in instrumentation_scope *)
 
-val has_instrumentation_scope_version : instrumentation_scope -> bool
+val instrumentation_scope_has_version : instrumentation_scope -> bool
   (** presence of field "version" in [instrumentation_scope] *)
 
-val set_instrumentation_scope_version : instrumentation_scope -> string -> unit
+val instrumentation_scope_set_version : instrumentation_scope -> string -> unit
   (** set field version in instrumentation_scope *)
 
-val set_instrumentation_scope_attributes : instrumentation_scope -> key_value list -> unit
+val instrumentation_scope_set_attributes : instrumentation_scope -> key_value list -> unit
   (** set field attributes in instrumentation_scope *)
 
-val has_instrumentation_scope_dropped_attributes_count : instrumentation_scope -> bool
+val instrumentation_scope_has_dropped_attributes_count : instrumentation_scope -> bool
   (** presence of field "dropped_attributes_count" in [instrumentation_scope] *)
 
-val set_instrumentation_scope_dropped_attributes_count : instrumentation_scope -> int32 -> unit
+val instrumentation_scope_set_dropped_attributes_count : instrumentation_scope -> int32 -> unit
   (** set field dropped_attributes_count in instrumentation_scope *)
 
 val make_entity_ref : 
@@ -154,22 +154,22 @@ val make_entity_ref :
 
 val copy_entity_ref : entity_ref -> entity_ref
 
-val has_entity_ref_schema_url : entity_ref -> bool
+val entity_ref_has_schema_url : entity_ref -> bool
   (** presence of field "schema_url" in [entity_ref] *)
 
-val set_entity_ref_schema_url : entity_ref -> string -> unit
+val entity_ref_set_schema_url : entity_ref -> string -> unit
   (** set field schema_url in entity_ref *)
 
-val has_entity_ref_type_ : entity_ref -> bool
+val entity_ref_has_type_ : entity_ref -> bool
   (** presence of field "type_" in [entity_ref] *)
 
-val set_entity_ref_type_ : entity_ref -> string -> unit
+val entity_ref_set_type_ : entity_ref -> string -> unit
   (** set field type_ in entity_ref *)
 
-val set_entity_ref_id_keys : entity_ref -> string list -> unit
+val entity_ref_set_id_keys : entity_ref -> string list -> unit
   (** set field id_keys in entity_ref *)
 
-val set_entity_ref_description_keys : entity_ref -> string list -> unit
+val entity_ref_set_description_keys : entity_ref -> string list -> unit
   (** set field description_keys in entity_ref *)
 
 

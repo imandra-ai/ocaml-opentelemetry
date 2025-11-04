@@ -109,37 +109,37 @@ let default_log_record_flags () = (Log_record_flags_do_not_use:log_record_flags)
 (** {2 Make functions} *)
 
 
-let[@inline] has_log_record_time_unix_nano (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 0)
-let[@inline] has_log_record_observed_time_unix_nano (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 1)
-let[@inline] has_log_record_severity_number (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 2)
-let[@inline] has_log_record_severity_text (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 3)
-let[@inline] has_log_record_dropped_attributes_count (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 4)
-let[@inline] has_log_record_flags (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 5)
-let[@inline] has_log_record_trace_id (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 6)
-let[@inline] has_log_record_span_id (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 7)
-let[@inline] has_log_record_event_name (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 8)
+let[@inline] log_record_has_time_unix_nano (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 0)
+let[@inline] log_record_has_observed_time_unix_nano (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 1)
+let[@inline] log_record_has_severity_number (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 2)
+let[@inline] log_record_has_severity_text (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 3)
+let[@inline] log_record_has_dropped_attributes_count (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 4)
+let[@inline] log_record_has_flags (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 5)
+let[@inline] log_record_has_trace_id (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 6)
+let[@inline] log_record_has_span_id (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 7)
+let[@inline] log_record_has_event_name (self:log_record) : bool = (Pbrt.Bitfield.get self._presence 8)
 
-let[@inline] set_log_record_time_unix_nano (self:log_record) (x:int64) : unit =
+let[@inline] log_record_set_time_unix_nano (self:log_record) (x:int64) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.time_unix_nano <- x
-let[@inline] set_log_record_observed_time_unix_nano (self:log_record) (x:int64) : unit =
+let[@inline] log_record_set_observed_time_unix_nano (self:log_record) (x:int64) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 1); self.observed_time_unix_nano <- x
-let[@inline] set_log_record_severity_number (self:log_record) (x:severity_number) : unit =
+let[@inline] log_record_set_severity_number (self:log_record) (x:severity_number) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 2); self.severity_number <- x
-let[@inline] set_log_record_severity_text (self:log_record) (x:string) : unit =
+let[@inline] log_record_set_severity_text (self:log_record) (x:string) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 3); self.severity_text <- x
-let[@inline] set_log_record_body (self:log_record) (x:Common.any_value) : unit =
+let[@inline] log_record_set_body (self:log_record) (x:Common.any_value) : unit =
   self.body <- Some x
-let[@inline] set_log_record_attributes (self:log_record) (x:Common.key_value list) : unit =
+let[@inline] log_record_set_attributes (self:log_record) (x:Common.key_value list) : unit =
   self.attributes <- x
-let[@inline] set_log_record_dropped_attributes_count (self:log_record) (x:int32) : unit =
+let[@inline] log_record_set_dropped_attributes_count (self:log_record) (x:int32) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 4); self.dropped_attributes_count <- x
-let[@inline] set_log_record_flags (self:log_record) (x:int32) : unit =
+let[@inline] log_record_set_flags (self:log_record) (x:int32) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 5); self.flags <- x
-let[@inline] set_log_record_trace_id (self:log_record) (x:bytes) : unit =
+let[@inline] log_record_set_trace_id (self:log_record) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 6); self.trace_id <- x
-let[@inline] set_log_record_span_id (self:log_record) (x:bytes) : unit =
+let[@inline] log_record_set_span_id (self:log_record) (x:bytes) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 7); self.span_id <- x
-let[@inline] set_log_record_event_name (self:log_record) (x:string) : unit =
+let[@inline] log_record_set_event_name (self:log_record) (x:string) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 8); self.event_name <- x
 
 let copy_log_record (self:log_record) : log_record =
@@ -161,44 +161,44 @@ let make_log_record
   let _res = default_log_record () in
   (match time_unix_nano with
   | None -> ()
-  | Some v -> set_log_record_time_unix_nano _res v);
+  | Some v -> log_record_set_time_unix_nano _res v);
   (match observed_time_unix_nano with
   | None -> ()
-  | Some v -> set_log_record_observed_time_unix_nano _res v);
+  | Some v -> log_record_set_observed_time_unix_nano _res v);
   (match severity_number with
   | None -> ()
-  | Some v -> set_log_record_severity_number _res v);
+  | Some v -> log_record_set_severity_number _res v);
   (match severity_text with
   | None -> ()
-  | Some v -> set_log_record_severity_text _res v);
+  | Some v -> log_record_set_severity_text _res v);
   (match body with
   | None -> ()
-  | Some v -> set_log_record_body _res v);
-  set_log_record_attributes _res attributes;
+  | Some v -> log_record_set_body _res v);
+  log_record_set_attributes _res attributes;
   (match dropped_attributes_count with
   | None -> ()
-  | Some v -> set_log_record_dropped_attributes_count _res v);
+  | Some v -> log_record_set_dropped_attributes_count _res v);
   (match flags with
   | None -> ()
-  | Some v -> set_log_record_flags _res v);
+  | Some v -> log_record_set_flags _res v);
   (match trace_id with
   | None -> ()
-  | Some v -> set_log_record_trace_id _res v);
+  | Some v -> log_record_set_trace_id _res v);
   (match span_id with
   | None -> ()
-  | Some v -> set_log_record_span_id _res v);
+  | Some v -> log_record_set_span_id _res v);
   (match event_name with
   | None -> ()
-  | Some v -> set_log_record_event_name _res v);
+  | Some v -> log_record_set_event_name _res v);
   _res
 
-let[@inline] has_scope_logs_schema_url (self:scope_logs) : bool = (Pbrt.Bitfield.get self._presence 0)
+let[@inline] scope_logs_has_schema_url (self:scope_logs) : bool = (Pbrt.Bitfield.get self._presence 0)
 
-let[@inline] set_scope_logs_scope (self:scope_logs) (x:Common.instrumentation_scope) : unit =
+let[@inline] scope_logs_set_scope (self:scope_logs) (x:Common.instrumentation_scope) : unit =
   self.scope <- Some x
-let[@inline] set_scope_logs_log_records (self:scope_logs) (x:log_record list) : unit =
+let[@inline] scope_logs_set_log_records (self:scope_logs) (x:log_record list) : unit =
   self.log_records <- x
-let[@inline] set_scope_logs_schema_url (self:scope_logs) (x:string) : unit =
+let[@inline] scope_logs_set_schema_url (self:scope_logs) (x:string) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.schema_url <- x
 
 let copy_scope_logs (self:scope_logs) : scope_logs =
@@ -212,20 +212,20 @@ let make_scope_logs
   let _res = default_scope_logs () in
   (match scope with
   | None -> ()
-  | Some v -> set_scope_logs_scope _res v);
-  set_scope_logs_log_records _res log_records;
+  | Some v -> scope_logs_set_scope _res v);
+  scope_logs_set_log_records _res log_records;
   (match schema_url with
   | None -> ()
-  | Some v -> set_scope_logs_schema_url _res v);
+  | Some v -> scope_logs_set_schema_url _res v);
   _res
 
-let[@inline] has_resource_logs_schema_url (self:resource_logs) : bool = (Pbrt.Bitfield.get self._presence 0)
+let[@inline] resource_logs_has_schema_url (self:resource_logs) : bool = (Pbrt.Bitfield.get self._presence 0)
 
-let[@inline] set_resource_logs_resource (self:resource_logs) (x:Resource.resource) : unit =
+let[@inline] resource_logs_set_resource (self:resource_logs) (x:Resource.resource) : unit =
   self.resource <- Some x
-let[@inline] set_resource_logs_scope_logs (self:resource_logs) (x:scope_logs list) : unit =
+let[@inline] resource_logs_set_scope_logs (self:resource_logs) (x:scope_logs list) : unit =
   self.scope_logs <- x
-let[@inline] set_resource_logs_schema_url (self:resource_logs) (x:string) : unit =
+let[@inline] resource_logs_set_schema_url (self:resource_logs) (x:string) : unit =
   self._presence <- (Pbrt.Bitfield.set self._presence 0); self.schema_url <- x
 
 let copy_resource_logs (self:resource_logs) : resource_logs =
@@ -239,15 +239,15 @@ let make_resource_logs
   let _res = default_resource_logs () in
   (match resource with
   | None -> ()
-  | Some v -> set_resource_logs_resource _res v);
-  set_resource_logs_scope_logs _res scope_logs;
+  | Some v -> resource_logs_set_resource _res v);
+  resource_logs_set_scope_logs _res scope_logs;
   (match schema_url with
   | None -> ()
-  | Some v -> set_resource_logs_schema_url _res v);
+  | Some v -> resource_logs_set_schema_url _res v);
   _res
 
 
-let[@inline] set_logs_data_resource_logs (self:logs_data) (x:resource_logs list) : unit =
+let[@inline] logs_data_set_resource_logs (self:logs_data) (x:resource_logs list) : unit =
   self.resource_logs <- x
 
 let copy_logs_data (self:logs_data) : logs_data =
@@ -257,7 +257,7 @@ let make_logs_data
   ?(resource_logs=[])
   () : logs_data  =
   let _res = default_logs_data () in
-  set_logs_data_resource_logs _res resource_logs;
+  logs_data_set_resource_logs _res resource_logs;
   _res
 
 
@@ -296,25 +296,25 @@ let rec pp_severity_number fmt (v:severity_number) =
 let rec pp_log_record fmt (v:log_record) = 
   let pp_i fmt () =
     Pbrt.Pp.pp_record_field ~first:true "time_unix_nano" Pbrt.Pp.pp_int64 fmt v.time_unix_nano;
-    if not (Pbrt.Bitfield.get v._presence 0) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "observed_time_unix_nano" Pbrt.Pp.pp_int64 fmt v.observed_time_unix_nano;
-    if not (Pbrt.Bitfield.get v._presence 1) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_observed_time_unix_nano v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "severity_number" pp_severity_number fmt v.severity_number;
-    if not (Pbrt.Bitfield.get v._presence 2) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_severity_number v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "severity_text" Pbrt.Pp.pp_string fmt v.severity_text;
-    if not (Pbrt.Bitfield.get v._presence 3) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_severity_text v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "body" (Pbrt.Pp.pp_option Common.pp_any_value) fmt v.body;
     Pbrt.Pp.pp_record_field ~first:false "attributes" (Pbrt.Pp.pp_list Common.pp_key_value) fmt v.attributes;
     Pbrt.Pp.pp_record_field ~first:false "dropped_attributes_count" Pbrt.Pp.pp_int32 fmt v.dropped_attributes_count;
-    if not (Pbrt.Bitfield.get v._presence 4) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_dropped_attributes_count v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "flags" Pbrt.Pp.pp_int32 fmt v.flags;
-    if not (Pbrt.Bitfield.get v._presence 5) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_flags v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "trace_id" Pbrt.Pp.pp_bytes fmt v.trace_id;
-    if not (Pbrt.Bitfield.get v._presence 6) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_trace_id v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "span_id" Pbrt.Pp.pp_bytes fmt v.span_id;
-    if not (Pbrt.Bitfield.get v._presence 7) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_span_id v) then Format.pp_print_string fmt "(* absent *)";
     Pbrt.Pp.pp_record_field ~first:false "event_name" Pbrt.Pp.pp_string fmt v.event_name;
-    if not (Pbrt.Bitfield.get v._presence 8) then Format.pp_print_string fmt "(* absent *)";
+    if not (log_record_has_event_name v) then Format.pp_print_string fmt "(* absent *)";
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -323,7 +323,7 @@ let rec pp_scope_logs fmt (v:scope_logs) =
     Pbrt.Pp.pp_record_field ~first:true "scope" (Pbrt.Pp.pp_option Common.pp_instrumentation_scope) fmt v.scope;
     Pbrt.Pp.pp_record_field ~first:false "log_records" (Pbrt.Pp.pp_list pp_log_record) fmt v.log_records;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (Pbrt.Bitfield.get v._presence 0) then Format.pp_print_string fmt "(* absent *)";
+    if not (scope_logs_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -332,7 +332,7 @@ let rec pp_resource_logs fmt (v:resource_logs) =
     Pbrt.Pp.pp_record_field ~first:true "resource" (Pbrt.Pp.pp_option Resource.pp_resource) fmt v.resource;
     Pbrt.Pp.pp_record_field ~first:false "scope_logs" (Pbrt.Pp.pp_list pp_scope_logs) fmt v.scope_logs;
     Pbrt.Pp.pp_record_field ~first:false "schema_url" Pbrt.Pp.pp_string fmt v.schema_url;
-    if not (Pbrt.Bitfield.get v._presence 0) then Format.pp_print_string fmt "(* absent *)";
+    if not (resource_logs_has_schema_url v) then Format.pp_print_string fmt "(* absent *)";
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -380,19 +380,19 @@ let rec encode_pb_severity_number (v:severity_number) encoder =
   | Severity_number_fatal4 -> Pbrt.Encoder.int_as_varint 24 encoder
 
 let rec encode_pb_log_record (v:log_record) encoder = 
-  if (Pbrt.Bitfield.get v._presence 0) then (
+  if log_record_has_time_unix_nano v then (
     Pbrt.Encoder.int64_as_bits64 v.time_unix_nano encoder;
     Pbrt.Encoder.key 1 Pbrt.Bits64 encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 1) then (
+  if log_record_has_observed_time_unix_nano v then (
     Pbrt.Encoder.int64_as_bits64 v.observed_time_unix_nano encoder;
     Pbrt.Encoder.key 11 Pbrt.Bits64 encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 2) then (
+  if log_record_has_severity_number v then (
     encode_pb_severity_number v.severity_number encoder;
     Pbrt.Encoder.key 2 Pbrt.Varint encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 3) then (
+  if log_record_has_severity_text v then (
     Pbrt.Encoder.string v.severity_text encoder;
     Pbrt.Encoder.key 3 Pbrt.Bytes encoder; 
   );
@@ -406,23 +406,23 @@ let rec encode_pb_log_record (v:log_record) encoder =
     Pbrt.Encoder.nested Common.encode_pb_key_value x encoder;
     Pbrt.Encoder.key 6 Pbrt.Bytes encoder; 
   ) v.attributes encoder;
-  if (Pbrt.Bitfield.get v._presence 4) then (
+  if log_record_has_dropped_attributes_count v then (
     Pbrt.Encoder.int32_as_varint v.dropped_attributes_count encoder;
     Pbrt.Encoder.key 7 Pbrt.Varint encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 5) then (
+  if log_record_has_flags v then (
     Pbrt.Encoder.int32_as_bits32 v.flags encoder;
     Pbrt.Encoder.key 8 Pbrt.Bits32 encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 6) then (
+  if log_record_has_trace_id v then (
     Pbrt.Encoder.bytes v.trace_id encoder;
     Pbrt.Encoder.key 9 Pbrt.Bytes encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 7) then (
+  if log_record_has_span_id v then (
     Pbrt.Encoder.bytes v.span_id encoder;
     Pbrt.Encoder.key 10 Pbrt.Bytes encoder; 
   );
-  if (Pbrt.Bitfield.get v._presence 8) then (
+  if log_record_has_event_name v then (
     Pbrt.Encoder.string v.event_name encoder;
     Pbrt.Encoder.key 12 Pbrt.Bytes encoder; 
   );
@@ -439,7 +439,7 @@ let rec encode_pb_scope_logs (v:scope_logs) encoder =
     Pbrt.Encoder.nested encode_pb_log_record x encoder;
     Pbrt.Encoder.key 2 Pbrt.Bytes encoder; 
   ) v.log_records encoder;
-  if (Pbrt.Bitfield.get v._presence 0) then (
+  if scope_logs_has_schema_url v then (
     Pbrt.Encoder.string v.schema_url encoder;
     Pbrt.Encoder.key 3 Pbrt.Bytes encoder; 
   );
@@ -456,7 +456,7 @@ let rec encode_pb_resource_logs (v:resource_logs) encoder =
     Pbrt.Encoder.nested encode_pb_scope_logs x encoder;
     Pbrt.Encoder.key 2 Pbrt.Bytes encoder; 
   ) v.scope_logs encoder;
-  if (Pbrt.Bitfield.get v._presence 0) then (
+  if resource_logs_has_schema_url v then (
     Pbrt.Encoder.string v.schema_url encoder;
     Pbrt.Encoder.key 3 Pbrt.Bytes encoder; 
   );
@@ -514,60 +514,60 @@ let rec decode_pb_log_record d =
     match Pbrt.Decoder.key d with
     | None -> (
       (* put lists in the correct order *)
-      set_log_record_attributes v (List.rev v.attributes);
+      log_record_set_attributes v (List.rev v.attributes);
     ); continue__ := false
     | Some (1, Pbrt.Bits64) -> begin
-      set_log_record_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
+      log_record_set_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(1)" pk
     | Some (11, Pbrt.Bits64) -> begin
-      set_log_record_observed_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
+      log_record_set_observed_time_unix_nano v (Pbrt.Decoder.int64_as_bits64 d);
     end
     | Some (11, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(11)" pk
     | Some (2, Pbrt.Varint) -> begin
-      set_log_record_severity_number v (decode_pb_severity_number d);
+      log_record_set_severity_number v (decode_pb_severity_number d);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(2)" pk
     | Some (3, Pbrt.Bytes) -> begin
-      set_log_record_severity_text v (Pbrt.Decoder.string d);
+      log_record_set_severity_text v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(3)" pk
     | Some (5, Pbrt.Bytes) -> begin
-      set_log_record_body v (Common.decode_pb_any_value (Pbrt.Decoder.nested d));
+      log_record_set_body v (Common.decode_pb_any_value (Pbrt.Decoder.nested d));
     end
     | Some (5, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(5)" pk
     | Some (6, Pbrt.Bytes) -> begin
-      set_log_record_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
+      log_record_set_attributes v ((Common.decode_pb_key_value (Pbrt.Decoder.nested d)) :: v.attributes);
     end
     | Some (6, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(6)" pk
     | Some (7, Pbrt.Varint) -> begin
-      set_log_record_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
+      log_record_set_dropped_attributes_count v (Pbrt.Decoder.int32_as_varint d);
     end
     | Some (7, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(7)" pk
     | Some (8, Pbrt.Bits32) -> begin
-      set_log_record_flags v (Pbrt.Decoder.int32_as_bits32 d);
+      log_record_set_flags v (Pbrt.Decoder.int32_as_bits32 d);
     end
     | Some (8, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(8)" pk
     | Some (9, Pbrt.Bytes) -> begin
-      set_log_record_trace_id v (Pbrt.Decoder.bytes d);
+      log_record_set_trace_id v (Pbrt.Decoder.bytes d);
     end
     | Some (9, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(9)" pk
     | Some (10, Pbrt.Bytes) -> begin
-      set_log_record_span_id v (Pbrt.Decoder.bytes d);
+      log_record_set_span_id v (Pbrt.Decoder.bytes d);
     end
     | Some (10, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(10)" pk
     | Some (12, Pbrt.Bytes) -> begin
-      set_log_record_event_name v (Pbrt.Decoder.string d);
+      log_record_set_event_name v (Pbrt.Decoder.string d);
     end
     | Some (12, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(log_record), field(12)" pk
@@ -582,20 +582,20 @@ let rec decode_pb_scope_logs d =
     match Pbrt.Decoder.key d with
     | None -> (
       (* put lists in the correct order *)
-      set_scope_logs_log_records v (List.rev v.log_records);
+      scope_logs_set_log_records v (List.rev v.log_records);
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      set_scope_logs_scope v (Common.decode_pb_instrumentation_scope (Pbrt.Decoder.nested d));
+      scope_logs_set_scope v (Common.decode_pb_instrumentation_scope (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      set_scope_logs_log_records v ((decode_pb_log_record (Pbrt.Decoder.nested d)) :: v.log_records);
+      scope_logs_set_log_records v ((decode_pb_log_record (Pbrt.Decoder.nested d)) :: v.log_records);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(2)" pk
     | Some (3, Pbrt.Bytes) -> begin
-      set_scope_logs_schema_url v (Pbrt.Decoder.string d);
+      scope_logs_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(scope_logs), field(3)" pk
@@ -610,20 +610,20 @@ let rec decode_pb_resource_logs d =
     match Pbrt.Decoder.key d with
     | None -> (
       (* put lists in the correct order *)
-      set_resource_logs_scope_logs v (List.rev v.scope_logs);
+      resource_logs_set_scope_logs v (List.rev v.scope_logs);
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      set_resource_logs_resource v (Resource.decode_pb_resource (Pbrt.Decoder.nested d));
+      resource_logs_set_resource v (Resource.decode_pb_resource (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      set_resource_logs_scope_logs v ((decode_pb_scope_logs (Pbrt.Decoder.nested d)) :: v.scope_logs);
+      resource_logs_set_scope_logs v ((decode_pb_scope_logs (Pbrt.Decoder.nested d)) :: v.scope_logs);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(2)" pk
     | Some (3, Pbrt.Bytes) -> begin
-      set_resource_logs_schema_url v (Pbrt.Decoder.string d);
+      resource_logs_set_schema_url v (Pbrt.Decoder.string d);
     end
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(resource_logs), field(3)" pk
@@ -638,10 +638,10 @@ let rec decode_pb_logs_data d =
     match Pbrt.Decoder.key d with
     | None -> (
       (* put lists in the correct order *)
-      set_logs_data_resource_logs v (List.rev v.resource_logs);
+      logs_data_set_resource_logs v (List.rev v.resource_logs);
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      set_logs_data_resource_logs v ((decode_pb_resource_logs (Pbrt.Decoder.nested d)) :: v.resource_logs);
+      logs_data_set_resource_logs v ((decode_pb_resource_logs (Pbrt.Decoder.nested d)) :: v.resource_logs);
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(logs_data), field(1)" pk

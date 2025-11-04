@@ -114,64 +114,64 @@ val make_log_record :
 
 val copy_log_record : log_record -> log_record
 
-val has_log_record_time_unix_nano : log_record -> bool
+val log_record_has_time_unix_nano : log_record -> bool
   (** presence of field "time_unix_nano" in [log_record] *)
 
-val set_log_record_time_unix_nano : log_record -> int64 -> unit
+val log_record_set_time_unix_nano : log_record -> int64 -> unit
   (** set field time_unix_nano in log_record *)
 
-val has_log_record_observed_time_unix_nano : log_record -> bool
+val log_record_has_observed_time_unix_nano : log_record -> bool
   (** presence of field "observed_time_unix_nano" in [log_record] *)
 
-val set_log_record_observed_time_unix_nano : log_record -> int64 -> unit
+val log_record_set_observed_time_unix_nano : log_record -> int64 -> unit
   (** set field observed_time_unix_nano in log_record *)
 
-val has_log_record_severity_number : log_record -> bool
+val log_record_has_severity_number : log_record -> bool
   (** presence of field "severity_number" in [log_record] *)
 
-val set_log_record_severity_number : log_record -> severity_number -> unit
+val log_record_set_severity_number : log_record -> severity_number -> unit
   (** set field severity_number in log_record *)
 
-val has_log_record_severity_text : log_record -> bool
+val log_record_has_severity_text : log_record -> bool
   (** presence of field "severity_text" in [log_record] *)
 
-val set_log_record_severity_text : log_record -> string -> unit
+val log_record_set_severity_text : log_record -> string -> unit
   (** set field severity_text in log_record *)
 
-val set_log_record_body : log_record -> Common.any_value -> unit
+val log_record_set_body : log_record -> Common.any_value -> unit
   (** set field body in log_record *)
 
-val set_log_record_attributes : log_record -> Common.key_value list -> unit
+val log_record_set_attributes : log_record -> Common.key_value list -> unit
   (** set field attributes in log_record *)
 
-val has_log_record_dropped_attributes_count : log_record -> bool
+val log_record_has_dropped_attributes_count : log_record -> bool
   (** presence of field "dropped_attributes_count" in [log_record] *)
 
-val set_log_record_dropped_attributes_count : log_record -> int32 -> unit
+val log_record_set_dropped_attributes_count : log_record -> int32 -> unit
   (** set field dropped_attributes_count in log_record *)
 
-val has_log_record_flags : log_record -> bool
+val log_record_has_flags : log_record -> bool
   (** presence of field "flags" in [log_record] *)
 
-val set_log_record_flags : log_record -> int32 -> unit
+val log_record_set_flags : log_record -> int32 -> unit
   (** set field flags in log_record *)
 
-val has_log_record_trace_id : log_record -> bool
+val log_record_has_trace_id : log_record -> bool
   (** presence of field "trace_id" in [log_record] *)
 
-val set_log_record_trace_id : log_record -> bytes -> unit
+val log_record_set_trace_id : log_record -> bytes -> unit
   (** set field trace_id in log_record *)
 
-val has_log_record_span_id : log_record -> bool
+val log_record_has_span_id : log_record -> bool
   (** presence of field "span_id" in [log_record] *)
 
-val set_log_record_span_id : log_record -> bytes -> unit
+val log_record_set_span_id : log_record -> bytes -> unit
   (** set field span_id in log_record *)
 
-val has_log_record_event_name : log_record -> bool
+val log_record_has_event_name : log_record -> bool
   (** presence of field "event_name" in [log_record] *)
 
-val set_log_record_event_name : log_record -> string -> unit
+val log_record_set_event_name : log_record -> string -> unit
   (** set field event_name in log_record *)
 
 val make_scope_logs : 
@@ -184,16 +184,16 @@ val make_scope_logs :
 
 val copy_scope_logs : scope_logs -> scope_logs
 
-val set_scope_logs_scope : scope_logs -> Common.instrumentation_scope -> unit
+val scope_logs_set_scope : scope_logs -> Common.instrumentation_scope -> unit
   (** set field scope in scope_logs *)
 
-val set_scope_logs_log_records : scope_logs -> log_record list -> unit
+val scope_logs_set_log_records : scope_logs -> log_record list -> unit
   (** set field log_records in scope_logs *)
 
-val has_scope_logs_schema_url : scope_logs -> bool
+val scope_logs_has_schema_url : scope_logs -> bool
   (** presence of field "schema_url" in [scope_logs] *)
 
-val set_scope_logs_schema_url : scope_logs -> string -> unit
+val scope_logs_set_schema_url : scope_logs -> string -> unit
   (** set field schema_url in scope_logs *)
 
 val make_resource_logs : 
@@ -206,16 +206,16 @@ val make_resource_logs :
 
 val copy_resource_logs : resource_logs -> resource_logs
 
-val set_resource_logs_resource : resource_logs -> Resource.resource -> unit
+val resource_logs_set_resource : resource_logs -> Resource.resource -> unit
   (** set field resource in resource_logs *)
 
-val set_resource_logs_scope_logs : resource_logs -> scope_logs list -> unit
+val resource_logs_set_scope_logs : resource_logs -> scope_logs list -> unit
   (** set field scope_logs in resource_logs *)
 
-val has_resource_logs_schema_url : resource_logs -> bool
+val resource_logs_has_schema_url : resource_logs -> bool
   (** presence of field "schema_url" in [resource_logs] *)
 
-val set_resource_logs_schema_url : resource_logs -> string -> unit
+val resource_logs_set_schema_url : resource_logs -> string -> unit
   (** set field schema_url in resource_logs *)
 
 val make_logs_data : 
@@ -226,7 +226,7 @@ val make_logs_data :
 
 val copy_logs_data : logs_data -> logs_data
 
-val set_logs_data_resource_logs : logs_data -> resource_logs list -> unit
+val logs_data_set_resource_logs : logs_data -> resource_logs list -> unit
   (** set field resource_logs in logs_data *)
 
 

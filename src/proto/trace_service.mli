@@ -44,7 +44,7 @@ val make_export_trace_service_request :
 
 val copy_export_trace_service_request : export_trace_service_request -> export_trace_service_request
 
-val set_export_trace_service_request_resource_spans : export_trace_service_request -> Trace.resource_spans list -> unit
+val export_trace_service_request_set_resource_spans : export_trace_service_request -> Trace.resource_spans list -> unit
   (** set field resource_spans in export_trace_service_request *)
 
 val make_export_trace_partial_success : 
@@ -56,16 +56,16 @@ val make_export_trace_partial_success :
 
 val copy_export_trace_partial_success : export_trace_partial_success -> export_trace_partial_success
 
-val has_export_trace_partial_success_rejected_spans : export_trace_partial_success -> bool
+val export_trace_partial_success_has_rejected_spans : export_trace_partial_success -> bool
   (** presence of field "rejected_spans" in [export_trace_partial_success] *)
 
-val set_export_trace_partial_success_rejected_spans : export_trace_partial_success -> int64 -> unit
+val export_trace_partial_success_set_rejected_spans : export_trace_partial_success -> int64 -> unit
   (** set field rejected_spans in export_trace_partial_success *)
 
-val has_export_trace_partial_success_error_message : export_trace_partial_success -> bool
+val export_trace_partial_success_has_error_message : export_trace_partial_success -> bool
   (** presence of field "error_message" in [export_trace_partial_success] *)
 
-val set_export_trace_partial_success_error_message : export_trace_partial_success -> string -> unit
+val export_trace_partial_success_set_error_message : export_trace_partial_success -> string -> unit
   (** set field error_message in export_trace_partial_success *)
 
 val make_export_trace_service_response : 
@@ -76,7 +76,7 @@ val make_export_trace_service_response :
 
 val copy_export_trace_service_response : export_trace_service_response -> export_trace_service_response
 
-val set_export_trace_service_response_partial_success : export_trace_service_response -> export_trace_partial_success -> unit
+val export_trace_service_response_set_partial_success : export_trace_service_response -> export_trace_partial_success -> unit
   (** set field partial_success in export_trace_service_response *)
 
 
