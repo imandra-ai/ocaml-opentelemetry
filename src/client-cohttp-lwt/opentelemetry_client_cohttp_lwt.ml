@@ -269,7 +269,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       with e ->
         let bt = Printexc.get_backtrace () in
         Printf.eprintf
-          "opentelemetry-curl: uncaught exception in %s: %s\n%s\n%!" where
+          "opentelemetry-cohttp-lwt: uncaught exception in %s: %s\n%s\n%!" where
           (Printexc.to_string e) bt
 
     let emit_all_force (httpc : Httpc.t) : unit Lwt.t =
