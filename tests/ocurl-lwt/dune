@@ -1,0 +1,4 @@
+(tests
+ (names test_urls)
+ (package opentelemetry-client-ocurl-lwt)
+ (libraries opentelemetry opentelemetry-client-ocurl-lwt))
