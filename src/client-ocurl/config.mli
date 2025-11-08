@@ -14,7 +14,7 @@ type t = {
           @since 0.7 *)
   common: Opentelemetry_client.Config.t;
       (** Common configuration options
-          @since NEXT_RELEASE*)
+          @since 0.12*)
 }
 (** Configuration.
 

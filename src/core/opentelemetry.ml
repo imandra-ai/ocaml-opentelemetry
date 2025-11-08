@@ -93,7 +93,7 @@ module Collector = struct
     (** [cleanup ~on_done ()] is called when the collector is shut down, and is
         responsible for sending remaining batches, flushing sockets, etc.
         @param on_done
-          callback invoked after the cleanup is done. since NEXT_RELEASE *)
+          callback invoked after the cleanup is done. @since 0.12 *)
   end
 
   type backend = (module BACKEND)
@@ -178,7 +178,7 @@ module Collector = struct
 
   (** Remove current backend, if any.
       @since 0.11
-      @param on_done see {!BACKEND.cleanup}, since NEXT_RELEASE *)
+      @param on_done see {!BACKEND.cleanup}, @since 0.12 *)
   let remove_backend ~on_done () : unit =
     match Atomic.exchange backend None with
     | None -> ()
@@ -688,7 +688,7 @@ module Globals = struct
   let service_instance_id = ref None
 
   (** Version for the service
-      @since NEXT_RELEASE *)
+      @since 0.12 *)
   let service_version = ref None
 
   let instrumentation_library =

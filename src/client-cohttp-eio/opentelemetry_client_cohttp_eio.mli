@@ -18,7 +18,7 @@ val create_backend :
   (module Opentelemetry.Collector.BACKEND)
 (** Create a new backend using Cohttp_eio
 
-    NOTE [after_cleanup] optional parameter removed since NEXT_RELEASE *)
+    NOTE [after_cleanup] optional parameter removed @since 0.12 *)
 
 val setup :
   ?stop:bool Atomic.t ->
@@ -38,7 +38,7 @@ val setup :
 
 val remove_backend : unit -> unit
 (** Shutdown current backend
-    @since NEXT_RELEASE *)
+    @since 0.12 *)
 
 val with_setup :
   ?stop:bool Atomic.t ->
