@@ -46,8 +46,7 @@
   opentelemetry-client-cohttp-lwt
   opentelemetry-cohttp-lwt
   opentelemetry-logs
-  logs
-))
+  logs))
 
 (executable
  (name cohttp_client)
@@ -57,5 +56,3 @@
   opentelemetry
   opentelemetry-client-cohttp-lwt
   opentelemetry-cohttp-lwt))
-
-
