@@ -81,8 +81,14 @@ let report_err_ = function
   | `Sysbreak -> Printf.eprintf "opentelemetry: ctrl-c captured, stopping\n%!"
   | `Failure msg ->
     Format.eprintf "@[<2>opentelemetry: export failed: %s@]@." msg
-  | `Status (code, { Opentelemetry.Proto.Status.code = scode; message; details })
-    ->
+  | `Status
+      ( code,
+        {
+          Opentelemetry.Proto.Status.code = scode;
+          message;
+          details;
+          _presence = _;
+        } ) ->
     let pp_details out l =
       List.iter
         (fun s -> Format.fprintf out "%S;@ " (Bytes.unsafe_to_string s))

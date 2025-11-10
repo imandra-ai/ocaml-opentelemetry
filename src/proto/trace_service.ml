@@ -1,88 +1,94 @@
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-23-27-30-39-44"]
 
 type export_trace_service_request = {
-  resource_spans : Trace.resource_spans list;
-}
-
-type export_trace_partial_success = {
-  rejected_spans : int64;
-  error_message : string;
-}
-
-type export_trace_service_response = {
-  partial_success : export_trace_partial_success option;
-}
-
-let rec default_export_trace_service_request 
-  ?resource_spans:((resource_spans:Trace.resource_spans list) = [])
-  () : export_trace_service_request  = {
-  resource_spans;
-}
-
-let rec default_export_trace_partial_success 
-  ?rejected_spans:((rejected_spans:int64) = 0L)
-  ?error_message:((error_message:string) = "")
-  () : export_trace_partial_success  = {
-  rejected_spans;
-  error_message;
-}
-
-let rec default_export_trace_service_response 
-  ?partial_success:((partial_success:export_trace_partial_success option) = None)
-  () : export_trace_service_response  = {
-  partial_success;
-}
-
-type export_trace_service_request_mutable = {
   mutable resource_spans : Trace.resource_spans list;
 }
 
-let default_export_trace_service_request_mutable () : export_trace_service_request_mutable = {
-  resource_spans = [];
-}
-
-type export_trace_partial_success_mutable = {
+type export_trace_partial_success = {
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
   mutable rejected_spans : int64;
   mutable error_message : string;
 }
 
-let default_export_trace_partial_success_mutable () : export_trace_partial_success_mutable = {
-  rejected_spans = 0L;
-  error_message = "";
-}
-
-type export_trace_service_response_mutable = {
+type export_trace_service_response = {
   mutable partial_success : export_trace_partial_success option;
 }
 
-let default_export_trace_service_response_mutable () : export_trace_service_response_mutable = {
-  partial_success = None;
+let default_export_trace_service_request (): export_trace_service_request =
+{
+  resource_spans=[];
+}
+
+let default_export_trace_partial_success (): export_trace_partial_success =
+{
+  _presence=Pbrt.Bitfield.empty;
+  rejected_spans=0L;
+  error_message="";
+}
+
+let default_export_trace_service_response (): export_trace_service_response =
+{
+  partial_success=None;
 }
 
 
 (** {2 Make functions} *)
 
-let rec make_export_trace_service_request 
-  ~(resource_spans:Trace.resource_spans list)
-  () : export_trace_service_request  = {
-  resource_spans;
-}
 
-let rec make_export_trace_partial_success 
-  ~(rejected_spans:int64)
-  ~(error_message:string)
-  () : export_trace_partial_success  = {
-  rejected_spans;
-  error_message;
-}
+let[@inline] export_trace_service_request_set_resource_spans (self:export_trace_service_request) (x:Trace.resource_spans list) : unit =
+  self.resource_spans <- x
 
-let rec make_export_trace_service_response 
-  ?partial_success:((partial_success:export_trace_partial_success option) = None)
-  () : export_trace_service_response  = {
-  partial_success;
-}
+let copy_export_trace_service_request (self:export_trace_service_request) : export_trace_service_request =
+  { self with resource_spans = self.resource_spans }
 
-[@@@ocaml.warning "-27-30-39"]
+let make_export_trace_service_request 
+  ?(resource_spans=[])
+  () : export_trace_service_request  =
+  let _res = default_export_trace_service_request () in
+  export_trace_service_request_set_resource_spans _res resource_spans;
+  _res
+
+let[@inline] export_trace_partial_success_has_rejected_spans (self:export_trace_partial_success) : bool = (Pbrt.Bitfield.get self._presence 0)
+let[@inline] export_trace_partial_success_has_error_message (self:export_trace_partial_success) : bool = (Pbrt.Bitfield.get self._presence 1)
+
+let[@inline] export_trace_partial_success_set_rejected_spans (self:export_trace_partial_success) (x:int64) : unit =
+  self._presence <- (Pbrt.Bitfield.set self._presence 0); self.rejected_spans <- x
+let[@inline] export_trace_partial_success_set_error_message (self:export_trace_partial_success) (x:string) : unit =
+  self._presence <- (Pbrt.Bitfield.set self._presence 1); self.error_message <- x
+
+let copy_export_trace_partial_success (self:export_trace_partial_success) : export_trace_partial_success =
+  { self with rejected_spans = self.rejected_spans }
+
+let make_export_trace_partial_success 
+  ?(rejected_spans:int64 option)
+  ?(error_message:string option)
+  () : export_trace_partial_success  =
+  let _res = default_export_trace_partial_success () in
+  (match rejected_spans with
+  | None -> ()
+  | Some v -> export_trace_partial_success_set_rejected_spans _res v);
+  (match error_message with
+  | None -> ()
+  | Some v -> export_trace_partial_success_set_error_message _res v);
+  _res
+
+
+let[@inline] export_trace_service_response_set_partial_success (self:export_trace_service_response) (x:export_trace_partial_success) : unit =
+  self.partial_success <- Some x
+
+let copy_export_trace_service_response (self:export_trace_service_response) : export_trace_service_response =
+  { self with partial_success = self.partial_success }
+
+let make_export_trace_service_response 
+  ?(partial_success:export_trace_partial_success option)
+  () : export_trace_service_response  =
+  let _res = default_export_trace_service_response () in
+  (match partial_success with
+  | None -> ()
+  | Some v -> export_trace_service_response_set_partial_success _res v);
+  _res
+
+[@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Formatters} *)
 
@@ -94,8 +100,8 @@ let rec pp_export_trace_service_request fmt (v:export_trace_service_request) =
 
 let rec pp_export_trace_partial_success fmt (v:export_trace_partial_success) = 
   let pp_i fmt () =
-    Pbrt.Pp.pp_record_field ~first:true "rejected_spans" Pbrt.Pp.pp_int64 fmt v.rejected_spans;
-    Pbrt.Pp.pp_record_field ~first:false "error_message" Pbrt.Pp.pp_string fmt v.error_message;
+    Pbrt.Pp.pp_record_field ~absent:(not (export_trace_partial_success_has_rejected_spans v)) ~first:true "rejected_spans" Pbrt.Pp.pp_int64 fmt v.rejected_spans;
+    Pbrt.Pp.pp_record_field ~absent:(not (export_trace_partial_success_has_error_message v)) ~first:false "error_message" Pbrt.Pp.pp_string fmt v.error_message;
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
@@ -105,22 +111,26 @@ let rec pp_export_trace_service_response fmt (v:export_trace_service_response) =
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
 
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Protobuf Encoding} *)
 
 let rec encode_pb_export_trace_service_request (v:export_trace_service_request) encoder = 
-  Pbrt.List_util.rev_iter_with (fun x encoder -> 
+  Pbrt.List_util.rev_iter_with (fun x encoder ->
     Pbrt.Encoder.nested Trace.encode_pb_resource_spans x encoder;
     Pbrt.Encoder.key 1 Pbrt.Bytes encoder; 
   ) v.resource_spans encoder;
   ()
 
 let rec encode_pb_export_trace_partial_success (v:export_trace_partial_success) encoder = 
-  Pbrt.Encoder.int64_as_varint v.rejected_spans encoder;
-  Pbrt.Encoder.key 1 Pbrt.Varint encoder; 
-  Pbrt.Encoder.string v.error_message encoder;
-  Pbrt.Encoder.key 2 Pbrt.Bytes encoder; 
+  if export_trace_partial_success_has_rejected_spans v then (
+    Pbrt.Encoder.int64_as_varint v.rejected_spans encoder;
+    Pbrt.Encoder.key 1 Pbrt.Varint encoder; 
+  );
+  if export_trace_partial_success_has_error_message v then (
+    Pbrt.Encoder.string v.error_message encoder;
+    Pbrt.Encoder.key 2 Pbrt.Bytes encoder; 
+  );
   ()
 
 let rec encode_pb_export_trace_service_response (v:export_trace_service_response) encoder = 
@@ -132,67 +142,61 @@ let rec encode_pb_export_trace_service_response (v:export_trace_service_response
   end;
   ()
 
-[@@@ocaml.warning "-27-30-39"]
+[@@@ocaml.warning "-23-27-30-39"]
 
 (** {2 Protobuf Decoding} *)
 
 let rec decode_pb_export_trace_service_request d =
-  let v = default_export_trace_service_request_mutable () in
+  let v = default_export_trace_service_request () in
   let continue__= ref true in
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
-      v.resource_spans <- List.rev v.resource_spans;
+      (* put lists in the correct order *)
+      export_trace_service_request_set_resource_spans v (List.rev v.resource_spans);
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      v.resource_spans <- (Trace.decode_pb_resource_spans (Pbrt.Decoder.nested d)) :: v.resource_spans;
+      export_trace_service_request_set_resource_spans v ((Trace.decode_pb_resource_spans (Pbrt.Decoder.nested d)) :: v.resource_spans);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_service_request), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_service_request" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
-  ({
-    resource_spans = v.resource_spans;
-  } : export_trace_service_request)
+  (v : export_trace_service_request)
 
 let rec decode_pb_export_trace_partial_success d =
-  let v = default_export_trace_partial_success_mutable () in
+  let v = default_export_trace_partial_success () in
   let continue__= ref true in
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
     ); continue__ := false
     | Some (1, Pbrt.Varint) -> begin
-      v.rejected_spans <- Pbrt.Decoder.int64_as_varint d;
+      export_trace_partial_success_set_rejected_spans v (Pbrt.Decoder.int64_as_varint d);
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_partial_success), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_partial_success" 1 pk
     | Some (2, Pbrt.Bytes) -> begin
-      v.error_message <- Pbrt.Decoder.string d;
+      export_trace_partial_success_set_error_message v (Pbrt.Decoder.string d);
     end
     | Some (2, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_partial_success), field(2)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_partial_success" 2 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
-  ({
-    rejected_spans = v.rejected_spans;
-    error_message = v.error_message;
-  } : export_trace_partial_success)
+  (v : export_trace_partial_success)
 
 let rec decode_pb_export_trace_service_response d =
-  let v = default_export_trace_service_response_mutable () in
+  let v = default_export_trace_service_response () in
   let continue__= ref true in
   while !continue__ do
     match Pbrt.Decoder.key d with
     | None -> (
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      v.partial_success <- Some (decode_pb_export_trace_partial_success (Pbrt.Decoder.nested d));
+      export_trace_service_response_set_partial_success v (decode_pb_export_trace_partial_success (Pbrt.Decoder.nested d));
     end
     | Some (1, pk) -> 
-      Pbrt.Decoder.unexpected_payload "Message(export_trace_service_response), field(1)" pk
+      Pbrt.Decoder.unexpected_payload_message "export_trace_service_response" 1 pk
     | Some (_, payload_kind) -> Pbrt.Decoder.skip d payload_kind
   done;
-  ({
-    partial_success = v.partial_success;
-  } : export_trace_service_response)
+  (v : export_trace_service_response)
