@@ -29,7 +29,7 @@ val setup :
       after a little while. *)
 
 val remove_backend : unit -> unit
-(** @since NEXT_RELEASE *)
+(** @since 0.12 *)
 
 val with_setup :
   ?stop:bool Atomic.t ->
