@@ -11,7 +11,7 @@
   Logs.warn (fun m -&gt; m &quot;Something bad may happen in the future.&quot;);
   if Logs.err_count () &gt; 0 then 1 else 0
 
-let setup_log style_renderer level =
+let setup_log ~style_renderer ~level =
   Fmt_tty.setup_std_outputs ?style_renderer ();
   Logs.set_level level;
   Logs.set_reporter (Logs_fmt.reporter ())
@@ -19,17 +19,20 @@ let setup_log style_renderer level =
 (* Command line interface *)
 
 open Cmdliner
+open Cmdliner.Term.Syntax
 
-let setup_log =
+let cmd =
+  Cmd.make (Cmd.info &quot;tool&quot;) @@
   let env = Cmd.Env.info &quot;TOOL_VERBOSITY&quot; in
-  Term.(const setup_log $ Fmt_cli.style_renderer () $ Logs_cli.level ~env ())
+  let+ style_renderer = Fmt_cli.style_renderer ()
+  and+ level = Logs_cli.level ~env ()
+  and+ msg =
+    let doc = &quot;The message to output.&quot;  in
+    Arg.(value &amp; pos 0 string &quot;Hello horrible world!&quot; &amp; info [] ~doc)
+  in
+  setup_log ~style_renderer ~level;
+  hello msg
 
-let msg =
-  let doc = &quot;The message to output.&quot;  in
-  Arg.(value &amp; pos 0 string &quot;Hello horrible world!&quot; &amp; info [] ~doc)
 
-let main () =
-  let cmd = Cmd.make (Cmd.info &quot;tool&quot;) Term.(const hello $ setup_log $ msg) in
-  Cmd.eval' cmd
-
+let main () = Cmd.eval' cmd
 let () = if !Sys.interactive then () else exit (main ())</code></pre></div></body></html>

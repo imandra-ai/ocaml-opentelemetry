@@ -1,3 +1,9 @@
+v0.10.0 2025-11-04 Zagreb
+-------------------------
+
+* Make log mutex immune to raising logging functions.
+  Thanks to Nathan Taylor for the report and the repro (#57).
+
 v0.9.0 2025-07-08 Zagreb
 ------------------------
 
@@ -11,7 +17,7 @@ v0.9.0 2025-07-08 Zagreb
 * `Logs.format_reporter` and `Logs_fmt.reporter` replace a few format 
   strings and `^^` uses by direct calls to `Format` primitives.
 * Requires OCaml >= 4.14.
-* Use Format.pp_print_text instead of your own.
+* Use Format.pp_print_text instead of our own.
 * Export `logs` from each sub library.
 
 v0.8.0 2025-03-10 La Forclaz (VS)

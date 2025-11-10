@@ -1,9 +1,10 @@
 {0 Examples}
 
 The examples are self-contained, cut and paste them in a file to play
-with them.
+with them. See also the suggested {{!page-cookbook.tip_src_structure}source
+code structure} and program {{!page-cookbook.blueprints}blueprints}.
 
-{1:exrm A [rm] command}
+{1:example_rm A [rm] command}
 
 We define the command line interface of an [rm] command with the
 synopsis:
@@ -25,20 +26,21 @@ line and we just take the {!Cmdliner.Arg.last} one to define our term
 value. If there is no occurrence the last value of the default list
 [[Always]] is taken. This means the default prompt behaviour is [Always].
 
-{[
+{@ocaml name=example_rm.ml[
 (* Implementation of the command, we just print the args. *)
 
 type prompt = Always | Once | Never
 let prompt_str = function
 | Always -> "always" | Once -> "once" | Never -> "never"
 
-let rm prompt recurse files =
+let rm ~prompt ~recurse files =
   Printf.printf "prompt = %s\nrecurse = %B\nfiles = %s\n"
     (prompt_str prompt) recurse (String.concat ", " files)
 
 (* Command line interface *)
 
 open Cmdliner
+open Cmdliner.Term.Syntax
 
 let files = Arg.(non_empty & pos_all file [] & info [] ~docv:"FILE")
 let prompt =
@@ -63,32 +65,34 @@ let recursive =
   let doc = "Remove directories and their contents recursively." in
   Arg.(value & flag & info ["r"; "R"; "recursive"] ~doc)
 
-let cmd =
+let rm_cmd =
   let doc = "Remove files or directories" in
   let man = [
     `S Manpage.s_description;
-    `P "$(tname) removes each specified $(i,FILE). By default it does not
+    `P "$(cmd) removes each specified $(i,FILE). By default it does not
         remove directories, to also remove them and their contents, use the
         option $(b,--recursive) ($(b,-r) or $(b,-R)).";
     `P "To remove a file whose name starts with a $(b,-), for example
         $(b,-foo), use one of these commands:";
-    `Pre "$(mname) $(b,-- -foo)"; `Noblank;
-    `Pre "$(mname) $(b,./-foo)";
-    `P "$(tname) removes symbolic links, not the files referenced by the
+    `Pre "$(cmd) $(b,-- -foo)"; `Noblank;
+    `Pre "$(cmd) $(b,./-foo)";
+    `P "$(cmd.name) removes symbolic links, not the files referenced by the
         links.";
     `S Manpage.s_bugs; `P "Report bugs to <bugs@example.org>.";
     `S Manpage.s_see_also; `P "$(b,rmdir)(1), $(b,unlink)(2)" ]
   in
-  let info = Cmd.info "rm" ~version:"v1.3.0" ~doc ~man in
-  Cmd.v info Term.(const rm $ prompt $ recursive $ files)
+  Cmd.make (Cmd.info "rm" ~version:"v2.0.0" ~doc ~man) @@
+  let+ prompt and+ recursive and+ files in
+  rm ~prompt ~recurse:recursive files
 
-let main () = exit (Cmd.eval cmd)
-let () = main ()
+let main () = Cmd.eval rm_cmd
+let () = if !Sys.interactive then () else exit (main ())
 ]}
 
-{1:excp A [cp] command}
+{1:example_cp A [cp] command}
 
 We define the command line interface of a [cp] command with the synopsis:
+
 {v
 cp [OPTION]… SOURCE… DEST
 v}
@@ -97,16 +101,16 @@ The [DEST] argument must be a directory if there is more than one
 [SOURCE]. This constraint is too complex to be expressed by the
 combinators of {!Cmdliner.Arg}.
 
-Hence we just give [DEST] the {!Cmdliner.Arg.string} type and verify the
-constraint at the beginning of the implementation of [cp]. If the
+Hence we just give [DEST] the {!Cmdliner.Arg.string} type and verify
+the constraint at the beginning of the implementation of [cp]. If the
 constraint is unsatisfied we return an [`Error] result. By using
-{!Cmdliner.Term.val-ret} on the lifted result [cp_t] of [cp],
-[Cmdliner] handles the error reporting.
+{!Cmdliner.Term.val-ret} on the command's term for [cp], [Cmdliner]
+handles the error reporting.
 
-{[
+{@ocaml name=example_cp.ml[
 (* Implementation, we check the dest argument and print the args *)
 
-let cp verbose recurse force srcs dest =
+let cp ~verbose ~recurse ~force srcs dest =
   let many = List.length srcs > 1 in
   if many && (not (Sys.file_exists dest) || not (Sys.is_directory dest))
   then `Error (false, dest ^ ": not a directory") else
@@ -117,6 +121,7 @@ let cp verbose recurse force srcs dest =
 (* Command line interface *)
 
 open Cmdliner
+open Cmdliner.Term.Syntax
 
 let verbose =
   let doc = "Print file names as they are copied." in
@@ -140,24 +145,25 @@ let dest =
   let docv = "DEST" in
   Arg.(required & pos ~rev:true 0 (some string) None & info [] ~docv ~doc)
 
-let cmd =
+let cp_cmd =
   let doc = "Copy files" in
   let man_xrefs =
-    [ `Tool "mv"; `Tool "scp"; `Page ("umask", 2); `Page ("symlink", 7) ]
+    [`Tool "mv"; `Tool "scp"; `Page ("umask", 2); `Page ("symlink", 7)]
   in
-  let man =
-    [ `S Manpage.s_bugs;
-      `P "Email them to <bugs@example.org>."; ]
+  let man = [
+    `S Manpage.s_bugs;
+    `P "Email them to <bugs@example.org>."; ]
   in
-  let info = Cmd.info "cp" ~version:"v1.3.0" ~doc ~man ~man_xrefs in
-  Cmd.v info Term.(ret (const cp $ verbose $ recurse $ force $ srcs $ dest))
+  Cmd.make (Cmd.info "cp" ~version:"v2.0.0" ~doc ~man ~man_xrefs) @@
+  Term.ret @@
+  let+ verbose and+ recurse and+ force and+ srcs and+ dest in
+  cp ~verbose ~recurse ~force srcs dest
 
-
-let main () = exit (Cmd.eval cmd)
-let () = main ()
+let main () = Cmd.eval cp_cmd
+let () = if !Sys.interactive then () else exit (main ())
 ]}
 
-{1:extail A [tail] command}
+{1:example_tail A [tail] command}
 
 We define the command line interface of a [tail] command with the
 synopsis:
@@ -180,7 +186,7 @@ the option [--follow] evaluates to [None] if [--follow] is absent from
 the command line, to [Some Descriptor] if present but without a value
 and to [Some v] if present with a value [v] specified.
 
-{[
+{@ocaml name=example_tail.ml[
 (* Implementation of the command, we just print the args. *)
 
 type loc = bool * int
@@ -193,7 +199,7 @@ let loc_str (rev, k) = if rev then str "%d" k else str "+%d" k
 let follow_str = function Name -> "name" | Descriptor -> "descriptor"
 let verb_str = function Verbose -> "verbose" | Quiet -> "quiet"
 
-let tail lines follow verb pid files =
+let tail ~lines ~follow ~verb ~pid files =
   Printf.printf
     "lines = %s\nfollow = %s\nverb = %s\npid = %s\nfiles = %s\n"
     (loc_str lines) (opt_str follow_str follow) (verb_str verb)
@@ -202,17 +208,18 @@ let tail lines follow verb pid files =
 (* Command line interface *)
 
 open Cmdliner
+open Cmdliner.Term.Syntax
 
 let loc_arg =
-  let parse s =
+  let parser s =
     try
       if s <> "" && s.[0] <> '+'
       then Ok (true, int_of_string s)
       else Ok (false, int_of_string (String.sub s 1 (String.length s - 1)))
-    with Failure _ -> Error (`Msg "unable to parse integer")
+    with Failure _ -> Error "unable to parse integer"
   in
-  let print ppf p = Format.fprintf ppf "%s" (loc_str p) in
-  Arg.conv ~docv:"N" (parse, print)
+  let pp ppf p = Format.fprintf ppf "%s" (loc_str p) in
+  Arg.Conv.make ~docv:"N" ~parser ~pp ()
 
 let lines =
   let doc = "Output the last $(docv) lines or use $(i,+)$(docv) to start \
@@ -246,27 +253,27 @@ let pid =
 
 let files = Arg.(value & (pos_all non_dir_file []) & info [] ~docv:"FILE")
 
-let cmd =
+let tail_cmd =
   let doc = "Display the last part of a file" in
   let man = [
     `S Manpage.s_description;
-    `P "$(tname) prints the last lines of each $(i,FILE) to standard output. If
-        no file is specified reads standard input. The number of printed
+    `P "$(cmd) prints the last lines of each $(i,FILE) to standard output.
+        If no file is specified reads standard input. The number of printed
         lines can be  specified with the $(b,-n) option.";
     `S Manpage.s_bugs;
     `P "Report them to <bugs@example.org>.";
     `S Manpage.s_see_also;
     `P "$(b,cat)(1), $(b,head)(1)" ]
   in
-  let info = Cmd.info "tail" ~version:"v1.3.0" ~doc ~man in
-  Cmd.v info Term.(const tail $ lines $ follow $ verb $ pid $ files)
+  Cmd.make (Cmd.info "tail" ~version:"v2.0.0" ~doc ~man) @@
+  let+ lines and+ follow and+ verb and+ pid and+ files in
+  tail ~lines ~follow ~verb ~pid files
 
-
-let main () = exit (Cmd.eval cmd)
-let () = main ()
+let main () = Cmd.eval tail_cmd
+let () = if !Sys.interactive then () else exit (main ())
 ]}
 
-{1:exdarcs A [darcs] command}
+{1:example_darcs A [darcs] command}
 
 We define the command line interface of a [darcs] command with the
 synopsis:
@@ -280,10 +287,8 @@ each command.  To avoid having to pass them individually to each
 command we gather them in a record of type [copts]. By lifting the
 record constructor [copts] into the term [copts_t] we now have a term
 that we can pass to the commands to stand for an argument of type
-[copts]. These options are documented in a section called [COMMON
-OPTIONS], since we also want to put [--help] and [--version] in this
-section, the term information of commands makes a judicious use of the
-[sdocs] parameter of {!Cmdliner.Term.val-info}.
+[copts]. These options are documented in the section
+{!Cmdliner.Manpage.s_common_options}.
 
 The [help] command shows help about commands or other topics. The help
 shown for commands is generated by [Cmdliner] by making an appropriate
@@ -291,9 +296,9 @@ use of {!Cmdliner.Term.val-ret} on the lifted [help] function.
 
 If the program is invoked without a command we just want to show the
 help of the program as printed by [Cmdliner] with [--help]. This is
-done by the [default_cmd] term.
+done by the [default] term.
 
-{[
+{@ocaml name=example_darcs.ml[
 (* Implementations, just print the args. *)
 
 type verb = Normal | Quiet | Verbose
@@ -321,16 +326,18 @@ let help copts man_format cmds topic = match topic with
 | None -> `Help (`Pager, None) (* help about the program. *)
 | Some topic ->
     let topics = "topics" :: "patterns" :: "environment" :: cmds in
-    let conv, _ = Cmdliner.Arg.enum (List.rev_map (fun s -> (s, s)) topics) in
-    match conv topic with
-    | `Error e -> `Error (false, e)
-    | `Ok t when t = "topics" -> List.iter print_endline topics; `Ok ()
-    | `Ok t when List.mem t cmds -> `Help (man_format, Some t)
-    | `Ok t ->
+    let conv = Cmdliner.Arg.enum (List.rev_map (fun s -> (s, s)) topics) in
+    let parse = Cmdliner.Arg.Conv.parser conv in
+    match parse topic with
+    | Error e -> `Error (false, e)
+    | Ok t when t = "topics" -> List.iter print_endline topics; `Ok ()
+    | Ok t when List.mem t cmds -> `Help (man_format, Some t)
+    | Ok t ->
         let page = (topic, 7, "", "", ""), [`S topic; `P "Say something";] in
         `Ok (Cmdliner.Manpage.print man_format Format.std_formatter page)
 
 open Cmdliner
+open Cmdliner.Term.Syntax
 
 (* Help sections common to all commands *)
 
@@ -338,9 +345,9 @@ let help_secs = [
  `S Manpage.s_common_options;
  `P "These options are common to all commands.";
  `S "MORE HELP";
- `P "Use $(mname) $(i,COMMAND) --help for help on a single command.";`Noblank;
- `P "Use $(mname) $(b,help patterns) for help on patch matching."; `Noblank;
- `P "Use $(mname) $(b,help environment) for help on environment variables.";
+ `P "Use $(tool) $(i,COMMAND) --help for help on a single command.";`Noblank;
+ `P "Use $(tool) $(b,help patterns) for help on patch matching."; `Noblank;
+ `P "Use $(tool) $(b,help environment) for help on environment variables.";
  `S Manpage.s_bugs; `P "Check bug reports at http://bugs.example.org.";]
 
 (* Options common to all commands *)
@@ -360,7 +367,7 @@ let copts_t =
     Arg.(last & vflag_all [Normal] [quiet; verbose])
   in
   let prehook =
-    let doc = "Specify command to run before this $(mname) command." in
+    let doc = "Specify command to run before this $(tool) command." in
     Arg.(value & opt (some string) None & info ["prehook"] ~docs ~doc)
   in
   Term.(const copts $ debug $ verb $ prehook)
@@ -382,8 +389,9 @@ let initialize_cmd =
        existing files and subdirectories become …";
     `Blocks help_secs; ]
   in
-  let info = Cmd.info "initialize" ~doc ~sdocs ~man in
-  Cmd.v info Term.(const initialize $ copts_t $ repodir)
+  Cmd.make (Cmd.info "initialize" ~doc ~sdocs ~man) @@
+  let+ copts_t and+ repodir in
+  initialize copts_t repodir
 
 let record_cmd =
   let pname =
@@ -409,12 +417,12 @@ let record_cmd =
   let man =
     [`S Manpage.s_description;
      `P "Creates a patch from changes in the working tree. If you specify
-         a set of files …";
+         a set of files…";
      `Blocks help_secs; ]
   in
-  let info = Cmd.info "record" ~doc ~sdocs ~man in
-  Cmd.v info
-    Term.(const record $ copts_t $ pname $ author $ all $ ask_deps $ files)
+  Cmd.make (Cmd.info "record" ~doc ~sdocs ~man) @@
+  let+ copts_t and+ pname and+ author and+ all and+ ask_deps and+ files in
+  record copts_t pname author all ask_deps files
 
 let help_cmd =
   let topic =
@@ -427,17 +435,19 @@ let help_cmd =
      `P "Prints help about darcs commands and other subjects…";
      `Blocks help_secs; ]
   in
-  let info = Cmd.info "help" ~doc ~man in
-  Cmd.v info
-    Term.(ret (const help $ copts_t $ Arg.man_format $ Term.choice_names $
-               topic))
+  Cmd.make (Cmd.info "help" ~doc ~man) @@
+  Term.ret @@
+  let+ copts_t and+ man_format = Arg.man_format
+  and+ choice_names = Term.choice_names and+ topic in
+  help copts_t man_format choice_names topic
 
 let main_cmd =
   let doc = "a revision control system" in
   let man = help_secs in
-  let info = Cmd.info "darcs" ~version:"v1.3.0" ~doc ~sdocs ~man in
+  let info = Cmd.info "darcs" ~version:"v2.0.0" ~doc ~sdocs ~man in
   let default = Term.(ret (const (fun _ -> `Help (`Pager, None)) $ copts_t)) in
   Cmd.group info ~default [initialize_cmd; record_cmd; help_cmd]
 
-let () = exit (Cmd.eval main_cmd)
+let main () = Cmd.eval main_cmd
+let () = if !Sys.interactive then () else exit (main ())
 ]}

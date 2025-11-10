@@ -1,3 +1,133 @@
+v2.0.0 2025-09-26 Zagreb
+------------------------
+
+### End-user visible changes
+
+- **IMPORTANT** Cmdliner no longer allows command names, option names,
+  and `Arg.enum` values to be specified by a prefix if the prefix is
+  unambiguous. See #200 for the rationale. To quickly salvage scripts
+  that may be relying on the old behaviour, it can be restored by
+  setting the environment variable `CMDLINER_LEGACY_PREFIXES=true`.
+  However the scripts should be fixed: this escape hatch will be
+  removed in the future.
+
+- Pager. If set, respect the user's `LESS` environment variable
+  (otherwise the default `LESS=FRX` is left unchanged).  Note however
+  that you likely need at least `R` specified if you define it
+  yourself, otherwise the manpage may look garbled (#191). Thanks to
+  Yukai Chou for suggesting.
+
+- Fix lack of output whenever `PAGER` or `MANPAGER` is set but empty;
+  fallback to pager discovery (#194). For example this prevented to
+  see manpages in `emacs`'s compilation mode which unhelpfully
+  hardcodes `PAGER=""`.
+
+- Fix synopsis rendering of required optional arguments (#203).
+
+- Output error messages on `stderr` with styled text (#144). Quoted
+  and typewriter text is in bold. Variables are written as
+  underlines. Key words of error messages are in red.
+
+- Output error messages after the usage line and remove the `Try with
+  $(tool) --help for more information` message. Instead we explicitly
+  indicate the `--help` option in the usage line. Having the error message
+  at the end makes it easier to spot.
+
+- Make `--help` request work in any context, except after `--` or on
+  the arguments after an unknown command error in which case that
+  error is reported (less confusing). Since the option has an optional
+  argument value, one had to be carefull that it would not pickup the
+  next argument and try to parse it according to `FMT`. This is no
+  longer the case. If the argument fails to parse `--help=auto` is
+  assumed. (#201).
+  
+- Deprecation messages are now prepended to the doc strings in the manpage.
+
+### API changes
+
+- Reserve the `--__complete` option for library use.
+
+- Documentation language, `$(cmd)`, `$(cmd.name)` and `$(tool)` can be
+  used and should be prefered over of `$(iname)`, `$(tname)` and
+  `$(mname)`. `$(cmd.parent)` is added to refer to a command's parent
+  or itself at the root.
+
+- Make `Cmdliner.Arg.conv` abstract.  Thanks to Andrey Popp for
+  the patch (#206).
+
+- Thanks to the previous point, use the `docv` parameter of argument
+  converters can now be used to define the default value used by `docv` in
+  `Arg.info`. See `Arg.Conv.docv`.
+
+- Add `Manpage.section_name` type alias (#202).
+
+- Add `Cmd.make` which should be preferred to `Cmd.v` (The `M.v` notation is
+  nice for simulating literals, not for heavy constructor).
+
+- Add `Cmd.Env.info_var`. To get back the environment variable name
+  from a variable info.
+
+- Add optional `doc_envs` argument to `Arg.info` for adding the given
+  environment variables info to the command in which the argument is used.
+  Sometimes more than one variable make sense and the `env` argument is
+  not directly used.
+
+- Add `Arg.Completion` a module to define argument completion 
+  strategies (#1, #187). 
+  
+- Add `Arg.Conv` module to define converters. This should be used in
+  new code. 
+
+- Add `Arg.{file,dir,}path` string converters equiped with appropriate
+  file system completions.
+
+- Add `docv` optional parameter to `Arg.enum`.
+
+- Add `Term.env` which provides access to the environment access 
+  function provided to evaluation functions.
+
+- Clarify the semantics of the `deprecated` argument of
+  `Cmdliner.Cmd.info`, `Cmdliner.Arg.info` and
+  `Cmdliner.Cmd.Env.info`. First, the language markup is now supported
+  therein. Second the message is no longer only used to warn about
+  usage it is now also prepended to the doc string of the entity.
+
+- Use `Arg.conv`'s `docv` property in the documentation of arguments
+  whenever `Arg.info`'s `docv` is unspecified (#207).
+
+- Do not check file existence for `-` in `Arg.file` or
+  `Arg.non_dir_file` values. This is supposed to mean `stdin` or
+  `stdout` (#208).
+
+- Fix manpage rendering performing direct calls to `Sys.getenv` in
+  `Cmd.eval*` functions instead of calling the `env` argument as
+  advertised in the docs. Incidentally add an `env` optional argument
+  to `Manpage.print` (#209).
+
+- Deprecate. `Arg.{printer,conv_docv,conv_parser,
+  conv_printer,parser_of_kind_of_string,conv,conv'}`. These will
+  likely never be removed but they should no longer be used for 
+  new code. Use `Arg.Conv`. 
+
+- Remove deprecated `Arg.{converter,parser,pconv}` (#206).
+- Remove deprecated `Arg.{env,env_var}` (#206).
+- Remove deprecated `Term.{pure,man_format}` (#206).
+- Remove deprecated `Term` evaluation interface (#206).
+
+### Other
+
+- Install a `cmdliner` tool to help with manpage and completion script
+  installation. See the command line interface manual of the library
+  for more information (#187, #227, #228).
+
+- Install all source files for `odoc` and goto definition editor
+  functionality. Thanks to Emile Trotignon and Paul-Elliot Anglès
+  d'Auriac for noticing and suggesting (#225).
+
+- Added a proper test suite to the library to check for regressions.
+  Replaces most of the test executables that had to be run and inspected
+  manually (#205).
+
 v1.3.0 2024-05-23 La Forclaz (VS)
 ---------------------------------
 
@@ -100,8 +230,8 @@ This version of cmdliner deprecates the `Term.eval*` evaluation
 functions and `Term.info` information values in favor of the new
 `Cmdliner.Cmd` module. 
 
-The `Cmd` module generalizes the existing sub command support to allow
-arbitrarily nested sub commands each with its own man page and command
+The `Cmd` module generalizes the existing subcommand support to allow
+arbitrarily nested subcommands each with its own man page and command
 line syntax represented by a `Term.t` value.
 
 The mapping between the old interface and the new one should be rather
@@ -116,7 +246,7 @@ However in this transition the following things are changed or added:
   * The `?exits` argument which defaults to `Cmd.Exit.defaults`
     rather than the empty list.
   * The `?man_xrefs` which defaults to the list ``[`Main]`` rather
-    than the empty list (this means that by default sub commands 
+    than the empty list (this means that by default subcommands 
     at any level automatically cross-reference the main command).
   * The `?sdocs` argument which defaults to `Manpage.s_common_options`
     rather than `Manpage.s_options`.
@@ -136,9 +266,9 @@ However in this transition the following things are changed or added:
   or `Term.term_result`.
   
 Finally be aware that if you replace, in an existing tool, an encoding
-of sub commands as positional arguments you will effectively break the
+of subcommands as positional arguments you will effectively break the
 command line compatibility of your tool since options can no longer be
-specified before the sub commands, i.e. your tool synopsis moves from:
+specified before the subcommands, i.e. your tool synopsis moves from:
 
 ```
 tool cmd [OPTION]… SUBCMD [ARG]…
@@ -367,7 +497,7 @@ v0.9.6 2014-11-18 La Forclaz (VS)
   the sense that only more command lines are parsed. Thanks to Hugo
   Heuzard for the patch.
 - End user error message improvements using heuristics and edit
-  distance search in the optional argument and sub command name
+  distance search in the optional argument and subcommand name
   spaces. Thanks to Hugo Heuzard for the patch.
 - Adds `Arg.doc_{quote,alts,alts_enum}`, documentation string
   helpers.

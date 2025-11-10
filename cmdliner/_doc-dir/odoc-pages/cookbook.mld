@@ -1,0 +1,720 @@
+{0 [Cmdliner] cookbook}
+
+A few recipes and starting {{!blueprints}blueprints} to describe your
+command lines with {!Cmdliner}.
+
+{b Note.} Some of the code snippets here assume they are done after:
+{[
+open Cmdliner
+open Cmdliner.Term.Syntax
+]}
+
+{1:tips Tips and pitfalls}
+
+Command line interfaces are a rather crude and inexpressive user
+interaction medium. It is tempting to try to be nice to users in
+various ways but this often backfires in confusing context sensitive
+behaviours. Here are a few tips and Cmdliner features you {b should
+rather not use}.
+
+{2:tip_avoid_default_command Avoid default commands in groups}
+
+Command {{!Cmdliner.Cmd.group}groups} can have a default command, that
+is be of the form [tool [CMD]]. Except perhaps at the top level of
+your tool, it's better to avoid them. They increase command line
+parsing ambiguities.
+
+In particular if the default command has positional arguments, users
+are forced to use the {{!cli.posargs}disambiguation token [--]} to
+specify them so that they can be distinguished from command
+names. For example:
+
+{@sh[
+tool -- file …
+]}
+
+One thing that is acceptable is to have a default command that simply
+{{!cmds_show_docs}shows documentation} for the group of subcommands as
+this not interfere with tool operation.
+
+{2:tip_avoid_default_option_values Avoid default option values}
+
+Optional arguments {{!Cmdliner.Arg.opt}with values} can have a default
+value, that is be of the form [--opt[=VALUE]]. In general it is better
+to avoid them as they lead to context sensitive command lines
+specifications and surprises when users refine invocations. For examples
+suppose you have the synopsis
+
+{@sh[
+tool --opt[=VALUE] [FILE]
+]}
+
+Trying to refine the following invocation to add a [FILE] parameter is
+error prone and painful:
+
+{@sh[
+tool --opt
+]}
+
+There is more than one way but the easiest way is to specify:
+{@sh[
+tool --opt -- FILE
+]}
+which is not obvious unless you have [tool]'s cli hard wired in your
+brain.  This would have been a careless refinement if [--opt] did not
+have a default option value.
+
+{2:tip_avoid_required_opt Avoid required optional arguments}
+
+Cmdliner allows to define required optional arguments. Avoid doing
+this, it's a contradiction in the terms. In command line interfaces
+optional arguments are defined to be… optional, not doing so is
+surprising for your users. Use required positional arguments if
+arguments are required by your command invocation.
+
+Required optional arguments can be useful though if your tool is not
+meant to be invoked manually but rather through scripts and has many
+required arguments. In this case they become a form of labelled
+arguments which can make invocations easier to understand.
+
+{2:tip_avoid_manpages Avoid making manpages your main documentation}
+
+Unless your tool is very simple, avoid making manpages the main
+documentation medium of your tool. The medium is rather limited and
+even though you can convert them to HTML, its cross references
+capabilities are rather limited which makes discussing your tool
+online more difficult.
+
+Keep information in manpages to the minimum needed to operate your
+tool without having to leave the terminal too much and defer reference
+manuals, conceptual information and tutorials to a more evolved medium
+like HTML.
+
+{2:tip_migrating Migrating from other conventions}
+
+If you are porting your command line parsing to [Cmdliner] and that
+you have conventions that clash with [Cmdliner]'s ones but you need to
+preserve backward compatibility, one way of proceeding is to
+pre-process {!Sys.argv} into a new array of the right shape before
+giving it to command {{!Cmdliner.Cmd.section-eval}evaluation
+functions} via the [?argv] optional argument.
+
+These are two common cases:
+
+{ul
+{- Long option names with a single dash like [-warn-error]. In this
+   case simply prefix an additional [-] to these arguments when they
+   occur in {!Sys.argv} before the [--] argument; after it, all arguments are
+   positional and to be treated literally.}
+{- Long option names with a single letter like [--X]. In this
+   case simply chop the first [-] to make it a short option when they
+   occur in {!Sys.argv} before the [--] argument; after it all arguments are
+   positional and to be treated literally.}}
+
+{2:tip_src_structure Source code structure}
+
+In general Cmdliner wants you to see your tools as regular OCaml functions
+that you make available to the shell. This means adopting the following
+source structure:
+
+{[
+(* Implementation of your command. Except for exit codes does not deal with
+   command line interface related matters and is independent from
+   Cmdliner. *)
+
+let exit_ok = 0
+let tool … = …; exit_ok
+
+(* Command line interface. Adds metadata to your [tool] function arguments
+   so that they can be parsed from the command line and documented. *)
+
+open Cmdliner
+open Cmdliner.Term.Syntax
+
+let cmd = … (* Has a term that invokes [tool] *)
+let main () = Cmd.eval' cmd
+let () = if !Sys.interactive then () else exit (main ())
+]}
+
+In particular it is good for your readers' understanding that your
+program has a single point where it {!Stdlib.exit}s. This structure is
+also useful for playing with your program in the OCaml toplevel
+(REPL), you can invoke its [main] function without having the risk of it
+[exit]ing the toplevel.
+
+If your tool named [tool] is growing into multiple commands which
+have a lot of definitions it is advised to:
+{ul
+{- Gather command line definition commonalities such as argument
+   converters or common options in a module called [Tool_cli].}
+{- Define each command named [name] in a separate module [Cmd_name] which
+   exports its command as a [val cmd : int Cmd.t] value.}
+{- Gather the commands with {!Cmdliner.Cmd.group} in a source file
+   called [tool_main.ml].}}
+
+For an hypothetic tool named [tool] with commands [import], [serve]
+and [user], this leads to the following set of files:
+
+{[
+cmd_import.ml    cmd_serve.ml     cmd_user.ml   tool_cli.ml   tool_main.ml
+cmd_import.mli   cmd_serve.mli    cmd_user.mli  tool_cli.mli
+]}
+
+The [.mli] files simply export commands:
+{[
+val cmd : int Cmdliner.Cmd.t
+]}
+
+And the [tool_main.ml] gathers them with a {!Cmdliner.Cmd.group}:
+{[
+let cmd =
+  let default = Term.(ret (const (`Help (`Auto, None)))) (* show help *) in
+  Cmd.group (Cmd.info "tool") ~default @@
+  [Cmd_import.cmd; Cmd_serve.cmd; Cmd_user.cmd]
+
+let main () = Cmd.value' cmd
+let () = if !Sys.interactive then () else exit (main ())
+]}
+
+{2:tip_tool_support Installing completions and manpages}
+
+The [cmdliner] tool can be used to install completion scripts and
+manpages for you tool and its subcommands by using the dedicated
+{{!page-cli.install_tool_completion}[install tool-completion]} and
+{{!page-cli.install_tool_manpages}[install tool-manpages]} subcommands.
+
+To install both directly (and possibly other support files in the future)
+it is more concise to use the [install
+tool-support] command. Invoke with [--help] for more information.
+
+{3:tip_tool_support_with_opam With [opam]}
+
+If you are installing your package with [opam] for a tool named [tool]
+located in the build at the path [$BUILD/tool], you can add the following
+instruction after your build instructions in the [build:] field of
+your [opam] file (also works if your build system is not using a
+[.install] file).
+
+{@sh[
+build: [
+  [ … ] # Your regular build instructions
+  ["cmdliner" "install" "tool-support"
+              "--update-opam-install=%{_:name}%.install"
+              "$BUILD/tool" "_build/cmdliner-install"]]
+]}
+
+You need to specify the path to the built executable, as it cannot be
+looked up in the [PATH] yet. Also more than one tool can be specified
+in a single invocation and there is a syntax for specifying the actual
+tool name if it is renamed on install; see [--help] for more
+details.
+
+If [cmdliner] is only an optional dependency of your package use the
+opam filter [{cmdliner:installed}] after the closing bracket of the command
+invocation.
+
+{3:tip_tool_support_with_opam_dune With [opam] and [dune]}
+
+First make sure your understand the
+{{!tip_tool_support_with_opam}above basic instructions} for [opam].
+You then
+{{:https://dune.readthedocs.io/en/stable/reference/packages.html#generating-opam-files}need to figure out} how to add the [cmdliner install] instruction to the [build:]
+field of the opam file after your [dune] build instructions. For a tool named
+[tool] the result should eventually look this:
+
+{@sh[
+build: [
+   [ … ] # Your regular dune build instructions
+   ["cmdliner" "install" "tool-support"
+               "--update-opam-install=%{_:name}%.install"
+               "_build/default/install/bin/tool" {os != "win32"}
+               "_build/default/install/bin/tool.exe" {os = "win32"}
+               "_build/cmdliner-install"]]
+]}
+
+{1:conventions Conventions}
+
+By simply using Cmdliner you are already abiding to a great deal
+of command line interface conventions. Here are a few other ones that
+are not necessarily enforced by the library but that are good to
+adopt for your users.
+
+{2:conv_use_dash Use ["-"] to specify [stdio] in file path arguments}
+
+Whenever a command line argument specifies a file path to read or
+write you should let the user specify [-] to denote standard in or
+standard out, if possible. If you worry about a file sporting this
+name, note that the user can always specify it using [./-] for
+the argument.
+
+Very often tools default to [stdin] or [stdout] when a file
+input or output is unspecified, here is typical argument definitions
+to support these conventions:
+
+{[
+let infile =
+  let doc = "$(docv) is the file to read from. Use $(b,-) for $(b,stdin)" in
+  Arg.(value & opt string "-" & info ["i", "input-file"] ~doc ~docv:"FILE")
+
+let outfile =
+  let doc = "$(docv) is the file to write to. Use $(b,-) for $(b,stdout)" in
+  Arg.(value & opt string "-" & info ["o", "output-file"] ~doc ~docv:"FILE")
+]}
+
+Here is {!Stdlib} based code to read to a string a file or standard
+input if [-] is specified:
+
+{[
+let read_file file =
+  let read file ic = try Ok (In_channel.input_all ic) with
+  | Sys_error e -> Error (Printf.sprintf "%s: %s" file e)
+  in
+  let binary_stdin () = In_channel.set_binary_mode In_channel.stdin true in
+  try match file with
+  | "-" -> binary_stdin (); read file In_channel.stdin
+  | file -> In_channel.with_open_bin file (read file)
+  with Sys_error e -> Error e
+]}
+
+Here is {!Stdlib} based code to write a string to a file or standard output
+if [-] is specified:
+
+{[
+let write_file file s =
+  let write file s oc = try Ok (Out_channel.output_string oc s) with
+  | Sys_error e -> Error (Printf.sprintf "%s: %s" file e)
+  in
+  let binary_stdout () = Out_channel.(set_binary_mode stdout true) in
+  try match file with
+  | "-" -> binary_stdout (); write file s Out_channel.stdout
+  | file -> Out_channel.with_open_bin file (write file s)
+  with Sys_error e -> Error e
+]}
+
+{2:conv_env_defaults Environment variables as default modifiers}
+
+Cmdliner has support to back values defined by arguments with
+environment variables. The value specified via an environment variable
+should never take over an argument specified explicitely on the
+command line. The environment variable should be seen as providing
+the default value when the argument is absent.
+
+This is exactly what Cmdliner's support for environment variables does,
+see {!env_args}
+
+{1:args Arguments}
+
+{2:args_positional How do I define a positional argument?}
+
+Positional arguments are extracted from the command line using
+{{!Cmdliner.Arg.posargs}these combinators} which use zero-based
+indexing. The following example extracts the first argument and if
+the argument is absent from the command line it evaluates
+to ["Revolt!"].
+{[
+let msg =
+  let doc = "$(docv) is the message to utter." and docv = "MSG" in
+  Arg.(value & pos 0 string "Revolt!" & info [] ~doc ~docv)
+]}
+
+{2:args_optional How do I define an optional argument?}
+
+Optional arguments are extracted from the command line using
+{{!Cmdliner.Arg.optargs}these combinators}. The actual option
+name is defined in the {!Cmdliner.Arg.val-info} structure without
+dashes. One character strings define short options, others long
+options (see the {{!page-cli.optargs}parsed syntax}).
+
+The following defines the [-l] and [--loud] options. This is a simple
+command line argument without a value also known as a command line {e
+flag}. The term [loud] evaluates to [false] when the argument is
+absent on the command line and [true] otherwise.
+
+{[
+let loud =
+  let doc = "Say the message loudly." in
+  Arg.(value & flag & info ["l"; "loud"] ~doc)
+]}
+
+The following defines the [-m] and [--message] options. The term [msg] evalutes
+to ["Revolt!"] when the option is absent on the command line.
+{[
+let msg =
+  let doc = "$(docv) is the message to utter." and docv = "MSG" in
+  Arg.(value & opt string "Revolt!" & info ["m"; "message"] ~doc ~docv)
+]}
+
+{2:args_required How do I define a required argument?}
+
+Some of the constraints on the presence of arguments occur when the
+specification of arguments is {{!Cmdliner.Arg.argterms}converted} to
+terms. The following says that the first positional argument is required:
+
+{[
+let msg =
+  let msg = "$(docv) is the message to utter." and docv = "MSG" in
+  Arg.(required & pos 0 (some string) None & info [] ~absent ~doc ~docv)
+]}
+
+The value [msg] ends up being a term of type [string]. If the argument
+is not provided, Cmdliner will automatically bail out during evaluation
+with an error message.
+
+Note that while it is possible to define required positional argument
+it is {{!tip_avoid_required_opt}discouraged}.
+
+{2:args_detect_absent How can I know if an argument was absent?}
+
+Most {{!Cmdliner.Arg.posargs}positional} and
+{{!Cmdliner.Arg.optargs}optional} arguments have a default value. You
+can use a [None] for the default argument and the {!Cmdliner.Arg.some} or
+{!Cmdliner.Arg.some'} combinators on your argument converter which simply
+wrap its result in a [Some].
+
+{[
+let msg =
+  let msg = "$(docv) is the message to utter." in
+  let absent = "Random quote." in
+  Arg.(value & pos 0 (some string) None & info [] ~absent ~doc ~docv:"MSG")
+]}
+
+There is more than one way to document the value when it is
+absent. See {!args_absent_doc}
+
+{2:args_absent_doc How do I document absent argument behaviours?}
+
+There are three ways to document the behaviour when an argument is
+unspecified on the command line.
+
+{ul
+{- If you specify a default value in the argument combinator, this value
+   gets printed in bold using the {{!Cmdliner.Arg.conv_printer}printer}
+   of the converter.}
+{- If you are using the {!Cmdliner.Arg.some'} and {!Cmdliner.Arg.some}
+   there is an optional [none] argument that allows you to specify
+   the default value. If you can exhibit this value at definition
+   point use {!Cmdliner.Arg.some'}, the underlying converter's
+   {{!Cmdliner.Arg.conv_printer}printer} will be used. If not
+   you can specify it as a string rendered in bold via {!Cmdliner.Arg.some}.}
+{- If you want to describe a more complex, but short, behaviour use
+   the [~absent] parameter of {!Cmdliner.Arg.val-info}. Using this
+   parameter overrides the two previous ways. See
+   {{!args_detect_absent}this} example. }}
+
+{2:args_completion How can I customize positional and option value completion?}
+
+Positional argument values and option values are completed according
+to the {{!Cmdliner.Arg.argconv}argument converter} you use for defining
+the optional or positional argument.
+
+A couple of predefined argument converter like {!Cmdliner.Arg.path},
+{!Cmdliner.Arg.filepath} and {!Cmdliner.Arg.dirpath} or
+{!Cmdliner.Arg.enum} automatically handle this for you.
+
+If you would like to perform custom or more elaborate context
+sensitive completions you can define your own argument converter with
+a completion defined with {!Cmdliner.Arg.Completion.make}.
+
+Here is an example where the first positional argument is completed
+with the filenames found in a directory specified via the [--dir]
+option (which defaults to the current working directory if unspecified).
+{[
+let dir = Arg.(value & opt dirpath "." & info ["d"; "dir"])
+let dir_filenames_conv =
+  let complete dir ~token = match dir with
+  | None -> Error "Could not determine directory to lookup"
+  | Some dir ->
+      match Array.to_list (Sys.readdir dir) with
+      | exception Sys_error e -> Error (String.concat ": " [dir; e])
+      | fnames ->
+          let fnames = List.filter (String.starts_with ~prefix:token) fnames in
+          Ok (List.map Arg.Completion.string fnames)
+  in
+  let completion = Arg.Completion.make ~context:dir complete in
+  Arg.Conv.of_conv ~completion Arg.string
+
+let pos0 = Arg.(required & pos 0 (some dir_filenames_conv) None & info [])
+]}
+
+Note that when you use [pos0] in a command line definition you also
+need to make sure [dir] is part of the term otherwise the context will
+always be [None]:
+
+{[
+let+ pos0 and+ dir and+ … in …
+]}
+
+{1:envs Environment variables}
+
+{2:env_args How can environment variables define defaults?}
+
+As mentioned in {!conv_env_defaults}, any non-required argument can be
+defined by an environment variable when absent. This works by
+specifying the [env] argument in the argument's {!Cmdliner.Arg.val-info}
+information. For example:
+
+{[
+let msg =
+  let doc = "$(docv) is the message to utter." and docv = "MSG" in
+  let env = Cmd.Env.info "MESSAGE" in
+  Arg.(value & pos 0 string "Revolt!" & info [] ~env ~doc ~docv)
+]}
+
+When the first positional argument is absent it takes the default
+value ["Revolt!"], unless the [MESSAGE] variable is defined in
+the environment in which case it takes its value.
+
+Cmdliner handles the environment variable lookup for you. By using the
+[msg] term in your command definition all this gets automatically
+documented in the tool help.
+
+{2:env_cmd How do I document environment variables influencing a command?}
+
+Environment variable that are used to change {{!env_args}argument
+defaults} automatically get documented in a command's man page when
+you use the argument's term in the command's term.
+
+However if your command implementation looks up other variables and you
+wish to document them in the command's man page, use the [envs]
+argument of {!Cmdliner.Cmd.val-info} or the [docs_env] argument
+of {!Cmdliner.Arg.val-info}.
+
+This documents in the {!Cmdliner.Manpage.s_environment} manual section
+of [tool] that [EDITOR] is looked up to find the tool to invoke to
+edit the files:
+
+{[
+let editor_env = "EDITOR"
+let tool … = … Sys.getenv_opt editor_env
+let cmd =
+   let env = Cmd.Env.info editor_env ~doc:"The editor used to edit files." in
+   Cmd.make (Cmd.info "tool" ~envs:[env]) @@
+   …
+]}
+
+{1:cmds Commands}
+
+{2:cmds_exit_code_docs How do I document command exit codes?}
+
+Exit codes are documentd by {!Cmdliner.Cmd.Exit.type-info} values and
+must be given to the command's {!Cmdliner.Cmd.type-info} value via the
+[exits] optional arguments. For example:
+
+{[
+let conf_not_found = 1
+let tool … =
+let tool_cmd =
+  let exits =
+    Cmd.Exit.info conf_not_found "if no configuration could be found." ::
+    Cmd.Exit.defaults
+  in
+  Cmd.make (Cmd.info "mycmd" ~exits) @@
+  …
+]}
+
+{2:cmds_show_docs How do I show help in a command group's default?}
+
+While it is usually {{!tip_avoid_default_command}not advised} to have a default
+command in a group, just showing docs is acceptable. A term can request
+Cmdliner's generated help by using {!Cmdliner.Term.val-ret}:
+{[
+let group_cmd =
+  let default = Term.(ret (const (`Help (`Auto, None)))) (* show help *) in
+  Cmd.group (Cmd.info "group") ~default @@
+  [first_cmd; second_cmd]
+]}
+
+{2:cmds_which_eval Which [Cmd] evaluation function should I use?}
+
+There are (too) many {{!Cmdliner.Cmd.section-eval}command evaluation}
+functions. They have grown organically in a rather ad-hoc manner. Some
+of these are there for backwards compatibility reasons and advanced
+usage for complex tools.
+
+Here are the main ones to use and why you may want to use them which
+essentially depends on how you want to handle errors and exit codes
+in your tool function.
+
+{ul
+{- {!Cmdliner.Cmd.val-eval}. This forces your tool function to return [()].
+   The evaluation function always returns an exit code of [0] unless a
+   command line parsing error occurs.}
+{- {!Cmdliner.Cmd.eval'}. {b Recommended}. This forces your tool function to
+   return an exit code [exit] which is returned by the evaluation function
+   unless a command line parsing error occurs. This is the recommended
+   function to use as it forces you to think about how to report errors and
+   design useful exit codes for users.}
+{- {!Cmdliner.Cmd.eval_result} is akin to {!Cmdliner.Cmd.val-eval} except
+   it forces your function to return either [Ok ()] or [Error msg].
+   The evaluation function returns with exit code [0] unless [Error msg] is
+   computed in which case [msg] is printed on the error stream prefixed by the
+   executable name and the evaluation function returns with
+   exit code {!Cmdliner.Cmd.Exit.some_error}.}
+{- {!Cmdliner.Cmd.eval_result'} is akin to {!Cmdliner.Cmd.eval_result}, except
+   the [Ok] case carries an exit code which is returned by the evaluation
+   function.}}
+
+{2:cmds_howto_complete How can my tool support command line completion?}
+
+The command line interface manual has all
+{{!page-cli.cli_completion}the details} and
+{{!page-cli.install_tool_completion} specific instructions} for
+complementing your tool install. See also {!tip_tool_support}.
+
+{2:cmds_listing How can I list all the commands of my tool?}
+
+In a shell the invocation [cmdliner tool-commands $TOOL] lists every
+command of the tool $TOOL.
+
+{2:cmds_errmsg_styling How can I suppress error message styling?}
+
+Since Cmdliner 2.0, error message printed on [stderr] use styled text
+with ANSI escapes. Styled text is disabled if one of the conditions
+mentioned {{!page-cli.error_message_styling}here} is met.
+
+If you want to be more aggressive in suppressing them you can use the
+[err] formatter argument of {{!Cmdliner.Cmd.section-eval}command
+evaluation} functions with a suitable formatter on which a function
+like
+{{:https://erratique.ch/software/more/doc/More/Fmt/index.html#val-strip_styles}
+this one} has been applied that automatically strips the styling.
+
+{1:manpage Manpages}
+
+{2:manpage_hide How do I prevent an item from being automatically listed?}
+
+In general it's not a good idea to hide stuff from your users but in
+case an item needs to be hidden you can use the special
+{!Cmdliner.Manpage.s_none} section name. This ensures the item does
+not get listed in any section.
+
+{[
+let secret = Arg.(value & flag & info ["super-secret"] ~docs:Manpage.s_none)
+]}
+
+{2:manpage_synopsis How can I write a better command synopsis section?}
+
+Define the {!Cmdliner.Manpage.s_synopsis} section in the manpage of
+your command. It takes over the one generated by Cmdliner. For example:
+
+{[
+let man = [
+ `S Manpage.s_synopsis;
+ `P "$(cmd) $(b,--) $(i,TOOL) [$(i,ARG)]…"; `Noblank;
+ `P "$(cmd) $(i,COMMAND) …";
+ `S Manpage.s_description;
+ `P "Without a command $(cmd) invokes $(i,TOOL)"; ]
+]}
+
+{2:manpage_install How can I install all the manpages of my tool?}
+
+The command line interface manual
+{{!page-cli.install_tool_manpages}the details} on how to install the manpages
+of your tool and its subcommands. See also {!tip_tool_support}.
+
+{1:blueprints Blueprints}
+
+These blueprints when copied to a [src.ml] file can be compiled and run with:
+
+{@sh[
+ocamlfind ocamlopt -package cmdliner -linkgpkg src.ml
+./a.out --help
+]}
+
+More concrete examples can be found on the {{!page-examples}examples page}
+and the {{!page-tutorial}tutorial} may help too.
+
+These examples follow a conventional {!tip_src_structure}.
+
+{2:blueprint_min Minimal}
+
+A minimal example.
+
+{@ocaml name=blueprint_min.ml[
+let tool () = Cmdliner.Cmd.Exit.ok
+
+open Cmdliner
+open Cmdliner.Term.Syntax
+
+let cmd =
+  Cmd.make (Cmd.info "TODO" ~version:"v2.0.0") @@
+  let+ unit = Term.const () in
+  tool unit
+
+let main () = Cmd.eval' cmd
+let () = if !Sys.interactive then () else exit (main ())
+]}
+
+{2:blueprint_tool A simple tool}
+
+This is a tool that has a flag, an optional positional argument for
+specifying an input file. It also responds to the [--version] option.
+
+{@ocaml name=blueprint_tool.ml[
+let exit_todo = 1
+let tool ~flag ~infile = exit_todo
+
+open Cmdliner
+open Cmdliner.Term.Syntax
+
+let flag = Arg.(value & flag & info ["flag"] ~doc:"The flag")
+let infile =
+  let doc = "$(docv) is the input file. Use $(b,-) for $(b,stdin)." in
+  Arg.(value & pos 0 string "-" & info [] ~doc ~docv:"FILE")
+
+let cmd =
+  let doc = "The tool synopsis is TODO" in
+  let man = [
+    `S Manpage.s_description;
+    `P "$(cmd) does TODO" ]
+  in
+  let exits =
+    Cmd.Exit.info exit_todo ~doc:"When there is stuff todo" ::
+    Cmd.Exit.defaults
+  in
+  Cmd.make (Cmd.info "TODO" ~version:"v2.0.0" ~doc ~man ~exits) @@
+  let+ flag and+ infile in
+  tool ~flag ~infile
+
+let main () = Cmd.eval' cmd
+let () = if !Sys.interactive then () else exit (main ())
+]}
+
+{2:blueprint_cmds A tool with subcommands}
+
+This is a tool with two subcommands [hey] and [ho]. If your tools
+grows many subcommands you may want to follow these
+{{!tip_src_structure}source code conventions}.
+
+{@ocaml name=blueprint_cmds.ml[
+let hey () = Cmdliner.Cmd.Exit.ok
+let ho () = Cmdliner.Cmd.Exit.ok
+
+open Cmdliner
+open Cmdliner.Term.Syntax
+
+let flag = Arg.(value & flag & info ["flag"] ~doc:"The flag")
+let infile =
+  let doc = "$(docv) is the input file. Use $(b,-) for $(b,stdin)." in
+  Arg.(value & pos 0 file "-" & info [] ~doc ~docv:"FILE")
+
+let hey_cmd =
+  let doc = "The hey command synopsis is TODO" in
+  Cmd.make (Cmd.info "hey" ~doc) @@
+  let+ unit = Term.const () in
+  ho ()
+
+let ho_cmd =
+  let doc = "The ho command synopsis is TODO" in
+  Cmd.make (Cmd.info "ho" ~doc) @@
+  let+ unit = Term.const () in
+  ho unit
+
+let cmd =
+  let doc = "The tool synopsis is TODO" in
+  Cmd.group (Cmd.info "TODO" ~version:"v2.0.0" ~doc) @@
+  [hey_cmd; ho_cmd]
+
+let main () = Cmd.eval' cmd
+let () = if !Sys.interactive then () else exit (main ())
+]}
