@@ -8,4 +8,10 @@ let set_mutex ~lock ~unlock : unit =
 
 let[@inline] with_lock f =
   !lock_ ();
-  Fun.protect ~finally:!unlock_ f
+  match f () with
+  | x ->
+    !unlock_ ();
+    x
+  | exception e ->
+    !unlock_ ();
+    Printexc.raise_with_backtrace e (Printexc.get_raw_backtrace ())

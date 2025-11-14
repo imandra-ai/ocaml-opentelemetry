@@ -7,6 +7,19 @@ type 'a t = {
 
 exception Closed
 
+(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08 *)
+(* cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
+let[@inline never] protect m f =
+  Mutex.lock m;
+  match f () with
+  | x ->
+    Mutex.unlock m;
+    x
+  | exception e ->
+    (* NOTE: [unlock] does not poll for asynchronous exceptions *)
+    Mutex.unlock m;
+    Printexc.raise_with_backtrace e (Printexc.get_raw_backtrace ())
+
 let create () : _ t =
   {
     mutex = Mutex.create ();
@@ -16,54 +29,42 @@ let create () : _ t =
   }
 
 let close (self : _ t) =
-  Mutex.lock self.mutex;
+  protect self.mutex @@ fun () ->
   if not self.closed then (
     self.closed <- true;
     Condition.broadcast self.cond (* awake waiters so they fail  *)
-  );
-  Mutex.unlock self.mutex
+  )
 
 let push (self : _ t) x : unit =
-  Mutex.lock self.mutex;
-  if self.closed then (
-    Mutex.unlock self.mutex;
+  protect self.mutex @@ fun () ->
+  if self.closed then
     raise Closed
-  ) else (
+  else (
     Queue.push x self.q;
-    Condition.signal self.cond;
-    Mutex.unlock self.mutex
+    Condition.signal self.cond
   )
 
 let pop (self : 'a t) : 'a =
-  Mutex.lock self.mutex;
   let rec loop () =
-    if self.closed then (
-      Mutex.unlock self.mutex;
+    if self.closed then
       raise Closed
-    ) else if Queue.is_empty self.q then (
+    else if Queue.is_empty self.q then (
       Condition.wait self.cond self.mutex;
       (loop [@tailcall]) ()
     ) else (
       let x = Queue.pop self.q in
-      Mutex.unlock self.mutex;
       x
     )
   in
-  loop ()
+  protect self.mutex loop
 
 let pop_all (self : 'a t) into : unit =
-  Mutex.lock self.mutex;
   let rec loop () =
     if Queue.is_empty self.q then (
-      if self.closed then (
-        Mutex.unlock self.mutex;
-        raise Closed
-      );
+      if self.closed then raise Closed;
       Condition.wait self.cond self.mutex;
       (loop [@tailcall]) ()
-    ) else (
-      Queue.transfer self.q into;
-      Mutex.unlock self.mutex
-    )
+    ) else
+      Queue.transfer self.q into
   in
-  loop ()
+  protect self.mutex loop
