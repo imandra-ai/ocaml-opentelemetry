@@ -17,6 +17,10 @@ module AList = AList
 (** Atomic list, for internal usage
     @since 0.7 *)
 
+module Util_mutex = Util_mutex
+(** Utilities for internal usage.
+    @since NEXT_RELEASE *)
+
 (** {2 Wire format} *)
 
 module Proto = Opentelemetry_proto

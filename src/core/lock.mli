@@ -1,3 +1,5 @@
+(** A global lock, modifiable by the user *)
+
 val set_mutex : lock:(unit -> unit) -> unlock:(unit -> unit) -> unit
 (** Set a pair of lock/unlock functions that are used to protect access to
     global state, if needed. By default these do nothing. *)

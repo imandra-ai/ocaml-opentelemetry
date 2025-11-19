@@ -1,3 +1,5 @@
+module Otel = Opentelemetry
+
 type 'a t = {
   mutable size: int;
   mutable q: 'a list;
@@ -8,19 +10,6 @@ type 'a t = {
   mutable start: Mtime.t;
   mutex: Mutex.t;
 }
-
-(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08 *)
-(* cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
-let[@inline never] protect_mutex m f =
-  Mutex.lock m;
-  match f () with
-  | x ->
-    Mutex.unlock m;
-    x
-  | exception e ->
-    (* NOTE: [unlock] does not poll for asynchronous exceptions *)
-    Mutex.unlock m;
-    Printexc.raise_with_backtrace e (Printexc.get_raw_backtrace ())
 
 let default_high_watermark batch_size =
   if batch_size = 1 then
@@ -58,7 +47,7 @@ let ready_to_pop ~force ~now self =
 
 let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
   let rev_batch_opt =
-    protect_mutex self.mutex @@ fun () ->
+    Otel.Util_mutex.protect self.mutex @@ fun () ->
     if ready_to_pop ~force ~now self then (
       assert (self.q <> []);
       let batch = self.q in
@@ -83,7 +72,7 @@ let rec push_unprotected (self : _ t) ~(elems : _ list) : unit =
     push_unprotected self ~elems:xs
 
 let push (self : _ t) elems : [ `Dropped | `Ok ] =
-  protect_mutex self.mutex @@ fun () ->
+  Otel.Util_mutex.protect self.mutex @@ fun () ->
   if self.size >= self.high_watermark then
     (* drop this to prevent queue from growing too fast *)
     `Dropped
