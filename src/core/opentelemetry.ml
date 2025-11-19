@@ -673,7 +673,7 @@ open struct
   let _conv_key_value (k, v) =
     let open Proto.Common in
     let value = _conv_value v in
-    default_key_value ~key:k ~value ()
+    make_key_value ~key:k ?value ()
 end
 
 (** {2 Global settings} *)
@@ -695,9 +695,8 @@ module Globals = struct
       @since 0.12 *)
   let service_version = ref None
 
-  let instrumentation_library =
-    default_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel"
-      ()
+  let instrumentation_library : instrumentation_scope =
+    make_instrumentation_scope ~version:"%%VERSION_NUM%%" ~name:"ocaml-otel" ()
 
   (** Global attributes, initially set via OTEL_RESOURCE_ATTRIBUTES and
       modifiable by the user code. They will be attached to each outgoing
@@ -705,7 +704,7 @@ module Globals = struct
   let global_attributes : key_value list ref =
     let parse_pair s =
       match String.split_on_char '=' s with
-      | [ a; b ] -> default_key_value ~key:a ~value:(Some (String_value b)) ()
+      | [ a; b ] -> make_key_value ~key:a ~value:(String_value b) ()
       | _ -> failwith (Printf.sprintf "invalid attribute: %S" s)
     in
     ref
@@ -734,32 +733,32 @@ module Globals = struct
   let mk_attributes ?(service_name = !service_name) ?(attrs = []) () : _ list =
     let l = List.map _conv_key_value attrs in
     let l =
-      default_key_value ~key:Conventions.Attributes.Service.name
-        ~value:(Some (String_value service_name)) ()
+      make_key_value ~key:Conventions.Attributes.Service.name
+        ~value:(String_value service_name) ()
       :: l
     in
     let l =
       match !service_instance_id with
       | None -> l
       | Some v ->
-        default_key_value ~key:Conventions.Attributes.Service.instance_id
-          ~value:(Some (String_value v)) ()
+        make_key_value ~key:Conventions.Attributes.Service.instance_id
+          ~value:(String_value v) ()
         :: l
     in
     let l =
       match !service_namespace with
       | None -> l
       | Some v ->
-        default_key_value ~key:Conventions.Attributes.Service.namespace
-          ~value:(Some (String_value v)) ()
+        make_key_value ~key:Conventions.Attributes.Service.namespace
+          ~value:(String_value v) ()
         :: l
     in
     let l =
       match !service_version with
       | None -> l
       | Some v ->
-        default_key_value ~key:Conventions.Attributes.Service.version
-          ~value:(Some (String_value v)) ()
+        make_key_value ~key:Conventions.Attributes.Service.version
+          ~value:(String_value v) ()
         :: l
     in
     l |> merge_global_attributes_
@@ -786,7 +785,7 @@ end = struct
   let make ?(time_unix_nano = Timestamp_ns.now_unix_ns ()) ?(attrs = [])
       (name : string) : t =
     let attrs = List.map _conv_key_value attrs in
-    default_span_event ~time_unix_nano ~name ~attributes:attrs ()
+    make_span_event ~time_unix_nano ~name ~attributes:attrs ()
 end
 
 (** Span Link
@@ -826,7 +825,7 @@ end = struct
     let dropped_attributes_count =
       Option.map Int32.of_int dropped_attributes_count
     in
-    default_span_link
+    make_span_link
       ~trace_id:(Trace_id.to_bytes trace_id)
       ~span_id:(Span_id.to_bytes span_id) ?trace_state ~attributes
       ?dropped_attributes_count ()
@@ -840,9 +839,10 @@ end
 module Span_status : sig
   open Proto.Trace
 
-  type t = status = {
-    message: string;
-    code: status_status_code;
+  type t = status = private {
+    mutable _presence: Pbrt.Bitfield.t;
+    mutable message: string;
+    mutable code: status_status_code;
   }
 
   type code = status_status_code =
@@ -854,9 +854,10 @@ module Span_status : sig
 end = struct
   open Proto.Trace
 
-  type t = status = {
-    message: string;
-    code: status_status_code;
+  type t = status = private {
+    mutable _presence: Pbrt.Bitfield.t;
+    mutable message: string;
+    mutable code: status_status_code;
   }
 
   type code = status_status_code =
@@ -864,7 +865,7 @@ end = struct
     | Status_code_ok
     | Status_code_error
 
-  let make ~message ~code = { message; code }
+  let[@inline] make ~message ~code : t = make_status ~message ~code ()
 end
 
 (** @since 0.11 *)
@@ -1199,8 +1200,8 @@ end = struct
     let parent_span_id = Option.map Span_id.to_bytes parent in
     let attributes = List.map _conv_key_value attrs in
     let span =
-      default_span ~trace_id ?parent_span_id ~span_id:(Span_id.to_bytes id)
-        ~attributes ~events ?trace_state ~status ~kind ~name ~links
+      make_span ~trace_id ?parent_span_id ~span_id:(Span_id.to_bytes id)
+        ~attributes ~events ?trace_state ?status ~kind ~name ~links
         ~start_time_unix_nano:start_time ~end_time_unix_nano:end_time ()
     in
     span, id
@@ -1216,14 +1217,13 @@ module Trace = struct
 
   type span = Span.t
 
-  let make_resource_spans ?service_name ?attrs spans =
+  let make_resource_spans ?service_name ?attrs spans : resource_spans =
     let ils =
-      default_scope_spans ~scope:(Some Globals.instrumentation_library) ~spans
-        ()
+      make_scope_spans ~scope:Globals.instrumentation_library ~spans ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource = Proto.Resource.default_resource ~attributes () in
-    default_resource_spans ~resource:(Some resource) ~scope_spans:[ ils ] ()
+    let resource = Proto.Resource.make_resource ~attributes () in
+    make_resource_spans ~resource ~scope_spans:[ ils ] ()
 
   (** Sync emitter.
 
@@ -1290,7 +1290,7 @@ module Trace = struct
           | Error (e, bt) ->
             Scope.record_exception scope e bt;
             Some
-              (default_status ~code:Status_code_error
+              (make_status ~code:Status_code_error
                  ~message:(Printexc.to_string e) ()))
       in
       let span, _ =
@@ -1371,23 +1371,22 @@ module Metrics = struct
       ?(now = Timestamp_ns.now_unix_ns ()) ?(attrs = []) (d : float) :
       number_data_point =
     let attributes = attrs |> List.map _conv_key_value in
-    default_number_data_point ~start_time_unix_nano ~time_unix_nano:now
-      ~attributes ~value:(As_double d) ()
+    make_number_data_point ~start_time_unix_nano ~time_unix_nano:now ~attributes
+      ~value:(As_double d) ()
 
   (** Number data point, as an int *)
   let int ?(start_time_unix_nano = _program_start)
       ?(now = Timestamp_ns.now_unix_ns ()) ?(attrs = []) (i : int) :
       number_data_point =
     let attributes = attrs |> List.map _conv_key_value in
-    default_number_data_point ~start_time_unix_nano ~time_unix_nano:now
-      ~attributes
+    make_number_data_point ~start_time_unix_nano ~time_unix_nano:now ~attributes
       ~value:(As_int (Int64.of_int i))
       ()
 
   (** Aggregation of a scalar metric, always with the current value *)
   let gauge ~name ?description ?unit_ (l : number_data_point list) : t =
-    let data = Gauge (default_gauge ~data_points:l ()) in
-    default_metric ~name ?description ?unit_ ~data ()
+    let data = Gauge (make_gauge ~data_points:l ()) in
+    make_metric ~name ?description ?unit_ ~data ()
 
   type aggregation_temporality = Metrics.aggregation_temporality =
     | Aggregation_temporality_unspecified
@@ -1399,9 +1398,9 @@ module Metrics = struct
       ?(aggregation_temporality = Aggregation_temporality_cumulative)
       ?is_monotonic (l : number_data_point list) : t =
     let data =
-      Sum (default_sum ~data_points:l ?is_monotonic ~aggregation_temporality ())
+      Sum (make_sum ~data_points:l ?is_monotonic ~aggregation_temporality ())
     in
-    default_metric ~name ?description ?unit_ ~data ()
+    make_metric ~name ?description ?unit_ ~data ()
 
   (** Histogram data
       @param count number of values in population (non negative)
@@ -1416,15 +1415,15 @@ module Metrics = struct
       ?(explicit_bounds = []) ?sum ~bucket_counts ~count () :
       histogram_data_point =
     let attributes = attrs |> List.map _conv_key_value in
-    default_histogram_data_point ~start_time_unix_nano ~time_unix_nano:now
+    make_histogram_data_point ~start_time_unix_nano ~time_unix_nano:now
       ~attributes ~exemplars ~bucket_counts ~explicit_bounds ~count ?sum ()
 
   let histogram ~name ?description ?unit_ ?aggregation_temporality
       (l : histogram_data_point list) : t =
     let data =
-      Histogram (default_histogram ~data_points:l ?aggregation_temporality ())
+      Histogram (make_histogram ~data_points:l ?aggregation_temporality ())
     in
-    default_metric ~name ?description ?unit_ ~data ()
+    make_metric ~name ?description ?unit_ ~data ()
 
   (* TODO: exponential history *)
   (* TODO: summary *)
@@ -1434,12 +1433,11 @@ module Metrics = struct
   let make_resource_metrics ?service_name ?attrs (l : t list) : resource_metrics
       =
     let lm =
-      default_scope_metrics ~scope:(Some Globals.instrumentation_library)
-        ~metrics:l ()
+      make_scope_metrics ~scope:Globals.instrumentation_library ~metrics:l ()
     in
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource = Proto.Resource.default_resource ~attributes () in
-    default_resource_metrics ~scope_metrics:[ lm ] ~resource:(Some resource) ()
+    let resource = Proto.Resource.make_resource ~attributes () in
+    make_resource_metrics ~scope_metrics:[ lm ] ~resource ()
 
   (** Emit some metrics to the collector (sync). This blocks until the backend
       has pushed the metrics into some internal queue, or discarded them.
@@ -1543,9 +1541,9 @@ module Logs = struct
     let trace_id = Option.map Trace_id.to_bytes trace_id in
     let span_id = Option.map Span_id.to_bytes span_id in
     let body = _conv_value body in
-    default_log_record ~time_unix_nano ~observed_time_unix_nano
+    make_log_record ~time_unix_nano ~observed_time_unix_nano
       ?severity_number:severity ?severity_text:log_level ?flags ?trace_id
-      ?span_id ~body ()
+      ?span_id ?body ()
 
   (** Make a log entry whose body is a string *)
   let make_str ?time ?observed_time_unix_nano ?severity ?log_level ?flags
@@ -1569,14 +1567,11 @@ module Logs = struct
       cause deadlocks. *)
   let emit ?service_name ?attrs (l : t list) : unit =
     let attributes = Globals.mk_attributes ?service_name ?attrs () in
-    let resource = Proto.Resource.default_resource ~attributes () in
+    let resource = Proto.Resource.make_resource ~attributes () in
     let ll =
-      default_scope_logs ~scope:(Some Globals.instrumentation_library)
-        ~log_records:l ()
+      make_scope_logs ~scope:Globals.instrumentation_library ~log_records:l ()
     in
-    let rl =
-      default_resource_logs ~resource:(Some resource) ~scope_logs:[ ll ] ()
-    in
+    let rl = make_resource_logs ~resource ~scope_logs:[ ll ] () in
     Collector.send_logs [ rl ] ~ret:ignore
 end
 

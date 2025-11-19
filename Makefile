@@ -11,7 +11,7 @@ clean:
 	@dune clean
 
 protoc-gen:
-	FORCE_GENPROTO=true @dune build @lint
+	FORCE_GENPROTO=true dune build @lint
 
 format:
 	@dune build @fmt --auto-promote

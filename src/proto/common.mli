@@ -16,91 +16,160 @@ type any_value =
   | Kvlist_value of key_value_list
   | Bytes_value of bytes
 
-and array_value = {
-  values : any_value list;
+and array_value = private {
+  mutable values : any_value list;
 }
 
-and key_value_list = {
-  values : key_value list;
+and key_value_list = private {
+  mutable values : key_value list;
 }
 
-and key_value = {
-  key : string;
-  value : any_value option;
+and key_value = private {
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 1 fields *)
+  mutable key : string;
+  mutable value : any_value option;
 }
 
-type instrumentation_scope = {
-  name : string;
-  version : string;
-  attributes : key_value list;
-  dropped_attributes_count : int32;
+type instrumentation_scope = private {
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 3 fields *)
+  mutable name : string;
+  mutable version : string;
+  mutable attributes : key_value list;
+  mutable dropped_attributes_count : int32;
+}
+
+type entity_ref = private {
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
+  mutable schema_url : string;
+  mutable type_ : string;
+  mutable id_keys : string list;
+  mutable description_keys : string list;
 }
 
 
 (** {2 Basic values} *)
 
 val default_any_value : unit -> any_value
-(** [default_any_value ()] is the default value for type [any_value] *)
+(** [default_any_value ()] is a new empty value for type [any_value] *)
 
-val default_array_value : 
+val default_array_value : unit -> array_value 
+(** [default_array_value ()] is a new empty value for type [array_value] *)
+
+val default_key_value_list : unit -> key_value_list 
+(** [default_key_value_list ()] is a new empty value for type [key_value_list] *)
+
+val default_key_value : unit -> key_value 
+(** [default_key_value ()] is a new empty value for type [key_value] *)
+
+val default_instrumentation_scope : unit -> instrumentation_scope 
+(** [default_instrumentation_scope ()] is a new empty value for type [instrumentation_scope] *)
+
+val default_entity_ref : unit -> entity_ref 
+(** [default_entity_ref ()] is a new empty value for type [entity_ref] *)
+
+
+(** {2 Make functions} *)
+
+val make_array_value : 
   ?values:any_value list ->
   unit ->
   array_value
-(** [default_array_value ()] is the default value for type [array_value] *)
+(** [make_array_value … ()] is a builder for type [array_value] *)
 
-val default_key_value_list : 
+val copy_array_value : array_value -> array_value
+
+val array_value_set_values : array_value -> any_value list -> unit
+  (** set field values in array_value *)
+
+val make_key_value_list : 
   ?values:key_value list ->
   unit ->
   key_value_list
-(** [default_key_value_list ()] is the default value for type [key_value_list] *)
+(** [make_key_value_list … ()] is a builder for type [key_value_list] *)
 
-val default_key_value : 
+val copy_key_value_list : key_value_list -> key_value_list
+
+val key_value_list_set_values : key_value_list -> key_value list -> unit
+  (** set field values in key_value_list *)
+
+val make_key_value : 
   ?key:string ->
-  ?value:any_value option ->
+  ?value:any_value ->
   unit ->
   key_value
-(** [default_key_value ()] is the default value for type [key_value] *)
+(** [make_key_value … ()] is a builder for type [key_value] *)
 
-val default_instrumentation_scope : 
+val copy_key_value : key_value -> key_value
+
+val key_value_has_key : key_value -> bool
+  (** presence of field "key" in [key_value] *)
+
+val key_value_set_key : key_value -> string -> unit
+  (** set field key in key_value *)
+
+val key_value_set_value : key_value -> any_value -> unit
+  (** set field value in key_value *)
+
+val make_instrumentation_scope : 
   ?name:string ->
   ?version:string ->
   ?attributes:key_value list ->
   ?dropped_attributes_count:int32 ->
   unit ->
   instrumentation_scope
-(** [default_instrumentation_scope ()] is the default value for type [instrumentation_scope] *)
-
-
-(** {2 Make functions} *)
-
-
-val make_array_value : 
-  values:any_value list ->
-  unit ->
-  array_value
-(** [make_array_value … ()] is a builder for type [array_value] *)
-
-val make_key_value_list : 
-  values:key_value list ->
-  unit ->
-  key_value_list
-(** [make_key_value_list … ()] is a builder for type [key_value_list] *)
-
-val make_key_value : 
-  key:string ->
-  ?value:any_value option ->
-  unit ->
-  key_value
-(** [make_key_value … ()] is a builder for type [key_value] *)
-
-val make_instrumentation_scope : 
-  name:string ->
-  version:string ->
-  attributes:key_value list ->
-  dropped_attributes_count:int32 ->
-  unit ->
-  instrumentation_scope
 (** [make_instrumentation_scope … ()] is a builder for type [instrumentation_scope] *)
+
+val copy_instrumentation_scope : instrumentation_scope -> instrumentation_scope
+
+val instrumentation_scope_has_name : instrumentation_scope -> bool
+  (** presence of field "name" in [instrumentation_scope] *)
+
+val instrumentation_scope_set_name : instrumentation_scope -> string -> unit
+  (** set field name in instrumentation_scope *)
+
+val instrumentation_scope_has_version : instrumentation_scope -> bool
+  (** presence of field "version" in [instrumentation_scope] *)
+
+val instrumentation_scope_set_version : instrumentation_scope -> string -> unit
+  (** set field version in instrumentation_scope *)
+
+val instrumentation_scope_set_attributes : instrumentation_scope -> key_value list -> unit
+  (** set field attributes in instrumentation_scope *)
+
+val instrumentation_scope_has_dropped_attributes_count : instrumentation_scope -> bool
+  (** presence of field "dropped_attributes_count" in [instrumentation_scope] *)
+
+val instrumentation_scope_set_dropped_attributes_count : instrumentation_scope -> int32 -> unit
+  (** set field dropped_attributes_count in instrumentation_scope *)
+
+val make_entity_ref : 
+  ?schema_url:string ->
+  ?type_:string ->
+  ?id_keys:string list ->
+  ?description_keys:string list ->
+  unit ->
+  entity_ref
+(** [make_entity_ref … ()] is a builder for type [entity_ref] *)
+
+val copy_entity_ref : entity_ref -> entity_ref
+
+val entity_ref_has_schema_url : entity_ref -> bool
+  (** presence of field "schema_url" in [entity_ref] *)
+
+val entity_ref_set_schema_url : entity_ref -> string -> unit
+  (** set field schema_url in entity_ref *)
+
+val entity_ref_has_type_ : entity_ref -> bool
+  (** presence of field "type_" in [entity_ref] *)
+
+val entity_ref_set_type_ : entity_ref -> string -> unit
+  (** set field type_ in entity_ref *)
+
+val entity_ref_set_id_keys : entity_ref -> string list -> unit
+  (** set field id_keys in entity_ref *)
+
+val entity_ref_set_description_keys : entity_ref -> string list -> unit
+  (** set field description_keys in entity_ref *)
 
 
 (** {2 Formatters} *)
@@ -120,6 +189,9 @@ val pp_key_value : Format.formatter -> key_value -> unit
 val pp_instrumentation_scope : Format.formatter -> instrumentation_scope -> unit 
 (** [pp_instrumentation_scope v] formats v *)
 
+val pp_entity_ref : Format.formatter -> entity_ref -> unit 
+(** [pp_entity_ref v] formats v *)
+
 
 (** {2 Protobuf Encoding} *)
 
@@ -138,6 +210,9 @@ val encode_pb_key_value : key_value -> Pbrt.Encoder.t -> unit
 val encode_pb_instrumentation_scope : instrumentation_scope -> Pbrt.Encoder.t -> unit
 (** [encode_pb_instrumentation_scope v encoder] encodes [v] with the given [encoder] *)
 
+val encode_pb_entity_ref : entity_ref -> Pbrt.Encoder.t -> unit
+(** [encode_pb_entity_ref v encoder] encodes [v] with the given [encoder] *)
+
 
 (** {2 Protobuf Decoding} *)
 
@@ -155,3 +230,6 @@ val decode_pb_key_value : Pbrt.Decoder.t -> key_value
 
 val decode_pb_instrumentation_scope : Pbrt.Decoder.t -> instrumentation_scope
 (** [decode_pb_instrumentation_scope decoder] decodes a [instrumentation_scope] binary value from [decoder] *)
+
+val decode_pb_entity_ref : Pbrt.Decoder.t -> entity_ref
+(** [decode_pb_entity_ref decoder] decodes a [entity_ref] binary value from [decoder] *)

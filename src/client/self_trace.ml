@@ -1,6 +1,6 @@
 module OT = Opentelemetry
 
-let enabled = Atomic.make true
+let enabled = Atomic.make false
 
 let add_event (scope : OT.Scope.t) ev = OT.Scope.add_event scope (fun () -> ev)
 
