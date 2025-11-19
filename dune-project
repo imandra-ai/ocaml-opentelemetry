@@ -91,6 +91,26 @@
  (synopsis "Collector client for opentelemetry, using http + ezcurl"))
 
 (package
+ (name opentelemetry-client-ocurl-lwt)
+ (depends
+  (ocaml
+   (>= "4.08"))
+  (mtime
+   (>= "1.4"))
+  (opentelemetry
+   (= :version))
+  (odoc :with-doc)
+  (ezcurl-lwt
+   (>= 0.2.3))
+  ocurl
+  (lwt
+   (>= "5.3"))
+  (lwt_ppx
+   (>= "2.0"))
+  (alcotest :with-test))
+ (synopsis "Collector client for opentelemetry, using ezcurl-lwt"))
+
+(package
  (name opentelemetry-logs)
  (depends
   (ocaml
