@@ -9,11 +9,18 @@ type 'a t = {
   mutex: Mutex.t;
 }
 
-(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08.
-   cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
+(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08 *)
+(* cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
 let[@inline never] protect_mutex m f =
   Mutex.lock m;
-  Fun.protect f ~finally:(fun () -> Mutex.unlock m)
+  match f () with
+  | x ->
+    Mutex.unlock m;
+    x
+  | exception e ->
+    (* NOTE: [unlock] does not poll for asynchronous exceptions *)
+    Mutex.unlock m;
+    Printexc.raise_with_backtrace e (Printexc.get_raw_backtrace ())
 
 let default_high_watermark batch_size =
   if batch_size = 1 then
