@@ -152,7 +152,7 @@ let chorus_cmd =
     `S Manpage.s_bugs;
     `P "Email bug reports to <bugs@example.org>." ]
   in
-  Cmd.make (Cmd.info "chorus" ~version:"v2.0.0" ~doc ~man) @@
+  Cmd.make (Cmd.info "chorus" ~version:"v2.1.0" ~doc ~man) @@
   let+ count and+ msg in
   chorus ~count msg
 

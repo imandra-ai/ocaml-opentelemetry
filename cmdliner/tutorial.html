@@ -32,7 +32,7 @@ let count =
     `S Manpage.s_bugs;
     `P &quot;Email bug reports to &lt;bugs@example.org&gt;.&quot; ]
   in
-  Cmd.make (Cmd.info &quot;chorus&quot; ~version:&quot;v2.0.0&quot; ~doc ~man) @@
+  Cmd.make (Cmd.info &quot;chorus&quot; ~version:&quot;v2.1.0&quot; ~doc ~man) @@
   let+ count and+ msg in
   chorus ~count msg
 
