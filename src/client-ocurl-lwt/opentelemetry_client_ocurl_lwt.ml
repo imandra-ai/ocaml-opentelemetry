@@ -117,7 +117,7 @@ end = struct
              \  %s\n\
              \  curl code: %s\n\
              \  url: %s\n\
-              \%!"
+              %!"
              msg (Curl.strerror code) url)
       in
       Lwt.return @@ Error err
