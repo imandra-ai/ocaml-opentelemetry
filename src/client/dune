@@ -7,6 +7,7 @@
   opentelemetry.util
   opentelemetry.emitter
   opentelemetry.proto
+  opentelemetry.domain
   pbrt
   saturn
   mtime
