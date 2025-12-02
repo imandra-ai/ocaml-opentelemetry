@@ -6,3 +6,4 @@
 module Config = Config
 module Signal = Signal
 module Self_trace = Self_trace
+module Gc_metrics_sampling = Gc_metrics_sampling
