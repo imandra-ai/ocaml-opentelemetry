@@ -1,4 +1,7 @@
-(** Atomic list *)
+(** Atomic list.
+
+    Note that we add at the front, so [add x 1; add x 2; pop_all x] will return
+    [2;1]. *)
 
 type 'a t
 

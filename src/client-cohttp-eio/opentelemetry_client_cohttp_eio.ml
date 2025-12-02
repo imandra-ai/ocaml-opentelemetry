@@ -19,54 +19,6 @@ let set_headers = Config.Env.set_headers
 
 let get_headers = Config.Env.get_headers
 
-let needs_gc_metrics = Atomic.make false
-
-let last_gc_metrics = Atomic.make (Mtime_clock.now ())
-
-let timeout_gc_metrics = Mtime.Span.(20 * s)
-
-(* Cross-domain, thread-safe storage for GC metrics gathered from different fibres. *)
-module GC_metrics : sig
-  val add : Proto.Metrics.resource_metrics -> unit
-
-  val drain : unit -> Proto.Metrics.resource_metrics list
-end = struct
-  (* Used to prevent data races across domains *)
-  let mutex = Eio.Mutex.create ()
-
-  let gc_metrics = ref []
-
-  let add m =
-    Eio.Mutex.use_rw ~protect:true mutex (fun () ->
-        gc_metrics := m :: !gc_metrics)
-
-  let drain () =
-    Eio.Mutex.use_rw ~protect:true mutex (fun () ->
-        let metrics = !gc_metrics in
-        gc_metrics := [];
-        metrics)
-end
-
-(* capture current GC metrics if {!needs_gc_metrics} is true,
-   or it has been a long time since the last GC metrics collection,
-   and push them into {!gc_metrics} for later collection *)
-let sample_gc_metrics_if_needed () =
-  let now = Mtime_clock.now () in
-  let alarm = Atomic.compare_and_set needs_gc_metrics true false in
-  let timeout () =
-    let elapsed = Mtime.span now (Atomic.get last_gc_metrics) in
-    Mtime.Span.compare elapsed timeout_gc_metrics > 0
-  in
-  if alarm || timeout () then (
-    Atomic.set last_gc_metrics now;
-    let l =
-      OT.Metrics.make_resource_metrics
-        ~attrs:(Opentelemetry.GC_metrics.get_runtime_attributes ())
-      @@ Opentelemetry.GC_metrics.get_metrics ()
-    in
-    GC_metrics.add l
-  )
-
 type error =
   [ `Status of int * Opentelemetry.Proto.Status.status
   | `Failure of string
@@ -276,7 +228,7 @@ let mk_emitter ~stop ~net (config : Config.t) : (module EMITTER) =
 
     let push_metrics x =
       let@ () = guard_exn_ "push metrics" in
-      sample_gc_metrics_if_needed ();
+      Opentelemetry_client.Gc_metrics_sampling.sample_gc_metrics_if_needed ();
       push_to_batch batch_metrics x
 
     let push_logs x =
@@ -293,7 +245,9 @@ let mk_emitter ~stop ~net (config : Config.t) : (module EMITTER) =
 
     let emit_metrics_maybe =
       maybe_emit batch_metrics config.url_metrics (fun collected_metrics ->
-          let gc_metrics = GC_metrics.drain () in
+          let gc_metrics =
+            Opentelemetry_client.Gc_metrics_sampling.pop_gc_metrics ()
+          in
           gc_metrics @ collected_metrics |> Signal.Encode.metrics)
 
     let emit_logs_maybe =
@@ -330,7 +284,7 @@ let mk_emitter ~stop ~net (config : Config.t) : (module EMITTER) =
       if Config.Env.get_debug () then
         Printf.eprintf "tick (from domain %d)\n%!" (Domain.self () :> int);
       run_tick_callbacks ();
-      sample_gc_metrics_if_needed ();
+      Opentelemetry_client.Gc_metrics_sampling.sample_gc_metrics_if_needed ();
       emit_all ~force:false
 
     let cleanup ~on_done () =
@@ -338,7 +292,7 @@ let mk_emitter ~stop ~net (config : Config.t) : (module EMITTER) =
         Printf.eprintf "opentelemetry: exiting…\n%!";
       Atomic.set stop true;
       run_tick_callbacks ();
-      sample_gc_metrics_if_needed ();
+      Opentelemetry_client.Gc_metrics_sampling.sample_gc_metrics_if_needed ();
       emit_all ~force:true;
       on_done ()
   end in
@@ -370,7 +324,7 @@ module Backend (Emitter : EMITTER) : Opentelemetry.Collector.BACKEND = struct
   let signal_emit_gc_metrics () =
     if Config.Env.get_debug () then
       Printf.eprintf "opentelemetry: emit GC metrics requested\n%!";
-    Atomic.set needs_gc_metrics true
+    Opentelemetry_client.Gc_metrics_sampling.signal_we_need_gc_metrics ()
 
   let additional_metrics () : Metrics.resource_metrics list =
     (* add exporter metrics to the lot? *)

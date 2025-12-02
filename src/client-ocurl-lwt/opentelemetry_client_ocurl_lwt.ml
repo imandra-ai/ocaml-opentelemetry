@@ -18,35 +18,6 @@ external reraise : exn -> 'a = "%reraise"
 (** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to
     use Lwt's latest version *)
 
-let needs_gc_metrics = Atomic.make false
-
-let last_gc_metrics = Atomic.make (Mtime_clock.now ())
-
-let timeout_gc_metrics = Mtime.Span.(20 * s)
-
-let gc_metrics = ref []
-(* side channel for GC, appended to {!E_metrics}'s data *)
-
-(* capture current GC metrics if {!needs_gc_metrics} is true,
-   or it has been a long time since the last GC metrics collection,
-   and push them into {!gc_metrics} for later collection *)
-let sample_gc_metrics_if_needed () =
-  let now = Mtime_clock.now () in
-  let alarm = Atomic.compare_and_set needs_gc_metrics true false in
-  let timeout () =
-    let elapsed = Mtime.span now (Atomic.get last_gc_metrics) in
-    Mtime.Span.compare elapsed timeout_gc_metrics > 0
-  in
-  if alarm || timeout () then (
-    Atomic.set last_gc_metrics now;
-    let l =
-      OT.Metrics.make_resource_metrics
-        ~attrs:(Opentelemetry.GC_metrics.get_runtime_attributes ())
-      @@ Opentelemetry.GC_metrics.get_metrics ()
-    in
-    gc_metrics := l :: !gc_metrics
-  )
-
 type error =
   [ `Status of int * Opentelemetry.Proto.Status.status
   | `Failure of string
@@ -231,8 +202,9 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
       match Batch.pop_if_ready ?force ~now batch_metrics with
       | None -> Lwt.return false
       | Some l ->
-        let batch = !gc_metrics @ l in
-        gc_metrics := [];
+        let batch =
+          Opentelemetry_client.Gc_metrics_sampling.pop_gc_metrics () @ l
+        in
         let+ () = send_metrics_http httpc batch in
         true
 
@@ -301,7 +273,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
 
     let push_metrics e =
       let@ () = guard_exn_ "push metrics" in
-      sample_gc_metrics_if_needed ();
+      Opentelemetry_client.Gc_metrics_sampling.sample_gc_metrics_if_needed ();
       push_to_batch batch_metrics e;
       let now = Mtime_clock.now () in
       Lwt.async (fun () ->
@@ -321,7 +293,7 @@ let mk_emitter ~stop ~(config : Config.t) () : (module EMITTER) =
     let tick_ () =
       if Config.Env.get_debug () then
         Printf.eprintf "tick (from %d)\n%!" (tid ());
-      sample_gc_metrics_if_needed ();
+      Opentelemetry_client.Gc_metrics_sampling.sample_gc_metrics_if_needed ();
       List.iter
         (fun f ->
           try f ()
@@ -384,7 +356,7 @@ module Backend
   let signal_emit_gc_metrics () =
     if Config.Env.get_debug () then
       Printf.eprintf "opentelemetry: emit GC metrics requested\n%!";
-    Atomic.set needs_gc_metrics true
+    Opentelemetry_client.Gc_metrics_sampling.signal_we_need_gc_metrics ()
 
   let additional_metrics () : Metrics.resource_metrics list =
     (* add exporter metrics to the lot? *)

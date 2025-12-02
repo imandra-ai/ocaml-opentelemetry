@@ -5,10 +5,11 @@
  (libraries
   opentelemetry.proto
   opentelemetry.ambient-context
+  opentelemetry.atomic
+  opentelemetry.domain
   ptime
   ptime.clock.os
   pbrt
   threads
-  opentelemetry.atomic
   hmap)
  (public_name opentelemetry))
