@@ -1,7 +1,5 @@
 (** Opentelemetry types and instrumentation *)
 
-open Common_
-
 module Rand_bytes = Rand_bytes
 (** Generation of random identifiers. *)
 
@@ -28,9 +26,6 @@ module Timestamp_ns = Timestamp_ns
 
 module Exporter = Exporter
 module Collector = Exporter [@@deprecated "Use 'Exporter' instead"]
-
-module Tick_callbacks = Tick_callbacks
-(** Helper to implement part of the exporter *)
 
 (** {2 Identifiers} *)
 
@@ -62,10 +57,6 @@ module Event = Event
 module Span_link = Span_link
 module Span_status = Span_status
 module Span_kind = Span_kind
-
-(** {2 Scopes} *)
-
-module Scope = Scope
 
 (** {2 Traces} *)
 

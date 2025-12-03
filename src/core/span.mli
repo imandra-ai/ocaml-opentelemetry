@@ -24,9 +24,30 @@ val id : t -> Span_id.t
 
 type key_value = Key_value.t
 
-val create :
+val make :
   ?kind:kind ->
-  ?id:id ->
+  ?trace_state:string ->
+  ?attrs:key_value list ->
+  ?events:Event.t list ->
+  ?status:status ->
+  trace_id:Trace_id.t ->
+  id:Span_id.t ->
+  ?parent:id ->
+  ?links:Span_link.t list ->
+  start_time:Timestamp_ns.t ->
+  end_time:Timestamp_ns.t ->
+  string ->
+  t
+(** [make ~trace_id ~id name] creates a new span
+    @param trace_id the trace this belongs to
+    @param parent parent span, if any
+    @param links
+      list of links to other spans, each with their trace state (see
+      {{:https://www.w3.org/TR/trace-context/#tracestate-header} w3.org}) *)
+
+val create_new :
+  ?kind:kind ->
+  ?id:Span_id.t ->
   ?trace_state:string ->
   ?attrs:key_value list ->
   ?events:Event.t list ->
@@ -37,10 +58,50 @@ val create :
   start_time:Timestamp_ns.t ->
   end_time:Timestamp_ns.t ->
   string ->
-  t * id
-(** [create ~trace_id name] creates a new span with its unique ID.
-    @param trace_id the trace this belongs to
-    @param parent parent span, if any
-    @param links
-      list of links to other spans, each with their trace state (see
-      {{:https://www.w3.org/TR/trace-context/#tracestate-header} w3.org}) *)
+  t
+
+val attrs : t -> Key_value.t list
+
+val events : t -> Event.t list
+
+val links : t -> Span_link.t list
+
+val status : t -> Span_status.t option
+
+val kind : t -> Span_kind.t option
+
+val to_span_link : t -> Span_link.t
+(** Turn the scope into a span link *)
+
+val to_span_ctx : t -> Span_ctx.t
+(** Turn the scope into a span context *)
+
+val add_event : t -> Event.t -> unit
+
+val add_event' : t -> (unit -> Event.t) -> unit
+(** Add an event to the scope. It will be aggregated into the span.
+
+    Note that this takes a function that produces an event, and will only call
+    it if there is an instrumentation backend. *)
+
+val record_exception : t -> exn -> Printexc.raw_backtrace -> unit
+
+val add_links : t -> Span_link.t list -> unit
+
+val add_links' : t -> (unit -> Span_link.t list) -> unit
+(** Add links to the scope. It will be aggregated into the span.
+
+    Note that this takes a function that produces links, and will only call it
+    if there is an instrumentation backend. *)
+
+val add_attrs : t -> (unit -> Key_value.t list) -> unit
+
+val set_status : t -> Span_status.t -> unit
+(** set the span status.
+
+    Note that this function will be called only if there is an instrumentation
+    backend. *)
+
+val set_kind : t -> Span_kind.t -> unit
+(** Set the span's kind.
+    @since 0.11 *)

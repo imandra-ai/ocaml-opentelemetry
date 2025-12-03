@@ -49,11 +49,11 @@ let simple_main_exporter : t =
 
     {b NOTE} be careful not to call this inside a Gc alarm, as it can cause
     deadlocks. *)
-let emit ?service_name:_ ?attrs:_ (spans : span list) : unit =
+let (emit [@deprecated "use an explicit tracer"]) =
+ fun ?service_name:_ ?attrs:_ (spans : span list) : unit ->
   match Exporter.Main_exporter.get () with
   | None -> ()
   | Some exp -> exp#send_trace spans
-[@@deprecated "use an explicit tracer"]
 
 (* TODO: remove scope, use span directly *)
 type scope = Scope.t = {
@@ -113,11 +113,11 @@ let with_' ?(tracer = simple_main_exporter) ?(force_new_trace_id = false)
             (make_status ~code:Status_code_error ~message:(Printexc.to_string e)
                ()))
     in
-    let span, _ =
+    let span =
       (* TODO: should the attrs passed to with_ go on the Span
            (in Span.create) or on the ResourceSpan (in emit)?
            (question also applies to Opentelemetry_lwt.Trace.with) *)
-      Span.create ?kind ~trace_id ?parent ~links:(Scope.links scope) ~id:span_id
+      Span.make ?kind ~trace_id ?parent ~links:(Scope.links scope) ~id:span_id
         ?trace_state ~attrs:(Scope.attrs scope) ~events:(Scope.events scope)
         ~start_time
         ~end_time:(Timestamp_ns.now_unix_ns ())
