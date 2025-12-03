@@ -13,10 +13,7 @@ val set_headers : (string * string) list -> unit
 module Config = Config
 
 val create_backend :
-  ?stop:bool Atomic.t ->
-  ?config:Config.t ->
-  unit ->
-  (module Opentelemetry.Collector.BACKEND)
+  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
 (** Create a new backend using lwt and ezcurl-lwt *)
 
 val setup :
