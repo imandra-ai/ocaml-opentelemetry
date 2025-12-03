@@ -216,7 +216,7 @@ module type EMITTER = sig
 
   val push_logs : Logs.resource_logs list -> unit
 
-  val set_on_tick_callbacks : (unit -> unit) AList.t -> unit
+  val set_on_tick_callbacks : (unit -> unit) Alist.t -> unit
 
   val tick : unit -> unit
 
@@ -312,7 +312,7 @@ let mk_emitter ~stop ~net (config : Config.t) : (module EMITTER) =
       Fiber.fork ~sw @@ emit_metrics_maybe ~now ~force;
       Fiber.fork ~sw @@ emit_traces_maybe ~now ~force
 
-    let on_tick_cbs_ = Atomic.make (AList.make ())
+    let on_tick_cbs_ = Atomic.make (Alist.make ())
 
     let run_tick_callbacks () =
       List.iter
@@ -321,7 +321,7 @@ let mk_emitter ~stop ~net (config : Config.t) : (module EMITTER) =
           with e ->
             Printf.eprintf "on tick callback raised: %s\n"
               (Printexc.to_string e))
-        (AList.get @@ Atomic.get on_tick_cbs_)
+        (Alist.get @@ Atomic.get on_tick_cbs_)
   end in
   let module M = struct
     let set_on_tick_callbacks = Atomic.set on_tick_cbs_
