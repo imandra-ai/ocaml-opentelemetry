@@ -1,10 +1,10 @@
 open Common_
 
-type t = { cbs: (unit -> Metrics.t list) AList.t } [@@unboxed]
+type t = { cbs: (unit -> Metrics.t list) Alist.t } [@@unboxed]
 
-let create () : t = { cbs = AList.make () }
+let create () : t = { cbs = Alist.make () }
 
-let[@inline] add_metrics_cb (self : t) f = AList.add self.cbs f
+let[@inline] add_metrics_cb (self : t) f = Alist.add self.cbs f
 
 let add_to_exporter (exp : #Exporter.t) (self : t) =
   let on_tick () =
@@ -14,7 +14,7 @@ let add_to_exporter (exp : #Exporter.t) (self : t) =
       (fun f ->
         let f_metrics = f () in
         res := List.rev_append f_metrics !res)
-      (AList.get self.cbs);
+      (Alist.get self.cbs);
     let metrics = !res in
 
     (* emit the metrics *)

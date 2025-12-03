@@ -6,6 +6,8 @@ open struct
   let[@inline] word_to_bytes n = n * bytes_per_word
 
   let[@inline] word_to_bytes_f n = n *. float bytes_per_word
+
+  let default_interval_s = 20
 end
 
 let get_metrics () : Metrics.t list =
@@ -34,16 +36,23 @@ let get_metrics () : Metrics.t list =
       [ int ~now gc.Gc.compactions ];
   ]
 
-let setup (exp : #Exporter.t) =
+let setup ?(min_interval_s = default_interval_s) (exp : #Exporter.t) =
+  (* limit rate *)
+  let min_interval_s = max 5 min_interval_s in
+  let min_interval = Mtime.Span.(min_interval_s * s) in
+  let limiter = Interval_limiter.create ~min_interval () in
+
   let on_tick () =
-    let m = get_metrics () in
-    exp#send_metrics m
+    if Interval_limiter.make_attempt limiter then (
+      let m = get_metrics () in
+      exp#send_metrics m
+    )
   in
   Exporter.on_tick exp on_tick
 
-let setup_on_main_exporter () =
+let setup_on_main_exporter ?min_interval_s () =
   match Exporter.Main_exporter.get () with
   | None -> ()
-  | Some exp -> setup exp
+  | Some exp -> setup ?min_interval_s exp
 
-let basic_setup = setup_on_main_exporter
+let basic_setup () = setup_on_main_exporter ()

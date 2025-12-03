@@ -5,7 +5,7 @@ open Common_
 module Rand_bytes = Rand_bytes
 (** Generation of random identifiers. *)
 
-module AList = AList
+module Alist = Alist
 (** Atomic list, for internal usage
     @since 0.7 *)
 

@@ -39,7 +39,7 @@ end
 
 (** Dummy exporter, does nothing *)
 let dummy : t =
-  let ticker = Tick_callbacks.create () in
+  let tick_cbs = Cb_set.create () in
   object
     method send_trace = ignore
 
@@ -47,9 +47,9 @@ let dummy : t =
 
     method send_logs = ignore
 
-    method tick () = Tick_callbacks.tick ticker
+    method tick () = Cb_set.trigger tick_cbs
 
-    method add_on_tick_callback cb = Tick_callbacks.on_tick ticker cb
+    method add_on_tick_callback cb = Cb_set.register tick_cbs cb
 
     method cleanup ~on_done () = on_done ()
   end
@@ -78,14 +78,15 @@ module Main_exporter = struct
   (* hidden *)
   open struct
     (* a list of callbacks automatically added to the main exporter *)
-    let on_tick_cbs_ = AList.make ()
+    let on_tick_cbs_ = Alist.make ()
 
     let exporter : t option Atomic.t = Atomic.make None
   end
 
   (** Set the global exporter *)
-  let set (exp : t) : unit =
-    List.iter exp#add_on_tick_callback (AList.get on_tick_cbs_);
+  let set (exp : #t) : unit =
+    let exp = (exp :> t) in
+    List.iter exp#add_on_tick_callback (Alist.get on_tick_cbs_);
     Atomic.set exporter (Some exp)
 
   (** Remove current exporter, if any.
@@ -104,25 +105,25 @@ module Main_exporter = struct
   let[@inline] get () : t option = Atomic.get exporter
 
   let add_on_tick_callback f =
-    AList.add on_tick_cbs_ f;
+    Alist.add on_tick_cbs_ f;
     Option.iter (fun exp -> exp#add_on_tick_callback f) (get ())
 end
 
-let set_backend = Main_exporter.set [@@deprecated "use `Main_exporter.set`"]
+let (set_backend [@deprecated "use `Main_exporter.set`"]) = Main_exporter.set
 
-let remove_backend = Main_exporter.remove
-[@@deprecated "use `Main_exporter.remove`"]
+let (remove_backend [@deprecated "use `Main_exporter.remove`"]) =
+  Main_exporter.remove
 
-let has_backend = Main_exporter.present
-[@@deprecated "use `Main_exporter.present`"]
+let (has_backend [@deprecated "use `Main_exporter.present`"]) =
+  Main_exporter.present
 
-let get_backend = Main_exporter.get [@@deprecated "use `Main_exporter.ge"]
+let (get_backend [@deprecated "use `Main_exporter.ge"]) = Main_exporter.get
 
 let with_setup_debug_backend ?(on_done = ignore) (exp : #t) ?(enable = true) ()
     f =
   let exp = (exp :> t) in
   if enable then (
-    set_backend exp;
+    Main_exporter.set exp;
     Fun.protect ~finally:(fun () -> cleanup exp ~on_done) f
   ) else
     f ()
