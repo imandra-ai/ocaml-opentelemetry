@@ -50,57 +50,30 @@ end
 
 open Conv
 
-module Well_known = struct
-  let spankind_key = "otrace.spankind"
-
-  let internal = `String "INTERNAL"
-
-  let server = `String "SERVER"
-
-  let client = `String "CLIENT"
-
-  let producer = `String "PRODUCER"
-
-  let consumer = `String "CONSUMER"
-
-  let spankind_of_string =
-    let open Otel.Span in
-    function
-    | "INTERNAL" -> Span_kind_internal
-    | "SERVER" -> Span_kind_server
-    | "CLIENT" -> Span_kind_client
-    | "PRODUCER" -> Span_kind_producer
-    | "CONSUMER" -> Span_kind_consumer
-    | _ -> Span_kind_unspecified
-
-  let otel_attrs_of_otrace_data data =
-    let kind : Otel.Span.kind ref = ref Otel.Span.Span_kind_unspecified in
-    let data =
-      List.filter_map
-        (function
-          | name, `String v when name = "otrace.spankind" ->
-            kind := spankind_of_string v;
-            None
-          | x -> Some x)
-        data
-    in
-    !kind, data
-
-  (** Key to store an error [Otel.Span.status] with the message. Set
-      ["otrace.error" = "mymsg"] in a span data to set the span's status to
-      [{message="mymsg"; code=Error}]. *)
-  let status_error_key = "otrace.error"
-end
-
-open Well_known
-
 let on_internal_error =
   ref (fun msg -> Printf.eprintf "error in Opentelemetry_trace: %s\n%!" msg)
 
-type Otrace.extension_event +=
-  | Ev_link_span of Otrace.explicit_span * Otrace.explicit_span
-  | Ev_set_span_kind of Otrace.explicit_span * Otel.Span_kind.t
-  | Ev_record_exn of Otrace.explicit_span * exn * Printexc.raw_backtrace
+module Extensions = struct
+  type Otrace.extension_event +=
+    | Ev_link_span of Otrace.explicit_span * Otrace.explicit_span
+    | Ev_record_exn of Otrace.explicit_span * exn * Printexc.raw_backtrace
+    | Ev_set_span_kind of Otrace.explicit_span * Otel.Span_kind.t
+end
+
+open Extensions
+module Span_tbl = Trace_subscriber.Span_tbl
+
+(* TODO: subscriber
+type state = {
+  foo: unit (* TODO: *)
+}
+
+module Callbacks
+*)
+
+let subscriber_of_exporter _ = assert false
+
+let collector_of_exporter _ = assert false
 
 module Internal = struct
   type span_begin = {
@@ -190,7 +163,8 @@ module Internal = struct
       { start_time; name; __FILE__; __LINE__; __FUNCTION__; scope; parent } =
     let open Otel in
     let end_time = Timestamp_ns.now_unix_ns () in
-    let kind, attrs = otel_attrs_of_otrace_data (Scope.attrs scope) in
+    let kind = Scope.kind scope in
+    let attrs = Scope.attrs scope in
 
     let status : Span_status.t =
       match List.assoc_opt Well_known.status_error_key attrs with
