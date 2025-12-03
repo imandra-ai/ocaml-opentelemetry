@@ -37,7 +37,7 @@ let is_logs = function
   | _ -> false
 
 module Encode = struct
-  let resource_to_string ~encoder ~ctor ~enc resource =
+  let resource_to_string ~encoder ~ctor ~enc resource : string =
     let encoder =
       match encoder with
       | Some e ->
@@ -51,26 +51,23 @@ module Encode = struct
     Pbrt.Encoder.to_string encoder
 
   let logs ?encoder resource_logs =
-    resource_logs
-    |> resource_to_string ~encoder
-         ~ctor:(fun r ->
-           Logs_service.make_export_logs_service_request ~resource_logs:r ())
-         ~enc:Logs_service.encode_pb_export_logs_service_request
+    resource_to_string ~encoder resource_logs
+      ~ctor:(fun r ->
+        Logs_service.make_export_logs_service_request ~resource_logs:r ())
+      ~enc:Logs_service.encode_pb_export_logs_service_request
 
   let metrics ?encoder resource_metrics =
-    resource_metrics
-    |> resource_to_string ~encoder
-         ~ctor:(fun r ->
-           Metrics_service.make_export_metrics_service_request
-             ~resource_metrics:r ())
-         ~enc:Metrics_service.encode_pb_export_metrics_service_request
+    resource_to_string ~encoder resource_metrics
+      ~ctor:(fun r ->
+        Metrics_service.make_export_metrics_service_request ~resource_metrics:r
+          ())
+      ~enc:Metrics_service.encode_pb_export_metrics_service_request
 
   let traces ?encoder resource_spans =
-    resource_spans
-    |> resource_to_string ~encoder
-         ~ctor:(fun r ->
-           Trace_service.make_export_trace_service_request ~resource_spans:r ())
-         ~enc:Trace_service.encode_pb_export_trace_service_request
+    resource_to_string ~encoder resource_spans
+      ~ctor:(fun r ->
+        Trace_service.make_export_trace_service_request ~resource_spans:r ())
+      ~enc:Trace_service.encode_pb_export_trace_service_request
 end
 
 module Decode = struct
