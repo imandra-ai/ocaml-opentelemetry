@@ -85,3 +85,5 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
     push_unprotected self ~elems;
     `Ok
   )
+
+let[@inline] push' self elems = ignore (push self elems : [ `Dropped | `Ok ])

@@ -8,9 +8,10 @@ let dummy_trace_id_ = OT.Trace_id.dummy
 
 let dummy_span_id = OT.Span_id.dummy
 
+(* FIXME: get an explicit tracer instead *)
 let with_ ?kind ?attrs name f =
   if Atomic.get enabled then
-    OT.Trace.with_ ?kind ?attrs name f
+    OT.Tracer.with_ ?kind ?attrs name f
   else (
     (* A new scope is needed here because it might be modified *)
     let scope =

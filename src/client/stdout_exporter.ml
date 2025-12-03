@@ -28,10 +28,11 @@ open struct
 end
 
 class stdout : OTEL.Exporter.t =
+  let open Opentelemetry_util in
   let out = Format.std_formatter in
   let mutex = Mutex.create () in
 
-  let ticker = Tick_callbacks.create () in
+  let tick_cbs = Cb_set.create () in
   object
     method send_trace l = pp_vlist mutex pp_span out l
 
@@ -39,9 +40,9 @@ class stdout : OTEL.Exporter.t =
 
     method send_logs l = pp_vlist mutex Proto.Logs.pp_log_record out l
 
-    method tick () = Tick_callbacks.tick ticker
+    method tick () = Cb_set.trigger tick_cbs
 
-    method add_on_tick_callback cb = Tick_callbacks.on_tick ticker cb
+    method add_on_tick_callback cb = Cb_set.register tick_cbs cb
 
     method cleanup ~on_done () = on_done ()
   end

@@ -50,3 +50,6 @@ val push : 'a t -> 'a list -> [ `Dropped | `Ok ]
 (** [push b xs] is [`Ok] if it succeeds in pushing the values in [xs] into the
     batch [b], or [`Dropped] if the current size of the batch has exceeded the
     high water mark determined by the [batch] argument to [{!make}]. ) *)
+
+val push' : 'a t -> 'a list -> unit
+(** Like {!push} but ignores the result *)
