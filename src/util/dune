@@ -1,0 +1,6 @@
+(library
+ (name opentelemetry_util)
+ (public_name opentelemetry.util)
+ (flags :standard -open Opentelemetry_atomic)
+ (libraries opentelemetry.atomic mtime mtime.clock.os)
+ (synopsis "Utilities for opentelemetry"))
