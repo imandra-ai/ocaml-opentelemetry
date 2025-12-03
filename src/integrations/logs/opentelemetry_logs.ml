@@ -11,13 +11,13 @@ module Otel = Opentelemetry
 (* Levels *)
 (*****************************************************************************)
 (* Convert log level to Otel severity *)
-let log_level_to_severity (level : Logs.level) : Otel.Logs.severity =
+let log_level_to_severity (level : Logs.level) : Otel.Log_record.severity =
   match level with
-  | Logs.App -> Otel.Logs.Severity_number_info (* like info, but less severe  *)
-  | Logs.Info -> Otel.Logs.Severity_number_info2
-  | Logs.Error -> Otel.Logs.Severity_number_error
-  | Logs.Warning -> Otel.Logs.Severity_number_warn
-  | Logs.Debug -> Otel.Logs.Severity_number_debug
+  | Logs.App -> Severity_number_info (* like info, but less severe  *)
+  | Logs.Info -> Severity_number_info2
+  | Logs.Error -> Severity_number_error
+  | Logs.Warning -> Severity_number_warn
+  | Logs.Debug -> Severity_number_debug
 
 (*****************************************************************************)
 (* Logs Util *)
@@ -44,9 +44,12 @@ let log ?service_name ?(attrs = []) ?(scope = Otel.Scope.get_ambient_scope ())
     Option.map (fun (scope : Otel.Scope.t) -> scope.trace_id) scope
   in
   let severity = log_level_to_severity level in
-  let log = Otel.Logs.make_str ~severity ~log_level ?trace_id ?span_id msg in
+  let log =
+    Otel.Log_record.make_str ~severity ~log_level ?trace_id ?span_id msg
+  in
   (* Noop if no backend is set *)
-  Otel.Logs.emit ?service_name ~attrs [ log ]
+  (* TODO: be more explicit *)
+  Otel.Logger.emit ?service_name ~attrs [ log ]
 
 let otel_reporter ?service_name ?(attributes = []) () : Logs.reporter =
   let report src level ~over k msgf =
