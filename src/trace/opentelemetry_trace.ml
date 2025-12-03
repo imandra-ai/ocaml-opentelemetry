@@ -1,6 +1,7 @@
 module Otel = Opentelemetry
 module Otrace = Trace_core (* ocaml-trace *)
 module TLS = Thread_local_storage
+module TSub = Trace_subscriber.Subscriber
 
 open struct
   let spf = Printf.sprintf

@@ -1,21 +1,3 @@
-module Otel := Opentelemetry
-module Otrace := Trace_core
-module TLS := Thread_local_storage
-
-module Conv : sig
-  val trace_id_of_otel : Otel.Trace_id.t -> string
-
-  val trace_id_to_otel : string -> Otel.Trace_id.t
-
-  val span_id_of_otel : Otel.Span_id.t -> int64
-
-  val span_id_to_otel : int64 -> Otel.Span_id.t
-
-  val ctx_to_otel : Otrace.explicit_span_ctx -> Otel.Span_ctx.t
-
-  val ctx_of_otel : Otel.Span_ctx.t -> Otrace.explicit_span_ctx
-end
-
 (** [opentelemetry.trace] implements a {!Trace_core.Collector} for
     {{:https://v3.ocaml.org/p/trace} ocaml-trace}.
 
@@ -43,12 +25,46 @@ end
       {!Internal.spankind_of_string} for the list of supported values.)
 
     {[
-      ocaml
       let describe () = [ Opentelemetry_trace.(spankind_key, client) ] in
       Trace_core.with_span ~__FILE__ ~__LINE__ ~data:describe "my-span"
       @@ fun _ ->
         (* ... *)
     ]} *)
+
+module Otel := Opentelemetry
+module Otrace := Trace_core
+module TLS := Thread_local_storage
+
+(** Conversions between [Opentelemetry] and [Trace_core] types *)
+module Conv : sig
+  val trace_id_of_otel : Otel.Trace_id.t -> string
+
+  val trace_id_to_otel : string -> Otel.Trace_id.t
+
+  val span_id_of_otel : Otel.Span_id.t -> int64
+
+  val span_id_to_otel : int64 -> Otel.Span_id.t
+
+  val ctx_to_otel : Otrace.explicit_span_ctx -> Otel.Span_ctx.t
+
+  val ctx_of_otel : Otel.Span_ctx.t -> Otrace.explicit_span_ctx
+end
+
+(** The extension events for {!Trace_core}. *)
+module Extensions : sig
+  type Otrace.extension_event +=
+    | Ev_link_span of Otrace.explicit_span * Otrace.explicit_span_ctx
+          (** Link the given span to the given context. The context isn't the
+              parent, but the link can be used to correlate both spans. *)
+    | Ev_record_exn of {
+        sp: Otrace.span;
+        exn: exn;
+        bt: Printexc.raw_backtrace;
+        error: bool;  (** Is this an actual internal error? *)
+      }
+          (** Record exception and potentially turn span to an error *)
+    | Ev_set_span_kind of Otrace.span * Otel.Span_kind.t
+end
 
 val on_internal_error : (string -> unit) ref
 (** Callback to print errors in the library itself (ie bugs) *)
@@ -56,8 +72,11 @@ val on_internal_error : (string -> unit) ref
 val setup : unit -> unit
 (** Install the OTEL backend as a Trace collector *)
 
-val setup_with_otel_backend : Opentelemetry.Collector.backend -> unit
-(** Same as {!setup}, but also install the given backend as OTEL backend *)
+val setup_with_otel_exporter : #Opentelemetry.Exporter.t -> unit
+(** Same as {!setup}, but using the given exporter *)
+
+val setup_with_otel_backend : #Opentelemetry.Exporter.t -> unit
+[@@deprecated "use setup_with_otel_exporter"]
 
 val collector : unit -> Trace_core.collector
 (** Make a Trace collector that uses the OTEL backend to send spans and logs *)
