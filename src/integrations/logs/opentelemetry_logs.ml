@@ -34,20 +34,20 @@ let emit_telemetry do_emit = Logs.Tag.(empty |> add emit_telemetry_tag do_emit)
 (*****************************************************************************)
 
 (* Log a message to otel with some attrs *)
-let log ?service_name ?(attrs = []) ?(scope = Otel.Ambient_span.get ()) ~level
-    msg =
+let log ?(logger = Otel.Logger.get_main ()) ?attrs
+    ?(scope = Otel.Ambient_span.get ()) ~level msg =
   let log_level = Logs.level_to_string (Some level) in
   let span_id = Option.map Otel.Span.id scope in
   let trace_id = Option.map Otel.Span.trace_id scope in
   let severity = log_level_to_severity level in
   let log =
-    Otel.Log_record.make_str ~severity ~log_level ?trace_id ?span_id msg
+    Otel.Log_record.make_str ~severity ~log_level ?attrs ?trace_id ?span_id msg
   in
   (* Noop if no backend is set *)
   (* TODO: be more explicit *)
-  Otel.Logger.emit ?service_name ~attrs [ log ]
+  Otel.Emitter.emit logger [ log ]
 
-let otel_reporter ?service_name ?(attributes = []) () : Logs.reporter =
+let otel_reporter ?(attributes = []) () : Logs.reporter =
   let report src level ~over k msgf =
     msgf (fun ?header ?(tags : Logs.Tag.set option) fmt ->
         let k _ =
@@ -91,13 +91,13 @@ let otel_reporter ?service_name ?(attributes = []) () : Logs.reporter =
             let do_emit =
               Option.value ~default:true (Logs.Tag.find emit_telemetry_tag tags)
             in
-            if do_emit then log ?service_name ~attrs ~level msg;
+            if do_emit then log ~attrs ~level msg;
             k ())
           fmt)
   in
   { Logs.report }
 
-let attach_otel_reporter ?service_name ?attributes reporter =
+let attach_otel_reporter ?attributes reporter =
   (* Copied directly from the Logs.mli docs. Just calls a bunch of reporters in a
    row *)
   let combine r1 r2 =
@@ -107,5 +107,5 @@ let attach_otel_reporter ?service_name ?attributes reporter =
     in
     { Logs.report }
   in
-  let otel_reporter = otel_reporter ?service_name ?attributes () in
+  let otel_reporter = otel_reporter ?attributes () in
   combine reporter otel_reporter
