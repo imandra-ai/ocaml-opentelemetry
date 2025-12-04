@@ -55,17 +55,9 @@ let (emit [@deprecated "use an explicit tracer"]) =
   | None -> ()
   | Some exp -> exp#send_trace spans
 
-(* TODO: remove scope, use span directly *)
-type scope = Scope.t = {
-  trace_id: Trace_id.t;
-  span_id: Span_id.t;
-  mutable items: Scope.item_list;
-}
-[@@deprecated "use Scope.t"]
+let (add_event [@deprecated "use Span.add_event"]) = Span.add_event
 
-let (add_event [@deprecated "use Scope.add_event"]) = Scope.add_event
-
-let (add_attrs [@deprecated "use Scope.add_attrs"]) = Scope.add_attrs
+let (add_attrs [@deprecated "use Span.add_attrs"]) = Span.add_attrs
 
 let with_' ?(tracer = simple_main_exporter) ?(force_new_trace_id = false)
     ?trace_state ?(attrs : (string * [< Value.t ]) list = []) ?kind ?trace_id
