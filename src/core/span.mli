@@ -47,6 +47,8 @@ val id : t -> Span_id.t
 
 val trace_id : t -> Trace_id.t
 
+val is_not_dummy : t -> bool
+
 val create_new :
   ?kind:kind ->
   ?id:Span_id.t ->
@@ -96,7 +98,9 @@ val add_links' : t -> (unit -> Span_link.t list) -> unit
     Note that this takes a function that produces links, and will only call it
     if there is an instrumentation backend. *)
 
-val add_attrs : t -> (unit -> Key_value.t list) -> unit
+val add_attrs : t -> Key_value.t list -> unit
+
+val add_attrs' : t -> (unit -> Key_value.t list) -> unit
 
 val set_status : t -> Span_status.t -> unit
 (** set the span status.
