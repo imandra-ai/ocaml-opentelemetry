@@ -33,8 +33,10 @@ let stdout : OTEL.Exporter.t =
   let open Opentelemetry_util in
   let out = Format.std_formatter in
   let mutex = Mutex.create () in
+  let ticker = Cb_set.create () in
 
   let closed = Atomic.make false in
+  let tick () = Cb_set.trigger ticker in
 
   let mk_emitter pp_signal =
     let emit l =
@@ -57,6 +59,7 @@ let stdout : OTEL.Exporter.t =
     emit_spans = mk_emitter pp_span;
     emit_logs = mk_emitter Proto.Logs.pp_log_record;
     emit_metrics = mk_emitter Proto.Metrics.pp_metric;
-    on_tick = Cb_set.create ();
+    on_tick = Cb_set.register ticker;
+    tick;
     cleanup = (fun ~on_done () -> on_done ());
   }

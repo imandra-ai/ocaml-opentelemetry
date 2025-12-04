@@ -1,8 +1,10 @@
 (library
  (name opentelemetry_client)
  (public_name opentelemetry.client)
+ (flags :standard -open Opentelemetry_util)
  (libraries
   opentelemetry
+  opentelemetry.util
   opentelemetry.emitter
   opentelemetry.proto
   pbrt

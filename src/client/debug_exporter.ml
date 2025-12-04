@@ -20,6 +20,7 @@ let debug ?(out = Format.err_formatter) (exp : OTEL.Exporter.t) :
         (fun m -> Format.fprintf out "METRIC: %a@." Metrics.pp_metric m)
         exp.emit_metrics;
     on_tick = exp.on_tick;
+    tick = exp.tick;
     cleanup =
       (fun ~on_done () ->
         Format.fprintf out "CLEANUP@.";
