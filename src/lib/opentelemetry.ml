@@ -21,7 +21,13 @@ module Timestamp_ns = Timestamp_ns
 (** {2 Export signals to some external collector.} *)
 
 module Exporter = Exporter
-module Collector = Exporter [@@deprecated "Use 'Exporter' instead"]
+module Main_exporter = Main_exporter
+
+module Collector = struct
+  include Exporter
+  include Main_exporter
+end
+[@@deprecated "Use 'Exporter' instead"]
 
 (** {2 Identifiers} *)
 
