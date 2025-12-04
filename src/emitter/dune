@@ -1,0 +1,5 @@
+(library
+ (name opentelemetry_emitter)
+ (public_name opentelemetry.emitter)
+ (libraries mtime mtime.clock.os)
+ (synopsis "Modular emitters for a single signal at a time"))
