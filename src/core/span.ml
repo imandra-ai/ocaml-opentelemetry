@@ -123,11 +123,3 @@ let set_status = span_set_status
 let set_kind = span_set_kind
 
 let k_context : t Context.key = Context.new_key ()
-
-(** Find current span from ambient-context *)
-let get_ambient () : t option = Ambient_context.get k_context
-
-(** [with_ambient span f] runs [f()] with the current ambient span being set to
-    [span] *)
-let[@inline] with_ambient (span : t) (f : unit -> 'a) : 'a =
-  Ambient_context.with_key_bound_to k_context span (fun _ -> f ())

@@ -1,4 +1,4 @@
-module Otel = Opentelemetry
+open Opentelemetry_util
 
 type 'a t = {
   mutable size: int;
@@ -47,7 +47,7 @@ let ready_to_pop ~force ~now self =
 
 let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
   let rev_batch_opt =
-    Otel.Util_mutex.protect self.mutex @@ fun () ->
+    Util_mutex.protect self.mutex @@ fun () ->
     if ready_to_pop ~force ~now self then (
       assert (self.q <> []);
       let batch = self.q in
@@ -72,7 +72,7 @@ let rec push_unprotected (self : _ t) ~(elems : _ list) : unit =
     push_unprotected self ~elems:xs
 
 let push (self : _ t) elems : [ `Dropped | `Ok ] =
-  Otel.Util_mutex.protect self.mutex @@ fun () ->
+  Util_mutex.protect self.mutex @@ fun () ->
   if self.size >= self.high_watermark then
     (* drop this to prevent queue from growing too fast *)
     `Dropped

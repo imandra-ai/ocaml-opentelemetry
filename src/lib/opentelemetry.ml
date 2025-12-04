@@ -1,15 +1,11 @@
-(** Opentelemetry types and instrumentation *)
+(** Main Opentelemetry API for libraries and user code. *)
 
-module Rand_bytes = Rand_bytes
-(** Generation of random identifiers. *)
+module Core = Opentelemetry_core
+(** Core types and definitions *)
 
 module Alist = Alist
 (** Atomic list, for internal usage
     @since 0.7 *)
-
-module Util_mutex = Util_mutex
-(** Utilities for internal usage.
-    @since NEXT_RELEASE *)
 
 (** {2 Wire format} *)
 

@@ -108,9 +108,4 @@ val set_kind : t -> Span_kind.t -> unit
 (** Set the span's kind.
     @since 0.11 *)
 
-val get_ambient : unit -> t option
-(** Find current span from ambient-context *)
-
-val with_ambient : t -> (unit -> 'a) -> 'a
-(** [with_ambient span f] runs [f()] with the current ambient span being set to
-    [span] *)
+val k_context : t Context.key

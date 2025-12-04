@@ -1,5 +1,3 @@
-open Common_
-
 type t = bytes
 
 let[@inline] to_bytes self = self
@@ -13,7 +11,13 @@ let create () : t =
   Bytes.set b 0 (Char.unsafe_chr (Char.code (Bytes.get b 0) lor 1));
   b
 
-let is_valid = Util_bytes_.bytes_non_zero
+let[@inline] is_zero (self : t) : bool =
+  (* try to reduce branches *)
+  assert (Bytes.length self = 8);
+  let n1 = Bytes.get_int64_ne self 0 in
+  n1 = 0L
+
+let[@inline] is_valid self = not (is_zero self)
 
 let[@inline] of_bytes b =
   if Bytes.length b = 8 then

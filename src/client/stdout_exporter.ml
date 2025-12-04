@@ -1,10 +1,11 @@
 (** A simple exporter that prints on stdout *)
 
 open Common_
-open OTEL
+open Opentelemetry_util
 
 open struct
-  let pp_span out (sp : Span.t) =
+  let pp_span out (sp : OTEL.Span.t) =
+    let open OTEL in
     Format.fprintf out
       "@[<2>SPAN@ trace_id: %a@ span_id: %a@ name: %S@ start: %a@ end: %a@]@."
       Trace_id.pp

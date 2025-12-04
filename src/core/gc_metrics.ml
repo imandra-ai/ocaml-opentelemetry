@@ -1,7 +1,7 @@
 open Common_
 
 open struct
-  let[@inline] bytes_per_word = Sys.word_size / 8
+  let bytes_per_word = Sys.word_size / 8
 
   let[@inline] word_to_bytes n = n * bytes_per_word
 

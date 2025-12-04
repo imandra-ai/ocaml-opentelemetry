@@ -40,9 +40,10 @@ let add_global_attribute (key : string) (v : Value.t) : unit =
 
 (* add global attributes to this list *)
 let merge_global_attributes_ into : _ list =
-  let open Key_value in
-  let not_redundant kv = List.for_all (fun kv' -> kv.key <> kv'.key) into in
-  List.rev_append (List.filter not_redundant !global_attributes) into
+  let not_redundant kv =
+    List.for_all Key_value.(fun kv' -> kv.key <> kv'.key) into
+  in
+  List.rev_append Key_value.(List.filter not_redundant !global_attributes) into
 
 (** Default span kind in {!Span.create}. This will be used in all spans that do
     not specify [~kind] explicitly; it is set to "internal", following

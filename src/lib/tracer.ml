@@ -66,7 +66,7 @@ let with_thunk_and_finally ?(tracer = simple_main_exporter)
   let parent =
     match parent with
     | Some _ -> parent
-    | None -> Span.get_ambient ()
+    | None -> Ambient_span.get ()
   in
   let trace_id =
     match trace_id, parent with
@@ -109,7 +109,7 @@ let with_thunk_and_finally ?(tracer = simple_main_exporter)
 
     tracer#emit [ span ]
   in
-  let thunk () = Span.with_ambient span (fun () -> cb span) in
+  let thunk () = Ambient_span.with_ambient span (fun () -> cb span) in
   thunk, finally
 
 (** Sync span guard.
