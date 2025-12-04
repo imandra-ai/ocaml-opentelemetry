@@ -57,6 +57,7 @@ module Span_kind = Span_kind
 (** {2 Traces} *)
 
 module Span = Span
+module Ambient_span = Ambient_span
 module Tracer = Tracer
 module Trace = Tracer [@@deprecated "use Tracer instead"]
 

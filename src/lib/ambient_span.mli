@@ -1,3 +1,5 @@
+(** Storing the current span in ambient context. *)
+
 val get : unit -> Span.t option
 (** Find current span from ambient-context *)
 
