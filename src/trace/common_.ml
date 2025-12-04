@@ -1,6 +1,5 @@
-module Otel = Opentelemetry
+module OTEL = Opentelemetry
 module Otrace = Trace_core (* ocaml-trace *)
-module TSub = Trace_subscriber.Subscriber
 
 let ( let@ ) = ( @@ )
 

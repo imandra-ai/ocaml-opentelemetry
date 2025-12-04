@@ -3,10 +3,11 @@
  (public_name opentelemetry.trace)
  (synopsis "Use opentelemetry as a collector for trace")
  (optional) ; trace
- (flags :standard -open Opentelemetry_util)
+ (flags :standard -open Opentelemetry_util -open Opentelemetry_atomic)
  (libraries
   opentelemetry.ambient-context
   opentelemetry.util
-  opentelemetry.core
+  opentelemetry.atomic
+  opentelemetry
   trace.core
   trace.subscriber))
