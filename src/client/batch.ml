@@ -91,6 +91,7 @@ let[@inline] push' self elems = ignore (push self elems : [ `Dropped | `Ok ])
 open Opentelemetry_emitter
 
 let wrap_emitter (self : _ t) (e : _ Emitter.t) : _ Emitter.t =
+  let enabled () = e.enabled () in
   let closed () = e.closed () in
   let flush_and_close () =
     (* FIXME: we need to close the batch first, to prevent
@@ -118,7 +119,7 @@ let wrap_emitter (self : _ t) (e : _ Emitter.t) : _ Emitter.t =
   in
 
   let emit l =
-    if l <> [] then (
+    if l <> [] && e.enabled () then (
       push' self l;
 
       (* TODO: it'd be nice if we checked only for size here, not
@@ -129,4 +130,4 @@ let wrap_emitter (self : _ t) (e : _ Emitter.t) : _ Emitter.t =
     )
   in
 
-  { Emitter.closed; flush_and_close; tick; emit }
+  { Emitter.closed; enabled; flush_and_close; tick; emit }
