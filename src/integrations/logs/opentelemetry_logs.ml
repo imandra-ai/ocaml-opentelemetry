@@ -34,15 +34,11 @@ let emit_telemetry do_emit = Logs.Tag.(empty |> add emit_telemetry_tag do_emit)
 (*****************************************************************************)
 
 (* Log a message to otel with some attrs *)
-let log ?service_name ?(attrs = []) ?(scope = Otel.Scope.get_ambient_scope ())
-    ~level msg =
+let log ?service_name ?(attrs = []) ?(scope = Otel.Ambient_span.get ()) ~level
+    msg =
   let log_level = Logs.level_to_string (Some level) in
-  let span_id =
-    Option.map (fun (scope : Otel.Scope.t) -> scope.span_id) scope
-  in
-  let trace_id =
-    Option.map (fun (scope : Otel.Scope.t) -> scope.trace_id) scope
-  in
+  let span_id = Option.map Otel.Span.id scope in
+  let trace_id = Option.map Otel.Span.trace_id scope in
   let severity = log_level_to_severity level in
   let log =
     Otel.Log_record.make_str ~severity ~log_level ?trace_id ?span_id msg
