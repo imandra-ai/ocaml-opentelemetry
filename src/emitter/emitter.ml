@@ -7,7 +7,10 @@
 
 exception Closed
 
-type 'a t = {
+type -'a t = {
+  enabled: unit -> bool;
+      (** Return [true] if [emit] has a chance of doing something with the
+          signals it's given. *)
   emit: 'a list -> unit;
       (** Emit signals. @raise Closed if the emitter is closed. *)
   tick: now:Mtime.t -> unit;
@@ -19,6 +22,8 @@ type 'a t = {
       (** Flush internally buffered signals, then close. *)
 }
 (** An emitter for values of type ['a]. *)
+
+let[@inline] enabled self : bool = self.enabled ()
 
 let[@inline] emit (self : _ t) l : unit = if l <> [] then self.emit l
 
@@ -33,7 +38,20 @@ let[@inline] flush_and_close (self : _ t) : unit = self.flush_and_close ()
 let map (f : 'a -> 'b) (self : 'b t) : 'a t =
   { self with emit = (fun l -> self.emit (List.map f l)) }
 
-(* TODO: batching, either regular or sharded to reduce contention *)
-(* TODO: sampling *)
+(** [tap f e] is like [e], but every signal is passed to [f] *)
+let tap (f : 'a -> unit) (self : 'a t) : 'a t =
+  let emit l =
+    List.iter f l;
+    self.emit l
+  in
+  { self with emit }
 
-(* TODO: use in Opentelemetry, and also for Tracer, Logger, etc. *)
+let dummy () : _ t =
+  let closed = Atomic.make false in
+  {
+    enabled = (fun () -> false);
+    emit = ignore;
+    tick = (fun ~now:_ -> ());
+    closed = (fun () -> Atomic.get closed);
+    flush_and_close = (fun () -> Atomic.set closed true);
+  }
