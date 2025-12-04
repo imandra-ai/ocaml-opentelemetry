@@ -87,3 +87,46 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
   )
 
 let[@inline] push' self elems = ignore (push self elems : [ `Dropped | `Ok ])
+
+open Opentelemetry_emitter
+
+let wrap_emitter (self : _ t) (e : _ Emitter.t) : _ Emitter.t =
+  let closed () = e.closed () in
+  let flush_and_close () =
+    (* FIXME: we need to close the batch first, to prevent
+       further pushes; then write the content to [e]; then
+         flusn and close [e]. In this order. *)
+    (match pop_if_ready self ~force:true ~now:Mtime.max_stamp with
+    | None -> ()
+    | Some l -> Emitter.emit e l);
+
+    Emitter.flush_and_close e
+  in
+
+  let maybe_emit ~now =
+    match pop_if_ready self ~force:false ~now with
+    | None -> ()
+    | Some l -> Emitter.emit e l
+  in
+
+  let tick ~now =
+    (* first, check if batch has timed out *)
+    maybe_emit ~now;
+
+    (* only then, tick the underlying emitter *)
+    Emitter.tick e ~now
+  in
+
+  let emit l =
+    if l <> [] then (
+      push' self l;
+
+      (* TODO: it'd be nice if we checked only for size here, not
+        for timeout. The [tick] function is enough for timeouts,
+        whereas [emit] is in the hot path of every single span/metric/log *)
+      let now = Mtime_clock.now () in
+      maybe_emit ~now
+    )
+  in
+
+  { Emitter.closed; flush_and_close; tick; emit }

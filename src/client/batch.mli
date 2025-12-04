@@ -53,3 +53,9 @@ val push : 'a t -> 'a list -> [ `Dropped | `Ok ]
 
 val push' : 'a t -> 'a list -> unit
 (** Like {!push} but ignores the result *)
+
+open Opentelemetry_emitter
+
+val wrap_emitter : 'a t -> 'a Emitter.t -> 'a Emitter.t
+(** [batch_emitter batch e] is an emitter that uses batch [batch] to gather
+    signals into larger lists before passing them to [e]. *)

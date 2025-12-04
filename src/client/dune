@@ -1,6 +1,12 @@
 (library
  (name opentelemetry_client)
  (public_name opentelemetry.client)
- (libraries opentelemetry opentelemetry.proto pbrt mtime mtime.clock.os)
+ (libraries
+  opentelemetry
+  opentelemetry.emitter
+  opentelemetry.proto
+  pbrt
+  mtime
+  mtime.clock.os)
  (synopsis
   "Basic exporters, as well as Common types and logic shared between exporters"))
