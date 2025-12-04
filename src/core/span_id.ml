@@ -11,10 +11,13 @@ let create () : t =
   Bytes.set b 0 (Char.unsafe_chr (Char.code (Bytes.get b 0) lor 1));
   b
 
+(* dark magic, woo. We have an [assert] below to do the bound checks once *)
+external unsafe_b_get64 : bytes -> int -> int64 = "%caml_bytes_get64u"
+
 let[@inline] is_zero (self : t) : bool =
   (* try to reduce branches *)
   assert (Bytes.length self = 8);
-  let n1 = Bytes.get_int64_ne self 0 in
+  let n1 = unsafe_b_get64 self 0 in
   n1 = 0L
 
 let[@inline] is_valid self = not (is_zero self)

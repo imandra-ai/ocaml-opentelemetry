@@ -8,6 +8,8 @@ val create : unit -> t
 
 val dummy : t
 
+val compare : t -> t -> int
+
 val pp : Format.formatter -> t -> unit
 
 val is_valid : t -> bool
@@ -23,6 +25,8 @@ val to_hex_into : t -> bytes -> int -> unit
 val of_hex : string -> t
 
 val of_hex_substring : string -> int -> t
+
+module Map : Map.S with type key = t
 
 val k_trace_id : t Hmap.key
 (** Hmap key to carry around a {!Trace_id.t}, to remember what the current trace
