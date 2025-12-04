@@ -51,7 +51,7 @@ let setup ?(min_interval_s = default_interval_s) (exp : Exporter.t) =
   Exporter.on_tick exp on_tick
 
 let setup_on_main_exporter ?min_interval_s () =
-  match Exporter.Main_exporter.get () with
+  match Main_exporter.get () with
   | None -> ()
   | Some exp -> setup ?min_interval_s exp
 

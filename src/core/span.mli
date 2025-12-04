@@ -112,4 +112,11 @@ val set_kind : t -> Span_kind.t -> unit
 (** Set the span's kind.
     @since 0.11 *)
 
+val default_kind : Span_kind.t ref
+(** Default span kind in {!make} and {!create_new}.
+
+    This will be used in all spans that do not specify [~kind] explicitly; it is
+    set to "internal", following directions from the [.proto] file. It can be
+    convenient to set "client" or "server" uniformly in here. *)
+
 val k_context : t Context.key

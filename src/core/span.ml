@@ -28,9 +28,10 @@ let[@inline] trace_id self = Trace_id.of_bytes self.trace_id
 
 let[@inline] is_not_dummy self = Span_id.is_valid (id self)
 
-let make ?(kind = !Globals.default_span_kind) ?trace_state ?(attrs = [])
-    ?(events = []) ?status ~trace_id ~id ?parent ?(links = []) ~start_time
-    ~end_time name : t =
+let default_kind = ref Proto.Trace.Span_kind_unspecified
+
+let make ?(kind = !default_kind) ?trace_state ?(attrs = []) ?(events = [])
+    ?status ~trace_id ~id ?parent ?(links = []) ~start_time ~end_time name : t =
   let trace_id = Trace_id.to_bytes trace_id in
   let parent_span_id = Option.map Span_id.to_bytes parent in
   let attributes = List.map Key_value.conv attrs in
@@ -99,7 +100,14 @@ let record_exception (self : t) (exn : exn) (bt : Printexc.raw_backtrace) : unit
     add_event self ev
   )
 
-let[@inline] add_attrs (self : t) (attrs : unit -> Key_value.t list) : unit =
+let add_attrs (self : t) (attrs : Key_value.t list) : unit =
+  if is_not_dummy self then (
+    let attrs = List.rev_map Key_value.conv attrs in
+    let attrs = List.rev_append attrs self.attributes in
+    span_set_attributes self attrs
+  )
+
+let add_attrs' (self : t) (attrs : unit -> Key_value.t list) : unit =
   if is_not_dummy self then (
     let attrs = List.rev_map Key_value.conv (attrs ()) in
     let attrs = List.rev_append attrs self.attributes in

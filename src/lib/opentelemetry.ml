@@ -7,6 +7,10 @@ module Alist = Alist
 (** Atomic list, for internal usage
     @since 0.7 *)
 
+module Interval_limiter = Interval_limiter
+(** Utility to limit the frequency of some event
+    @since NEXT_RELEASE *)
+
 (** {2 Wire format} *)
 
 module Proto = Opentelemetry_proto
