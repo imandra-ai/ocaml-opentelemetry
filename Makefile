@@ -13,6 +13,9 @@ clean:
 protoc-gen:
 	FORCE_GENPROTO=true dune build @lint
 
+update-submodules:
+	git submodule update --init
+
 format:
 	@dune build @fmt --auto-promote
 
