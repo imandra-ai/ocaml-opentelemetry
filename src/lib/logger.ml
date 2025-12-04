@@ -8,11 +8,16 @@ open Opentelemetry_emitter
 
 type t = Log_record.t Emitter.t
 
-let dummy () : t = Emitter.dummy ()
+let dummy : t = Emitter.dummy
 
 let enabled = Emitter.enabled
 
 let of_exporter (exp : Exporter.t) : t = exp.emit_logs
+
+let get_main () : t =
+  match Main_exporter.get () with
+  | None -> dummy
+  | Some e -> e.emit_logs
 
 let emit ?attrs:_ (logs : Log_record.t list) : unit =
   match Main_exporter.get () with

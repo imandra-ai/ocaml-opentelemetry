@@ -29,9 +29,9 @@ type t = {
 let dummy () : t =
   let ticker = Cb_set.create () in
   {
-    emit_spans = Emitter.dummy ();
-    emit_metrics = Emitter.dummy ();
-    emit_logs = Emitter.dummy ();
+    emit_spans = Emitter.dummy;
+    emit_metrics = Emitter.dummy;
+    emit_logs = Emitter.dummy;
     on_tick = Cb_set.register ticker;
     tick = (fun () -> Cb_set.trigger ticker);
     cleanup = (fun ~on_done () -> on_done ());

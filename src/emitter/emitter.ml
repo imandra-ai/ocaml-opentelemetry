@@ -46,12 +46,11 @@ let tap (f : 'a -> unit) (self : 'a t) : 'a t =
   in
   { self with emit }
 
-let dummy () : _ t =
-  let closed = Atomic.make false in
+let dummy : _ t =
   {
     enabled = (fun () -> false);
     emit = ignore;
     tick = (fun ~now:_ -> ());
-    closed = (fun () -> Atomic.get closed);
-    flush_and_close = (fun () -> Atomic.set closed true);
+    closed = (fun () -> true);
+    flush_and_close = ignore;
   }

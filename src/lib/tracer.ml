@@ -16,12 +16,18 @@ type t = Span.t Emitter.t
     https://opentelemetry.io/docs/specs/otel/trace/api/#tracer *)
 
 (** Dummy tracer, always disabled *)
-let dummy () : t = Emitter.dummy ()
+let dummy : t = Emitter.dummy
 
 (** A tracer that uses the current {!Main_exporter} *)
 let dynamic_forward_to_main_exporter : t =
   Main_exporter.Util.dynamic_forward_to_main_exporter () ~get_emitter:(fun e ->
       e.emit_spans)
+
+(** Get tracer using the main exporter in {!Main_exporter} *)
+let get_main () : t =
+  match Main_exporter.get () with
+  | None -> dummy
+  | Some e -> e.emit_spans
 
 let (add_event [@deprecated "use Span.add_event"]) = Span.add_event
 

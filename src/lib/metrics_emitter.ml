@@ -2,7 +2,7 @@ open Opentelemetry_emitter
 
 type t = Metrics.t Emitter.t
 
-let dummy () : t = Emitter.dummy ()
+let dummy : t = Emitter.dummy
 
 let enabled = Emitter.enabled
 
@@ -15,6 +15,11 @@ let (emit [@deprecated "use an explicit Metrics_emitter.t"]) =
   match Main_exporter.get () with
   | None -> ()
   | Some exp -> Exporter.send_metrics exp l
+
+let get_main () : t =
+  match Main_exporter.get () with
+  | None -> dummy
+  | Some e -> e.emit_metrics
 
 (** An emitter that uses the current {!Main_exporter} *)
 let dynamic_forward_to_main_exporter : t =
