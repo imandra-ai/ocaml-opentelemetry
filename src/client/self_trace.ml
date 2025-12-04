@@ -2,7 +2,7 @@ module OT = Opentelemetry
 
 let enabled = Atomic.make false
 
-let add_event (scope : OT.Scope.t) ev = OT.Scope.add_event scope (fun () -> ev)
+let[@inline] add_event (scope : OT.Span.t) ev = OT.Span.add_event scope ev
 
 let dummy_trace_id_ = OT.Trace_id.dummy
 
@@ -14,10 +14,11 @@ let with_ ?kind ?attrs name f =
     OT.Tracer.with_ ?kind ?attrs name f
   else (
     (* A new scope is needed here because it might be modified *)
-    let scope =
-      OT.Scope.make ~trace_id:dummy_trace_id_ ~span_id:dummy_span_id ()
+    let span : OT.Span.t =
+      OT.Span.make ~trace_id:dummy_trace_id_ ~id:dummy_span_id ~start_time:0L
+        ~end_time:0L name
     in
-    f scope
+    f span
   )
 
 let set_enabled b = Atomic.set enabled b
