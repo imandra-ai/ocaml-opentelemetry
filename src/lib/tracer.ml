@@ -6,44 +6,36 @@
 
 open Common_
 open Proto.Trace
+open Opentelemetry_emitter
 
 type span = Span.t
 
+type t = Span.t Emitter.t
 (** A tracer.
 
     https://opentelemetry.io/docs/specs/otel/trace/api/#tracer *)
-class type t = object
-  method is_enabled : unit -> bool
-
-  method emit : span list -> unit
-end
 
 (** Dummy tracer, always disabled *)
-let dummy : t =
-  object
-    method is_enabled () = false
-
-    method emit _ = ()
-  end
-
-(** A simple exporter that directly calls the exporter. *)
-class simple (exp : #Exporter.t) : t =
-  object
-    method is_enabled () = true
-
-    method emit spans = if spans <> [] then Exporter.send_trace exp spans
-  end
+let dummy () : t = Emitter.dummy ()
 
 (** A tracer that uses {!Exporter.Main_exporter} *)
 let simple_main_exporter : t =
-  object
-    method is_enabled () = Exporter.Main_exporter.present ()
-
-    method emit spans =
+  let enabled () = Exporter.Main_exporter.present () in
+  let closed () = not (enabled ()) in
+  let flush_and_close () = () in
+  let tick ~now:_ =
+    match Exporter.Main_exporter.get () with
+    | None -> ()
+    | Some exp -> Exporter.tick exp
+  in
+  let emit spans =
+    if spans <> [] then (
       match Exporter.Main_exporter.get () with
       | None -> ()
-      | Some exp -> exp#send_trace spans
-  end
+      | Some exp -> Exporter.send_trace exp spans
+    )
+  in
+  { Emitter.enabled; closed; emit; tick; flush_and_close }
 
 (** Directly emit to the main exporter.
 
@@ -53,7 +45,7 @@ let (emit [@deprecated "use an explicit tracer"]) =
  fun ?service_name:_ ?attrs:_ (spans : span list) : unit ->
   match Exporter.Main_exporter.get () with
   | None -> ()
-  | Some exp -> exp#send_trace spans
+  | Some exp -> Exporter.send_trace exp spans
 
 let (add_event [@deprecated "use Span.add_event"]) = Span.add_event
 
@@ -107,7 +99,7 @@ let with_thunk_and_finally ?(tracer = simple_main_exporter)
         in
         Span.set_status span status));
 
-    tracer#emit [ span ]
+    Emitter.emit tracer [ span ]
   in
   let thunk () = Ambient_span.with_ambient span (fun () -> cb span) in
   thunk, finally

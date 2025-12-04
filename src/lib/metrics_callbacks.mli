@@ -16,7 +16,7 @@ val add_metrics_cb : t -> (unit -> Metrics.t list) -> unit
     metrics. It might be called regularly by the backend, in particular (but not
     only) when {!Exporter.tick} is called. *)
 
-val add_to_exporter : #Exporter.t -> t -> unit
+val add_to_exporter : Exporter.t -> t -> unit
 (** Make sure we export metrics at every [tick] of the exporter *)
 
 module Main_set : sig

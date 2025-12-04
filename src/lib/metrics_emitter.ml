@@ -1,32 +1,19 @@
-open Common_
+open Opentelemetry_emitter
 
-class type t = object
-  method is_enabled : unit -> bool
+type t = Metrics.t Emitter.t
 
-  method emit : Metrics.t list -> unit
-end
+let dummy () : t = Emitter.dummy ()
 
-class dummy : t =
-  object
-    method is_enabled () = false
+let enabled = Emitter.enabled
 
-    method emit _ = ()
-  end
+let emit = Emitter.emit
 
-class simple (exp : #Exporter.t) : t =
-  object
-    method is_enabled () = true
-
-    method emit l = if l <> [] then exp#send_metrics l
-  end
+let of_exporter (exp : Exporter.t) : t = exp.emit_metrics
 
 (** Emit some metrics to the collector (sync). This blocks until the backend has
-    pushed the metrics into some internal queue, or discarded them.
-
-    {b NOTE} be careful not to call this inside a Gc alarm, as it can cause
-    deadlocks. *)
+    pushed the metrics into some internal queue, or discarded them. *)
 let emit ?attrs:_ (l : Metrics.t list) : unit =
   match Exporter.Main_exporter.get () with
   | None -> ()
-  | Some exp -> exp#send_metrics l
+  | Some exp -> Exporter.send_metrics exp l
 [@@deprecated "use an explicit Metrics_emitter.t"]

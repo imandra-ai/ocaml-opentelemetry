@@ -6,7 +6,7 @@ let create () : t = { cbs = Alist.make () }
 
 let[@inline] add_metrics_cb (self : t) f = Alist.add self.cbs f
 
-let add_to_exporter (exp : #Exporter.t) (self : t) =
+let add_to_exporter (exp : Exporter.t) (self : t) =
   let on_tick () =
     (* collect all metrics *)
     let res = ref [] in

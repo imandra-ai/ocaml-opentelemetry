@@ -75,6 +75,7 @@ module Logs = Logger [@@deprecated "use Logger"]
 
 (** {2 Utils} *)
 
+module Any_signal = Any_signal
 module Trace_context = Trace_context
 module Gc_metrics = Gc_metrics
 

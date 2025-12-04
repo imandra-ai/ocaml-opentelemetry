@@ -4,34 +4,14 @@
     {{:https://opentelemetry.io/docs/reference/specification/overview/#log-signal}
      the spec} *)
 
-open Common_
+open Opentelemetry_emitter
 
-(** A logger object *)
-class type t = object
-  method is_enabled : Log_record.severity -> bool
+type t = Log_record.t Emitter.t
 
-  method emit : Log_record.t list -> unit
-end
+let dummy () : t = Emitter.dummy ()
 
-(** Dummy logger, always disabled *)
-let dummy : t =
-  object
-    method is_enabled _ = false
+let enabled = Emitter.enabled
 
-    method emit _ = ()
-  end
+let emit = Emitter.emit
 
-class simple (exp : #Exporter.t) : t =
-  object
-    method is_enabled _ = true
-
-    method emit logs = if logs <> [] then exp#send_logs logs
-  end
-
-let emit ?service_name:_ ?attrs:_ (l : Log_record.t list) : unit =
-  match Exporter.Main_exporter.get () with
-  | None -> ()
-  | Some e -> e#send_logs l
-[@@deprecated "use an explicit Logger"]
-
-let k_logger : t Context.key = Context.new_key ()
+let of_exporter (exp : Exporter.t) : t = exp.emit_logs
