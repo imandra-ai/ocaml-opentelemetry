@@ -59,69 +59,57 @@ let (add_event [@deprecated "use Span.add_event"]) = Span.add_event
 
 let (add_attrs [@deprecated "use Span.add_attrs"]) = Span.add_attrs
 
-let with_' ?(tracer = simple_main_exporter) ?(force_new_trace_id = false)
-    ?trace_state ?(attrs : (string * [< Value.t ]) list = []) ?kind ?trace_id
-    ?parent ?scope ?(links = []) name cb =
-  let scope =
-    if force_new_trace_id then
-      None
-    else
-      Scope.get_ambient_scope ?scope ()
+let with_thunk_and_finally ?(tracer = simple_main_exporter)
+    ?(force_new_trace_id = false) ?trace_state
+    ?(attrs : (string * [< Value.t ]) list = []) ?kind ?trace_id ?parent ?links
+    name cb =
+  let parent =
+    match parent with
+    | Some _ -> parent
+    | None -> Span.get_ambient ()
   in
   let trace_id =
-    match trace_id, scope with
+    match trace_id, parent with
     | _ when force_new_trace_id -> Trace_id.create ()
     | Some trace_id, _ -> trace_id
-    | None, Some scope -> scope.trace_id
+    | None, Some p -> Span.trace_id p
     | None, None -> Trace_id.create ()
-  in
-  let parent =
-    match parent, scope with
-    | _ when force_new_trace_id -> None
-    | Some span_id, _ -> Some span_id
-    | None, Some scope -> Some scope.span_id
-    | None, None -> None
   in
   let start_time = Timestamp_ns.now_unix_ns () in
   let span_id = Span_id.create () in
-  let scope = Scope.make ~trace_id ~span_id ~attrs ~links () in
+
+  let parent_id = Option.map Span.id parent in
+
+  let span : Span.t =
+    Span.make ?trace_state ?kind ?parent:parent_id ~trace_id ~id:span_id ~attrs
+      ?links ~start_time ~end_time:start_time name
+  in
   (* called once we're done, to emit a span *)
   let finally res =
-    let status =
-      match Scope.status scope with
-      | Some status -> Some status
-      | None ->
-        (match res with
-        | Ok () ->
-          (* By default, all spans are Unset, which means a span completed without error.
+    let end_time = Timestamp_ns.now_unix_ns () in
+    Proto.Trace.span_set_end_time_unix_nano span end_time;
+
+    (match Span.status span with
+    | Some _ -> ()
+    | None ->
+      (match res with
+      | Ok () ->
+        (* By default, all spans are Unset, which means a span completed without error.
              The Ok status is reserved for when you need to explicitly mark a span as successful
              rather than stick with the default of Unset (i.e., “without error”).
 
               https://opentelemetry.io/docs/languages/go/instrumentation/#set-span-status *)
-          None
-        | Error (e, bt) ->
-          Scope.record_exception scope e bt;
-          Some
-            (make_status ~code:Status_code_error ~message:(Printexc.to_string e)
-               ()))
-    in
-    let span =
-      (* TODO: should the attrs passed to with_ go on the Span
-           (in Span.create) or on the ResourceSpan (in emit)?
-           (question also applies to Opentelemetry_lwt.Trace.with) *)
-      Span.make ?kind ~trace_id ?parent ~links:(Scope.links scope) ~id:span_id
-        ?trace_state ~attrs:(Scope.attrs scope) ~events:(Scope.events scope)
-        ~start_time
-        ~end_time:(Timestamp_ns.now_unix_ns ())
-        ?status name
-    in
+        ()
+      | Error (e, bt) ->
+        Span.record_exception span e bt;
+        let status =
+          make_status ~code:Status_code_error ~message:(Printexc.to_string e) ()
+        in
+        Span.set_status span status));
 
     tracer#emit [ span ]
   in
-  let thunk () =
-    (* set global scope in this thread *)
-    Scope.with_ambient_scope scope @@ fun () -> cb scope
-  in
+  let thunk () = Span.with_ambient span (fun () -> cb span) in
   thunk, finally
 
 (** Sync span guard.
@@ -141,10 +129,10 @@ let with_' ?(tracer = simple_main_exporter) ?(force_new_trace_id = false)
       [~scope] argument, nor [~trace_id], but will instead always create fresh
       identifiers for this span *)
 let with_ ?tracer ?force_new_trace_id ?trace_state ?attrs ?kind ?trace_id
-    ?parent ?scope ?links name (cb : Scope.t -> 'a) : 'a =
+    ?parent ?links name (cb : Span.t -> 'a) : 'a =
   let thunk, finally =
-    with_' ?tracer ?force_new_trace_id ?trace_state ?attrs ?kind ?trace_id
-      ?parent ?scope ?links name cb
+    with_thunk_and_finally ?tracer ?force_new_trace_id ?trace_state ?attrs ?kind
+      ?trace_id ?parent ?links name cb
   in
 
   try

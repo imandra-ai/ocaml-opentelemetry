@@ -20,8 +20,6 @@ type kind = Span_kind.t =
   | Span_kind_producer
   | Span_kind_consumer
 
-val id : t -> Span_id.t
-
 type key_value = Key_value.t
 
 val make :
@@ -44,6 +42,10 @@ val make :
     @param links
       list of links to other spans, each with their trace state (see
       {{:https://www.w3.org/TR/trace-context/#tracestate-header} w3.org}) *)
+
+val id : t -> Span_id.t
+
+val trace_id : t -> Trace_id.t
 
 val create_new :
   ?kind:kind ->
