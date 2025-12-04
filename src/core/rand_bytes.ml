@@ -1,4 +1,12 @@
+let initialized_ = Atomic.make false
+
+let[@inline never] actually_init () = Random.self_init ()
+
+let[@inline] maybe_init () =
+  if not (Atomic.exchange initialized_ true) then actually_init ()
+
 let default_rand_bytes_8 () : bytes =
+  maybe_init ();
   let b = Bytes.create 8 in
   for i = 0 to 1 do
     (* rely on the stdlib's [Random] being thread-or-domain safe *)
@@ -14,6 +22,7 @@ let default_rand_bytes_8 () : bytes =
   b
 
 let default_rand_bytes_16 () : bytes =
+  maybe_init ();
   let b = Bytes.create 16 in
   for i = 0 to 4 do
     (* rely on the stdlib's [Random] being thread-or-domain safe *)
