@@ -36,7 +36,7 @@ let get_metrics () : Metrics.t list =
       [ int ~now gc.Gc.compactions ];
   ]
 
-let setup ?(min_interval_s = default_interval_s) (exp : #Exporter.t) =
+let setup ?(min_interval_s = default_interval_s) (exp : Exporter.t) =
   (* limit rate *)
   let min_interval_s = max 5 min_interval_s in
   let min_interval = Mtime.Span.(min_interval_s * s) in
@@ -45,7 +45,7 @@ let setup ?(min_interval_s = default_interval_s) (exp : #Exporter.t) =
   let on_tick () =
     if Interval_limiter.make_attempt limiter then (
       let m = get_metrics () in
-      exp#send_metrics m
+      Exporter.send_metrics exp m
     )
   in
   Exporter.on_tick exp on_tick

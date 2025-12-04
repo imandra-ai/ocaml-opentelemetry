@@ -6,9 +6,10 @@
  (libraries
   opentelemetry.proto
   opentelemetry.util
+  opentelemetry.atomic
+  opentelemetry.emitter
   ptime
   ptime.clock.os
   pbrt
   threads
-  opentelemetry.atomic
   hmap))
