@@ -32,6 +32,9 @@ type t = private {
       (** If true, the OTEL library will also emit its own spans. Default
           [false].
           @since 0.7 *)
+  http_concurrency_level: int option;
+      (** How many HTTP requests can be done simultaneously (at most)?
+          @since NEXT_RELEASE *)
 }
 (** Configuration.
 
@@ -55,6 +58,7 @@ type 'k make =
   ?headers:(string * string) list ->
   ?batch_timeout_ms:int ->
   ?self_trace:bool ->
+  ?http_concurrency_level:int ->
   'k
 (** A function that gathers all the values needed to construct a {!t}, and
     produces a ['k]. ['k] is typically a continuation used to construct a

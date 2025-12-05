@@ -9,6 +9,7 @@ type t = {
   batch_logs: int option;
   batch_timeout_ms: int;
   self_trace: bool;
+  http_concurrency_level: int option;
 }
 
 let pp out (self : t) : unit =
@@ -26,15 +27,17 @@ let pp out (self : t) : unit =
     batch_metrics;
     batch_logs;
     batch_timeout_ms;
+    http_concurrency_level;
   } =
     self
   in
   Format.fprintf out
     "{@[ debug=%B;@ self_trace=%B; url_traces=%S;@ url_metrics=%S;@ \
      url_logs=%S;@ headers=%a;@ batch_traces=%a;@ batch_metrics=%a;@ \
-     batch_logs=%a;@ batch_timeout_ms=%d @]}"
+     batch_logs=%a;@ batch_timeout_ms=%d;@ http_concurrency_level=%a @]}"
     debug self_trace url_traces url_metrics url_logs ppheaders headers ppiopt
-    batch_traces ppiopt batch_metrics ppiopt batch_logs batch_timeout_ms
+    batch_traces ppiopt batch_metrics ppiopt batch_logs batch_timeout_ms ppiopt
+    http_concurrency_level
 
 let default_url = "http://localhost:4318"
 
@@ -50,6 +53,7 @@ type 'k make =
   ?headers:(string * string) list ->
   ?batch_timeout_ms:int ->
   ?self_trace:bool ->
+  ?http_concurrency_level:int ->
   'k
 
 module type ENV = sig
@@ -123,7 +127,8 @@ module Env () : ENV = struct
   let make k ?(debug = get_debug ()) ?url ?url_traces ?url_metrics ?url_logs
       ?(batch_traces = Some 400) ?(batch_metrics = Some 20)
       ?(batch_logs = Some 400) ?(headers = get_headers ())
-      ?(batch_timeout_ms = 2_000) ?(self_trace = false) =
+      ?(batch_timeout_ms = 2_000) ?(self_trace = false) ?http_concurrency_level
+      =
     (* Ensure the state is synced, in case these values are passed in explicitly *)
     set_debug debug;
     set_headers headers;
@@ -165,5 +170,6 @@ module Env () : ENV = struct
         batch_logs;
         batch_timeout_ms;
         self_trace;
+        http_concurrency_level;
       }
 end
