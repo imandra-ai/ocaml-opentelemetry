@@ -8,6 +8,7 @@
   opentelemetry
   opentelemetry.atomic
   opentelemetry-client
+  opentelemetry-client.lwt
   pbrt
   mtime
   mtime.clock.os
