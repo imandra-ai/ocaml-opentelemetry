@@ -42,7 +42,7 @@ jobs:
           allow-prerelease-opam: true
 
       - run: |
-          opam pin https://github.com/mransan/ocaml-protoc.git#5510694deffde13283742b8ad116fab61b65dfbc -y -n
+          opam pin pbrt 4.0 -y -n
           opam install pbrt -y
 
       # We cannot install packages that need eio on ocaml versions before 5
