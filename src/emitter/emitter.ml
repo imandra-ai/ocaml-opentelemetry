@@ -33,10 +33,20 @@ let[@inline] closed self : bool = self.closed ()
 
 let[@inline] flush_and_close (self : _ t) : unit = self.flush_and_close ()
 
-(** [map f emitter] returns a new emitter that applies [f] to signals before
-    passing them to [emitter] *)
+(** [map f emitter] returns a new emitter that applies [f] to signals item-wise
+    before passing them to [emitter] *)
 let map (f : 'a -> 'b) (self : 'b t) : 'a t =
   { self with emit = (fun l -> self.emit (List.map f l)) }
+
+(** [map_l f emitter] applies [f] to incoming lists of signals, and emits the
+    resulting list (if non empty) *)
+let flat_map (f : 'a list -> 'b list) (self : 'b t) : 'a t =
+  let emit l =
+    match f l with
+    | [] -> ()
+    | fl -> self.emit fl
+  in
+  { self with emit }
 
 (** [tap f e] is like [e], but every signal is passed to [f] *)
 let tap (f : 'a -> unit) (self : 'a t) : 'a t =
