@@ -47,15 +47,3 @@ let to_emitter (self : 'a t) : 'a Opentelemetry_emitter.Emitter.t =
   let tick ~now:_ = () in
   let flush_and_close () = close self in
   { closed; enabled; emit; tick; flush_and_close }
-
-let logs_emitter (self : Any_resource.t t) : OTEL.Logger.t =
-  to_emitter self
-  |> Opentelemetry_emitter.Emitter.flat_map Any_resource.of_logs_or_empty
-
-let spans_emitter (self : Any_resource.t t) : OTEL.Tracer.t =
-  to_emitter self
-  |> Opentelemetry_emitter.Emitter.flat_map Any_resource.of_spans_or_empty
-
-let metrics_emitter (self : Any_resource.t t) : OTEL.Metrics_emitter.t =
-  to_emitter self
-  |> Opentelemetry_emitter.Emitter.flat_map Any_resource.of_metrics_or_empty
