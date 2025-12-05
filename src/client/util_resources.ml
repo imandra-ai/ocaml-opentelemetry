@@ -2,9 +2,9 @@
 
 open Common_
 
-let make_resource_logs (logs : Proto.Logs.log_record list) :
-    Proto.Logs.resource_logs =
-  let attributes = OTEL.Globals.mk_attributes () in
+let make_resource_logs ?service_name ?attrs (logs : Proto.Logs.log_record list)
+    : Proto.Logs.resource_logs =
+  let attributes = OTEL.Globals.mk_attributes ?service_name ?attrs () in
   let resource = Proto.Resource.make_resource ~attributes () in
   let ll =
     Proto.Logs.make_scope_logs ~scope:OTEL.Globals.instrumentation_library
