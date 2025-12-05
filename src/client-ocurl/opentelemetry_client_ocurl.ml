@@ -117,6 +117,8 @@ module Backend_impl : sig
 
   val send_event : t -> Event.t -> unit
 
+  val n_bytes_sent : unit -> int
+
   val shutdown : t -> on_done:(unit -> unit) -> unit
 end = struct
   open Opentelemetry.Proto
@@ -187,6 +189,10 @@ end = struct
 
   let[@inline] send_event (self : t) ev : unit = B_queue.push self.q ev
 
+  let n_bytes_sent_ = Atomic.make 0
+
+  let[@inline] n_bytes_sent () = Atomic.get n_bytes_sent_
+
   (** Thread that, in a loop, reads from [q] to get the next message to send via
       http *)
   let bg_thread_loop (self : t) : unit =
@@ -199,7 +205,9 @@ end = struct
         Self_trace.with_ ~kind:Span_kind_producer name
           ~attrs:[ "n", `Int (List.length l) ]
       in
-      conv l |> send_http_ ~stop ~config ~url client
+      let msg = conv l in
+      ignore (Atomic.fetch_and_add n_bytes_sent_ (String.length msg) : int);
+      send_http_ ~stop ~config ~url client msg
     in
     try
       while not (Atomic.get stop) do
@@ -471,3 +479,5 @@ let with_setup ?stop ?config ?(enable = true) () f =
     Fun.protect ~finally:remove_backend f
   ) else
     f ()
+
+let n_bytes_sent = Backend_impl.n_bytes_sent

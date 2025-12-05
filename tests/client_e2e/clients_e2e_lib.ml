@@ -79,10 +79,12 @@ let get_metric_values name signals =
            Option.some
            @@
            match m.data with
-           | Sum { data_points; is_monotonic = true; _ } ->
+           | Some (Sum { data_points; is_monotonic = true; _ }) ->
              List.fold_left
                (fun acc (p : Proto.Metrics.number_data_point) ->
-                 acc +. number_data_point_to_float p.value)
+                 acc
+                 +. CCOption.map_or ~default:0. number_data_point_to_float
+                      p.value)
                0. data_points
            | _ -> failwith "TODO: Support for getting other metrics")
 

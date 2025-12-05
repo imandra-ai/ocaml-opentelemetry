@@ -42,8 +42,7 @@ jobs:
           allow-prerelease-opam: true
 
       - run: |
-          opam pin ocaml-protoc 3.0.1 -y -n
-          opam pin pbrt 3.0.1 -y -n
+          opam pin pbrt 4.0 -y -n
           opam install pbrt -y
 
       # We cannot install packages that need eio on ocaml versions before 5

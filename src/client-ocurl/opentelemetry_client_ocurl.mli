@@ -11,6 +11,9 @@ val set_headers : (string * string) list -> unit
 module Atomic = Opentelemetry_atomic.Atomic
 module Config = Config
 
+val n_bytes_sent : unit -> int
+(** Global counter of bytes sent (or attempted to be sent) *)
+
 val create_backend :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->

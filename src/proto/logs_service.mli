@@ -7,62 +7,77 @@
 
 (** {2 Types} *)
 
-type export_logs_service_request = {
-  resource_logs : Logs.resource_logs list;
+type export_logs_service_request = private {
+  mutable resource_logs : Logs.resource_logs list;
 }
 
-type export_logs_partial_success = {
-  rejected_log_records : int64;
-  error_message : string;
+type export_logs_partial_success = private {
+  mutable _presence: Pbrt.Bitfield.t; (** presence for 2 fields *)
+  mutable rejected_log_records : int64;
+  mutable error_message : string;
 }
 
-type export_logs_service_response = {
-  partial_success : export_logs_partial_success option;
+type export_logs_service_response = private {
+  mutable partial_success : export_logs_partial_success option;
 }
 
 
 (** {2 Basic values} *)
 
-val default_export_logs_service_request : 
-  ?resource_logs:Logs.resource_logs list ->
-  unit ->
-  export_logs_service_request
-(** [default_export_logs_service_request ()] is the default value for type [export_logs_service_request] *)
+val default_export_logs_service_request : unit -> export_logs_service_request 
+(** [default_export_logs_service_request ()] is a new empty value for type [export_logs_service_request] *)
 
-val default_export_logs_partial_success : 
-  ?rejected_log_records:int64 ->
-  ?error_message:string ->
-  unit ->
-  export_logs_partial_success
-(** [default_export_logs_partial_success ()] is the default value for type [export_logs_partial_success] *)
+val default_export_logs_partial_success : unit -> export_logs_partial_success 
+(** [default_export_logs_partial_success ()] is a new empty value for type [export_logs_partial_success] *)
 
-val default_export_logs_service_response : 
-  ?partial_success:export_logs_partial_success option ->
-  unit ->
-  export_logs_service_response
-(** [default_export_logs_service_response ()] is the default value for type [export_logs_service_response] *)
+val default_export_logs_service_response : unit -> export_logs_service_response 
+(** [default_export_logs_service_response ()] is a new empty value for type [export_logs_service_response] *)
 
 
 (** {2 Make functions} *)
 
 val make_export_logs_service_request : 
-  resource_logs:Logs.resource_logs list ->
+  ?resource_logs:Logs.resource_logs list ->
   unit ->
   export_logs_service_request
 (** [make_export_logs_service_request … ()] is a builder for type [export_logs_service_request] *)
 
+val copy_export_logs_service_request : export_logs_service_request -> export_logs_service_request
+
+val export_logs_service_request_set_resource_logs : export_logs_service_request -> Logs.resource_logs list -> unit
+  (** set field resource_logs in export_logs_service_request *)
+
 val make_export_logs_partial_success : 
-  rejected_log_records:int64 ->
-  error_message:string ->
+  ?rejected_log_records:int64 ->
+  ?error_message:string ->
   unit ->
   export_logs_partial_success
 (** [make_export_logs_partial_success … ()] is a builder for type [export_logs_partial_success] *)
 
+val copy_export_logs_partial_success : export_logs_partial_success -> export_logs_partial_success
+
+val export_logs_partial_success_has_rejected_log_records : export_logs_partial_success -> bool
+  (** presence of field "rejected_log_records" in [export_logs_partial_success] *)
+
+val export_logs_partial_success_set_rejected_log_records : export_logs_partial_success -> int64 -> unit
+  (** set field rejected_log_records in export_logs_partial_success *)
+
+val export_logs_partial_success_has_error_message : export_logs_partial_success -> bool
+  (** presence of field "error_message" in [export_logs_partial_success] *)
+
+val export_logs_partial_success_set_error_message : export_logs_partial_success -> string -> unit
+  (** set field error_message in export_logs_partial_success *)
+
 val make_export_logs_service_response : 
-  ?partial_success:export_logs_partial_success option ->
+  ?partial_success:export_logs_partial_success ->
   unit ->
   export_logs_service_response
 (** [make_export_logs_service_response … ()] is a builder for type [export_logs_service_response] *)
+
+val copy_export_logs_service_response : export_logs_service_response -> export_logs_service_response
+
+val export_logs_service_response_set_partial_success : export_logs_service_response -> export_logs_partial_success -> unit
+  (** set field partial_success in export_logs_service_response *)
 
 
 (** {2 Formatters} *)

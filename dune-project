@@ -37,8 +37,8 @@
   (alcotest :with-test)
   (pbrt
    (and
-    (>= 3.0)
-    (< 4.0)))
+    (>= 4.0)
+    (< 5.0)))
   (ocaml-lsp-server :with-dev-setup)
   (ocamlformat
    (and

@@ -86,6 +86,8 @@ let run () =
         [
           sum ~name:"num-sleep" ~is_monotonic:true
             [ int (Atomic.get num_sleep) ];
+          sum ~name:"otel.bytes-sent" ~is_monotonic:true ~unit_:"B"
+            [ int (Opentelemetry_client_ocurl.n_bytes_sent ()) ];
         ]);
 
   let n_jobs = max 1 !n_jobs in

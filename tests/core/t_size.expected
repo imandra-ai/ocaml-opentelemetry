@@ -1,119 +1,352 @@
-metrics size: 171B
+metrics size: 149B
 res1: { resource = None;
         scope_metrics =
           [{ scope = None;
              metrics =
                [{ name = "sum.foo";
-                  description = "";
-                  unit_ = "";
+                  description = "" (* absent *);
+                  unit_ = "" (* absent *);
                   data =
-                    Sum(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_int(10);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_int(20);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                        aggregation_temporality =
-                          Aggregation_temporality_cumulative;
-                        is_monotonic = false;
-                      });
+                    Some(
+                      Sum(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_int(10));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_int(20));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             }
+                             ];
+                          aggregation_temporality =
+                            Aggregation_temporality_cumulative;
+                          is_monotonic = false (* absent *);
+                        }));
+                  metadata = [];
                 };
                 { name = "gauge.bar";
-                  description = "";
-                  unit_ = "";
+                  description = "" (* absent *);
+                  unit_ = "" (* absent *);
                   data =
-                    Gauge(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_double(10.);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_double(20.);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                      });
+                    Some(
+                      Gauge(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_double(10.));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_double(20.));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             }
+                             ];
+                        }));
+                  metadata = [];
                 }
                 ];
-             schema_url = "";
+             schema_url = "" (* absent *);
            }
            ];
-        schema_url = "";
+        schema_url = "" (* absent *);
       }
 res1: { resource = None;
         scope_metrics =
           [{ scope = None;
              metrics =
                [{ name = "sum.foo";
-                  description = "";
-                  unit_ = "";
+                  description = "" (* absent *);
+                  unit_ = "" (* absent *);
                   data =
-                    Sum(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_int(10);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_int(20);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                        aggregation_temporality =
-                          Aggregation_temporality_cumulative;
-                        is_monotonic = false;
-                      });
+                    Some(
+                      Sum(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_int(10));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_int(20));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             }
+                             ];
+                          aggregation_temporality =
+                            Aggregation_temporality_cumulative;
+                          is_monotonic = false (* absent *);
+                        }));
+                  metadata = [];
                 };
                 { name = "gauge.bar";
-                  description = "";
-                  unit_ = "";
+                  description = "" (* absent *);
+                  unit_ = "" (* absent *);
                   data =
-                    Gauge(
-                      { data_points =
-                          [{ attributes = [];
-                             start_time_unix_nano = 42;
-                             time_unix_nano = 45;
-                             value = As_double(10.);
-                             exemplars = [];
-                             flags = 0;
-                           };
-                           { attributes = [];
-                             start_time_unix_nano = 52;
-                             time_unix_nano = 55;
-                             value = As_double(20.);
-                             exemplars = [];
-                             flags = 0;
-                           }
-                           ];
-                      });
+                    Some(
+                      Gauge(
+                        { data_points =
+                            [{ attributes = [];
+                               start_time_unix_nano = 42;
+                               time_unix_nano = 45;
+                               value = Some(As_double(10.));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             };
+                             { attributes = [];
+                               start_time_unix_nano = 52;
+                               time_unix_nano = 55;
+                               value = Some(As_double(20.));
+                               exemplars = [];
+                               flags = 0 (* absent *);
+                             }
+                             ];
+                        }));
+                  metadata = [];
                 }
                 ];
-             schema_url = "";
+             schema_url = "" (* absent *);
            }
            ];
-        schema_url = "";
+        schema_url = "" (* absent *);
       }
+trace size: 371B
+trace1: { resource = None;
+          scope_spans =
+            [{ scope = None;
+               spans =
+                 [{ trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=0> (* absent *);
+                    flags = 0 (* absent *);
+                    name = "sp1";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 10;
+                    end_time_unix_nano = 15;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp2";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 20;
+                    end_time_unix_nano = 25;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp3";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 30;
+                    end_time_unix_nano = 35;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp4";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 40;
+                    end_time_unix_nano = 45;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp5";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 50;
+                    end_time_unix_nano = 55;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp6";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 60;
+                    end_time_unix_nano = 65;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  }
+                  ];
+               schema_url = "" (* absent *);
+             }
+             ];
+          schema_url = "" (* absent *);
+        }
+trace2: { resource = None;
+          scope_spans =
+            [{ scope = None;
+               spans =
+                 [{ trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=0> (* absent *);
+                    flags = 0 (* absent *);
+                    name = "sp1";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 10;
+                    end_time_unix_nano = 15;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp2";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 20;
+                    end_time_unix_nano = 25;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp3";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 30;
+                    end_time_unix_nano = 35;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp4";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 40;
+                    end_time_unix_nano = 45;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp5";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 50;
+                    end_time_unix_nano = 55;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  };
+                  { trace_id = <bytes len=16>;
+                    span_id = <bytes len=8>;
+                    trace_state = "" (* absent *);
+                    parent_span_id = <bytes len=8>;
+                    flags = 0 (* absent *);
+                    name = "sp6";
+                    kind = Span_kind_unspecified (* absent *);
+                    start_time_unix_nano = 60;
+                    end_time_unix_nano = 65;
+                    attributes = [];
+                    dropped_attributes_count = 0 (* absent *);
+                    events = [];
+                    dropped_events_count = 0 (* absent *);
+                    links = [];
+                    dropped_links_count = 0 (* absent *);
+                    status = None;
+                  }
+                  ];
+               schema_url = "" (* absent *);
+             }
+             ];
+          schema_url = "" (* absent *);
+        }
