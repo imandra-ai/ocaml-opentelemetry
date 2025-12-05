@@ -30,7 +30,7 @@ end
     somewhere else, store them, etc.
     @param resource_attributes attributes added to every "resource" batch *)
 let create ?(resource_attributes = []) ~(q : Any_resource.t Bounded_queue.t)
-    ~(consumer : Any_resource.t Consumer.t) () : OTEL.Exporter.t =
+    ~(consumer : Consumer.any_resource_builder) () : OTEL.Exporter.t =
   let emit_spans =
     BQ_emitters.spans_emitter_of_bq ~attrs:resource_attributes q
   in
@@ -44,6 +44,8 @@ let create ?(resource_attributes = []) ~(q : Any_resource.t Bounded_queue.t)
   let on_tick f = Cb_set.register tick_set f in
 
   let closed = Atomic.make false in
+
+  let consumer = consumer.start_consuming q in
 
   let cleanup ~on_done () =
     if not (Atomic.exchange closed true) then (

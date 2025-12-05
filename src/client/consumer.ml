@@ -25,3 +25,6 @@ module Builder = struct
 
   let start_consuming (self : _ t) bq = self.start_consuming bq
 end
+
+type any_resource_builder = Any_resource.t Builder.t
+(** The type that's useful for OTEL backends *)

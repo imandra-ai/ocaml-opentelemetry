@@ -62,3 +62,8 @@ let to_emitter (self : 'a t) : 'a Opentelemetry_emitter.Emitter.t =
      fundamentally asynchronous because it's done by consumers *)
   let flush_and_close () = close self in
   { closed; enabled; emit; tick; flush_and_close }
+
+module Defaults = struct
+  (** The default high watermark *)
+  let high_watermark : int = 2048
+end
