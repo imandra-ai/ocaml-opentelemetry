@@ -23,7 +23,6 @@ module Consumer_impl = struct
     config: Config.t;
     mutable send_threads: Thread.t array;
         (** Threads that send data via http *)
-    cleaned: bool Atomic.t;  (** True when we cleaned up after closing *)
     mcond: Util_thread.MCond.t;  (** how to wait for the queue *)
   }
 
@@ -133,7 +132,6 @@ module Consumer_impl = struct
         config;
         send_threads = [||];
         bq = q;
-        cleaned = Atomic.make false;
         mcond = Util_thread.MCond.create ();
       }
     in

@@ -103,7 +103,8 @@ module Consumer_impl = struct
   }
 
   let shutdown self =
-    if not (Atomic.exchange self.stop true) then (
+    Atomic.set self.stop true;
+    if not (Atomic.exchange self.cleaned true) then (
       CNotifier.trigger self.notify;
       CNotifier.delete self.notify
     )
