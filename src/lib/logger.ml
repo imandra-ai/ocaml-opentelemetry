@@ -19,11 +19,11 @@ let get_main () : t =
   | None -> dummy
   | Some e -> e.emit_logs
 
-let emit ?attrs:_ (logs : Log_record.t list) : unit =
+let (emit [@deprecated "use an explicit Logger.t"]) =
+ fun (logs : Log_record.t list) : unit ->
   match Main_exporter.get () with
   | None -> ()
   | Some exp -> Exporter.send_logs exp logs
-[@@deprecated "use an explicit Logger.t"]
 
 (** An emitter that uses the current {!Main_exporter} *)
 let dynamic_forward_to_main_exporter : t =
