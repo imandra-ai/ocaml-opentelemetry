@@ -1,5 +1,3 @@
-open Common_
-
 open struct
   let bytes_per_word = Sys.word_size / 8
 
