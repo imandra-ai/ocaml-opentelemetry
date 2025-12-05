@@ -23,13 +23,6 @@
         overlay = final: prev:
           {
             # You can add overrides here
-            pbrt = prev.pbrt.overrideAttrs (oldAttrs: {
-              src = pkgs.fetchgit {
-                url = "https://github.com/mransan/ocaml-protoc.git";
-                rev = "5510694deffde13283742b8ad116fab61b65dfbc";
-                sha256 = "sha256-0eQEaAZMs/OydNLsEKxdbdwx0/Ots6fLEpYg89VxK3k=";
-              };
-            });
           };
         scope' = scope.overrideScope overlay;
         # Packages from devPackagesQuery
