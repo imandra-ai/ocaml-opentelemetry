@@ -6,7 +6,7 @@
   (>= %{ocaml_version} 5.0))
  (libraries
   opentelemetry
-  opentelemetry.client
+  opentelemetry-client
   eio
   eio.unix
   cohttp

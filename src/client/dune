@@ -1,6 +1,6 @@
 (library
  (name opentelemetry_client)
- (public_name opentelemetry.client)
+ (public_name opentelemetry-client)
  (flags :standard -open Opentelemetry_util)
  (libraries
   opentelemetry
@@ -8,7 +8,8 @@
   opentelemetry.emitter
   opentelemetry.proto
   pbrt
+  saturn
   mtime
   mtime.clock.os)
  (synopsis
-  "Basic exporters, as well as Common types and logic shared between exporters"))
+  "Basic exporters, as well as common types and logic shared between exporters"))

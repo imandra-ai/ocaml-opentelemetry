@@ -6,7 +6,7 @@
   (pps lwt_ppx))
  (libraries
   opentelemetry
-  opentelemetry.client
+  opentelemetry-client
   lwt
   cohttp-lwt
   cohttp-lwt-unix

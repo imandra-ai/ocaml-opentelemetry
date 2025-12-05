@@ -20,10 +20,10 @@ module Tracer = struct
   include Tracer
 
   (** Sync span guard *)
-  let with_ ?force_new_trace_id ?trace_state ?attrs ?kind ?trace_id ?parent
-      ?links name (cb : Span.t -> 'a Lwt.t) : 'a Lwt.t =
+  let with_ (self : t) ?force_new_trace_id ?trace_state ?attrs ?kind ?trace_id
+      ?parent ?links name (cb : Span.t -> 'a Lwt.t) : 'a Lwt.t =
     let thunk, finally =
-      with_thunk_and_finally ?force_new_trace_id ?trace_state ?attrs ?kind
+      with_thunk_and_finally self ?force_new_trace_id ?trace_state ?attrs ?kind
         ?trace_id ?parent ?links name cb
     in
 

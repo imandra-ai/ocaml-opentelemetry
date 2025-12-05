@@ -5,7 +5,7 @@
 
 open Opentelemetry_client
 open Common_
-module OT = Opentelemetry
+module OTEL = Opentelemetry
 module Config = Config
 
 let get_headers = Config.Env.get_headers
@@ -52,26 +52,13 @@ let start_bg_thread (f : unit -> unit) : Thread.t =
   Thread.create run ()
 
 let str_to_hex (s : string) : string =
-  let i_to_hex (i : int) =
-    if i < 10 then
-      Char.chr (i + Char.code '0')
-    else
-      Char.chr (i - 10 + Char.code 'a')
-  in
-
-  let res = Bytes.create (2 * String.length s) in
-  for i = 0 to String.length s - 1 do
-    let n = Char.code (String.get s i) in
-    Bytes.set res (2 * i) (i_to_hex ((n land 0xf0) lsr 4));
-    Bytes.set res ((2 * i) + 1) (i_to_hex (n land 0x0f))
-  done;
-  Bytes.unsafe_to_string res
+  Opentelemetry_util.Util_bytes_.bytes_to_hex (Bytes.unsafe_of_string s)
 
 module Exporter_impl : sig
   val n_bytes_sent : int Atomic.t
 
   class type t = object
-    inherit OT.Exporter.t
+    inherit OTEL.Exporter.t
 
     method shutdown : on_done:(unit -> unit) -> unit -> unit
   end
@@ -85,7 +72,7 @@ end = struct
   let n_bytes_sent : int Atomic.t = Atomic.make 0
 
   class type t = object
-    inherit OT.Exporter.t
+    inherit OTEL.Exporter.t
 
     method shutdown : on_done:(unit -> unit) -> unit -> unit
   end
@@ -301,12 +288,12 @@ end = struct
 end
 
 let create_exporter ?(stop = Atomic.make false)
-    ?(config : Config.t = Config.make ()) () : #OT.Exporter.t =
+    ?(config : Config.t = Config.make ()) () : #OTEL.Exporter.t =
   let backend = Exporter_impl.create ~stop ~config () in
-  (backend :> OT.Exporter.t)
+  (backend :> OTEL.Exporter.t)
 
 (** thread that calls [tick()] regularly, to help enforce timeouts *)
-let setup_ticker_thread ~stop ~sleep_ms (exp : #OT.Exporter.t) () =
+let setup_ticker_thread ~stop ~sleep_ms (exp : #OTEL.Exporter.t) () =
   let sleep_s = float sleep_ms /. 1000. in
   let tick_loop () =
     try
@@ -326,7 +313,7 @@ let setup_ticker_thread ~stop ~sleep_ms (exp : #OT.Exporter.t) () =
 let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
     : unit =
   let exporter = Exporter_impl.create ~stop ~config () in
-  OT.Exporter.Main_exporter.set exporter;
+  OTEL.Exporter.Main_exporter.set exporter;
 
   Self_trace.set_enabled config.common.self_trace;
 
@@ -338,7 +325,7 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
 
 let remove_backend () : unit =
   (* we don't need the callback, this runs in the same thread *)
-  OT.Exporter.Main_exporter.remove () ~on_done:ignore
+  OTEL.Exporter.Main_exporter.remove () ~on_done:ignore
 
 let setup ?stop ?config ?(enable = true) () =
   if enable then setup_ ?stop ?config ()

@@ -24,6 +24,7 @@ module Timestamp_ns = Timestamp_ns
 
 (** {2 Export signals to some external collector.} *)
 
+module Emitter = Opentelemetry_emitter.Emitter
 module Exporter = Exporter
 module Main_exporter = Main_exporter
 

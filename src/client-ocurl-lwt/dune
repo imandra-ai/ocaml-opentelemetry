@@ -7,7 +7,7 @@
  (libraries
   opentelemetry
   opentelemetry.atomic
-  opentelemetry.client
+  opentelemetry-client
   pbrt
   mtime
   mtime.clock.os
