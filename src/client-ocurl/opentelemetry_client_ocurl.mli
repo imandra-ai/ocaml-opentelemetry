@@ -4,7 +4,6 @@
    *)
 
 open Opentelemetry_atomic
-open Opentelemetry_util
 
 val get_headers : unit -> (string * string) list
 
@@ -16,8 +15,19 @@ module Config = Config
 val n_bytes_sent : unit -> int
 (** Global counter of bytes sent (or attempted to be sent) *)
 
+val consumer :
+  ?stop:bool Atomic.t ->
+  ?config:Config.t ->
+  unit ->
+  Opentelemetry_client.Consumer.any_resource_builder
+(** Consumer that pulls from a queue *)
+
 val create_exporter :
   ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+
+val create_backend :
+  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+[@@deprecated "use create_exporter"]
 
 val setup :
   ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit
