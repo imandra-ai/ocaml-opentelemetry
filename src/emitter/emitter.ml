@@ -56,6 +56,7 @@ let tap (f : 'a -> unit) (self : 'a t) : 'a t =
   in
   { self with emit }
 
+(** Dummy emitter, doesn't accept or emit anything. *)
 let dummy : _ t =
   {
     enabled = (fun () -> false);
