@@ -19,8 +19,8 @@ type t = private {
       (** Batch metrics? If [Some i], then this produces batches of (at most)
           [i] items. If [None], there is no batching.
 
-          Note that traces and metrics are batched separately. Default [None].
-      *)
+          Note that traces and metrics are batched separately. Default
+          [Some 20]. *)
   batch_logs: int option;
       (** Batch logs? See {!batch_metrics} for details. Default [Some 400] *)
   batch_timeout_ms: int;
