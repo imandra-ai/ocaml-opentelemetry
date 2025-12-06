@@ -14,27 +14,13 @@ let get_headers = Config.Env.get_headers
 
 type error = Export_error.t
 
-(* TODO: emit this in a metric in [tick()] if self tracing is enabled? *)
-let n_errors = Atomic.make 0
-
-let report_err_ = Export_error.report_err
+open struct
+  module IO = Opentelemetry_client_lwt.Io_lwt
+end
 
 (** HTTP client *)
-module Httpc : sig
-  type t
-
-  val create : unit -> t
-
-  val send :
-    t ->
-    url:string ->
-    decode:[ `Dec of Pbrt.Decoder.t -> 'a | `Ret of 'a ] ->
-    string ->
-    ('a, error) result Lwt.t
-
-  val cleanup : t -> unit
-end = struct
-  open Opentelemetry.Proto
+module Httpc : Generic_http_consumer.HTTPC with module IO = IO = struct
+  module IO = IO
   open Lwt.Syntax
 
   type t = Curl.t
@@ -43,7 +29,7 @@ end = struct
 
   let cleanup self = Ezcurl_core.delete self
 
-  (* send the content to the remote endpoint/path *)
+  (** send the content to the remote endpoint/path *)
   let send (self : t) ~url ~decode (bod : string) : ('a, error) result Lwt.t =
     let* r =
       let headers =
@@ -86,139 +72,12 @@ end = struct
       Lwt.return (Error err)
 end
 
-module Consumer_impl = struct
-  module CNotifier = Opentelemetry_client_lwt.Notifier
-  open Lwt.Syntax
-
-  type state = {
-    stop: bool Atomic.t;
-    cleaned: bool Atomic.t;  (** True when we cleaned up after closing *)
-    config: Config.t;
-    q: Any_resource.t Bounded_queue.t;
-    notify: CNotifier.t;
-  }
-
-  let shutdown self =
-    Atomic.set self.stop true;
-    if not (Atomic.exchange self.cleaned true) then (
-      CNotifier.trigger self.notify;
-      CNotifier.delete self.notify
-    )
-
-  let send_http_ (self : state) ~backoff (httpc : Httpc.t) ~url (data : string)
-      : unit Lwt.t =
-    let* r = Httpc.send httpc ~url ~decode:(`Ret ()) data in
-    match r with
-    | Ok () ->
-      Util_backoff.on_success backoff;
-      Lwt.return ()
-    | Error `Sysbreak ->
-      Printf.eprintf "ctrl-c captured, stopping\n%!";
-      Atomic.set self.stop true;
-      Lwt.return ()
-    | Error err ->
-      Atomic.incr n_errors;
-      let dur_s = Util_backoff.cur_duration_s backoff in
-      Util_backoff.on_error backoff;
-      report_err_ err;
-      Lwt_unix.sleep (dur_s +. Random.float (dur_s /. 10.))
-
-  let send_metrics_http (st : state) client ~encoder
-      (l : Proto.Metrics.resource_metrics list) =
-    let msg = Signal.Encode.metrics ~encoder l in
-    Pbrt.Encoder.reset encoder;
-    send_http_ st client msg ~url:st.config.url_metrics
-
-  let send_traces_http st client ~encoder (l : Proto.Trace.resource_spans list)
-      =
-    let msg = Signal.Encode.traces ~encoder l in
-    Pbrt.Encoder.reset encoder;
-    send_http_ st client msg ~url:st.config.url_traces
-
-  let send_logs_http st client ~encoder (l : Proto.Logs.resource_logs list) =
-    let msg = Signal.Encode.logs ~encoder l in
-    Pbrt.Encoder.reset encoder;
-    send_http_ st client msg ~url:st.config.url_logs
-
-  let tick (self : state) = CNotifier.trigger self.notify
-
-  let start_worker (self : state) : unit =
-    let client = Httpc.create () in
-    let encoder = Pbrt.Encoder.create () in
-    let backoff = Util_backoff.create () in
-
-    (* loop on [q] *)
-    let rec loop () : unit Lwt.t =
-      if Atomic.get self.stop then
-        Lwt.return ()
-      else
-        let* () =
-          match Bounded_queue.try_pop self.q with
-          | `Closed ->
-            shutdown self;
-            Lwt.return ()
-          | `Empty -> CNotifier.wait self.notify
-          | `Item (R_logs logs) ->
-            send_logs_http self client ~backoff ~encoder logs
-          | `Item (R_metrics ms) ->
-            send_metrics_http self client ~encoder ~backoff ms
-          | `Item (R_spans spans) ->
-            send_traces_http self client ~encoder ~backoff spans
-        in
-        loop ()
-    in
-
-    Lwt.async (fun () ->
-        Lwt.finalize loop (fun () ->
-            Httpc.cleanup client;
-            Lwt.return ()))
-
-  let default_n_workers = 50
-
-  let create_state ~stop ~config ~q () : state =
-    let self =
-      {
-        stop;
-        config;
-        q;
-        cleaned = Atomic.make false;
-        notify = CNotifier.create ();
-      }
-    in
-
-    (* start workers *)
-    let n_workers =
-      min 2
-        (max 500
-           (Option.value ~default:default_n_workers
-              config.http_concurrency_level))
-    in
-    for _i = 1 to n_workers do
-      start_worker self
-    done;
-
-    self
-
-  let to_consumer (self : state) : Any_resource.t Consumer.t =
-    let active () = not (Atomic.get self.stop) in
-    let shutdown ~on_done =
-      shutdown self;
-      on_done ()
-    in
-    let tick () = tick self in
-    { active; tick; shutdown }
-
-  let consumer ~stop ~config () : Consumer.any_resource_builder =
-    {
-      start_consuming =
-        (fun q ->
-          let st = create_state ~stop ~config ~q () in
-          to_consumer st);
-    }
-end
+module Consumer_impl =
+  Generic_http_consumer.Make (IO) (Opentelemetry_client_lwt.Notifier_lwt)
+    (Httpc)
 
 let create_consumer ?(stop = Atomic.make false) ?(config = Config.make ()) () =
-  Consumer_impl.consumer ~stop ~config ()
+  Consumer_impl.consumer ~ticker_task:(Some 0.5) ~stop ~config ()
 
 let create_exporter ?stop ?(config = Config.make ()) () =
   let consumer = create_consumer ?stop ~config () in

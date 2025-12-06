@@ -12,160 +12,83 @@ let get_headers = Config.Env.get_headers
 
 let set_headers = Config.Env.set_headers
 
-let n_errors = Atomic.make 0
-
 let n_bytes_sent : int Atomic.t = Atomic.make 0
 
-module Consumer_impl = struct
-  type state = {
-    bq: Any_resource.t Bounded_queue.t;  (** Queue of incoming workload *)
-    stop: bool Atomic.t;
-    config: Config.t;
-    mutable send_threads: Thread.t array;
-        (** Threads that send data via http *)
-    mcond: Util_thread.MCond.t;  (** how to wait for the queue *)
-  }
+type error = Export_error.t
 
-  let shutdown self : unit =
-    Atomic.set self.stop true;
-    (* wakeup sleepers *)
-    Util_thread.MCond.signal self.mcond
+open struct
+  module Notifier = Notifier_sync
 
-  let send_http_ (self : state) (client : Curl.t) ~backoff ~url (data : string)
-      : unit =
-    let@ _sc =
-      Self_trace.with_ ~kind:Span_kind_producer "otel-ocurl.send-http"
-    in
+  module IO : Generic_io.S_WITH_CONCURRENCY with type 'a t = 'a = struct
+    include Generic_io.Direct_style
 
-    (* avoid crazy error loop *)
-    let sleep_with_backoff () =
-      let dur_s = Util_backoff.cur_duration_s backoff in
-      Util_backoff.on_error backoff;
-      Thread.delay (dur_s +. Random.float (dur_s /. 10.))
-    in
+    let sleep_s = Thread.delay
 
-    if Config.Env.get_debug () then
-      Printf.eprintf "opentelemetry: send http POST to %s (%dB)\n%!" url
-        (String.length data);
-    let headers =
-      ("Content-Type", "application/x-protobuf") :: self.config.common.headers
-    in
-    match
-      let@ _sc =
-        Self_trace.with_ ~kind:Span_kind_internal "curl.post"
-          ~attrs:[ "size", `Int (String.length data); "url", `String url ]
-      in
-      Ezcurl.post ~headers ~client ~params:[] ~url ~content:(`String data) ()
-    with
-    | Ok { code; _ } when code >= 200 && code < 300 ->
-      Util_backoff.on_success backoff;
-      if Config.Env.get_debug () then
-        Printf.eprintf "opentelemetry: got response code=%d\n%!" code
-    | Ok { code; body; headers = _; info = _ } ->
-      Atomic.incr n_errors;
-      Self_trace.add_event _sc
-      @@ Opentelemetry.Event.make "error" ~attrs:[ "code", `Int code ];
-
-      if Config.Env.get_debug () then (
-        let err = Export_error.decode_invalid_http_response ~url ~code body in
-        Export_error.report_err err;
-        ()
-      );
-
-      sleep_with_backoff ()
-    | exception Sys.Break ->
-      Printf.eprintf "ctrl-c captured, stopping\n%!";
-      shutdown self
-    | Error (code, msg) ->
-      Atomic.incr n_errors;
-
-      Printf.eprintf
-        "opentelemetry: export failed:\n  %s\n  curl code: %s\n  url: %s\n%!"
-        msg (Curl.strerror code) url;
-
-      sleep_with_backoff ()
-
-  (** The main loop of a thread that, reads from [bq] to get the next message to
-      send via http *)
-  let bg_thread_loop (self : state) : unit =
-    Ezcurl.with_client ?set_opts:None @@ fun client ->
-    (* we need exactly one encoder per thread *)
-    let encoder = Pbrt.Encoder.create ~size:2048 () in
-    let backoff = Util_backoff.create () in
-
-    let send ~name ~url ~conv ~backoff (signals : _ list) : unit =
-      let@ _sp =
-        Self_trace.with_ ~kind:Span_kind_producer name
-          ~attrs:[ "n", `Int (List.length signals) ]
-      in
-
-      let msg : string = conv ?encoder:(Some encoder) signals in
-      Pbrt.Encoder.reset encoder;
-
-      ignore (Atomic.fetch_and_add n_bytes_sent (String.length msg) : int);
-      send_http_ self client msg ~backoff ~url;
-      ()
-    in
-    while not (Atomic.get self.stop) do
-      match Bounded_queue.try_pop self.bq with
-      | `Closed -> shutdown self
-      | `Empty -> Util_thread.MCond.wait self.mcond
-      | `Item (Any_resource.R_spans tr) ->
-        send ~name:"send-traces" ~conv:Signal.Encode.traces ~backoff
-          ~url:self.config.common.url_traces tr
-      | `Item (Any_resource.R_metrics ms) ->
-        send ~name:"send-metrics" ~conv:Signal.Encode.metrics ~backoff
-          ~url:self.config.common.url_metrics ms
-      | `Item (Any_resource.R_logs logs) ->
-        send ~name:"send-logs" ~conv:Signal.Encode.logs ~backoff
-          ~url:self.config.common.url_logs logs
-    done
-
-  let to_consumer (self : state) : _ Consumer.t =
-    let active () = not (Atomic.get self.stop) in
-    let tick () =
-      (* make sure to poll from time to time *)
-      Util_thread.MCond.signal self.mcond
-    in
-    let shutdown ~on_done =
-      shutdown self;
-      on_done ()
-    in
-    { tick; active; shutdown }
-
-  let create_state ~stop ~(config : Config.t) ~q () : state =
-    let n_send_threads = min 100 @@ max 2 config.bg_threads in
-
-    let self =
-      {
-        stop;
-        config;
-        send_threads = [||];
-        bq = q;
-        mcond = Util_thread.MCond.create ();
-      }
-    in
-
-    Util_thread.MCond.wakeup_from_bq self.mcond q;
-
-    self.send_threads <-
-      Array.init n_send_threads (fun _i ->
-          Util_thread.start_bg_thread (fun () -> bg_thread_loop self));
-
-    self
-
-  let create ~stop ~config () : Consumer.any_resource_builder =
-    {
-      start_consuming =
-        (fun q ->
-          let st = create_state ~stop ~config ~q () in
-          to_consumer st);
-    }
+    let[@inline] spawn f = ignore (Util_thread.start_bg_thread f : Thread.t)
+  end
 end
+
+module Httpc : Generic_http_consumer.HTTPC with module IO = IO = struct
+  module IO = IO
+
+  type t = Curl.t
+
+  let create () = Ezcurl.make ()
+
+  let cleanup = Ezcurl.delete
+
+  let send (self : t) ~url ~decode (bod : string) : ('a, error) result =
+    let r =
+      let headers =
+        ("Content-Type", "application/x-protobuf")
+        :: ("Accept", "application/x-protobuf")
+        :: Config.Env.get_headers ()
+      in
+      Ezcurl.post ~client:self ~headers ~params:[] ~url ~content:(`String bod)
+        ()
+    in
+    match r with
+    | Error (code, msg) ->
+      let err =
+        `Failure
+          (spf
+             "sending signals via http POST failed:\n\
+             \  %s\n\
+             \  curl code: %s\n\
+             \  url: %s\n\
+              %!"
+             msg (Curl.strerror code) url)
+      in
+      Error err
+    | Ok { code; body; _ } when code >= 200 && code < 300 ->
+      (match decode with
+      | `Ret x -> Ok x
+      | `Dec f ->
+        let dec = Pbrt.Decoder.of_string body in
+        (try Ok (f dec)
+         with e ->
+           let bt = Printexc.get_backtrace () in
+           Error
+             (`Failure
+                (spf "decoding failed with:\n%s\n%s" (Printexc.to_string e) bt))))
+    | Ok { code; body; _ } ->
+      let err = Export_error.decode_invalid_http_response ~url ~code body in
+      Error err
+end
+
+module Consumer_impl = Generic_http_consumer.Make (IO) (Notifier) (Httpc)
 
 let consumer ?(stop = Atomic.make false) ?(config = Config.make ()) () :
     Opentelemetry_client.Consumer.any_resource_builder =
-  Consumer_impl.create ~stop ~config ()
+  let n_workers = max 2 (min 32 config.bg_threads) in
+  let ticker_task =
+    if config.ticker_thread then
+      Some (float config.ticker_interval_ms /. 1000.)
+    else
+      None
+  in
+  Consumer_impl.consumer ~override_n_workers:n_workers ~ticker_task ~stop
+    ~config:config.common ()
 
 let create_exporter ?stop ?(config = Config.make ()) () : OTEL.Exporter.t =
   let consumer = consumer ?stop ~config () in
