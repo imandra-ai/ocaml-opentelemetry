@@ -13,8 +13,10 @@ let delete = ignore
 
 let[@inline] protect self f = Util_mutex.protect self.mutex f
 
-(** NOTE: the mutex must be acquired *)
-let wait self = Condition.wait self.cond self.mutex
+let wait self =
+  Mutex.lock self.mutex;
+  Condition.wait self.cond self.mutex;
+  Mutex.unlock self.mutex
 
 (** Ensure we get signalled when the queue goes from empty to non-empty *)
 let register_bounded_queue (self : t) (bq : _ Bounded_queue.t) : unit =
