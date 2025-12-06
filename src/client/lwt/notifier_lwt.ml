@@ -1,5 +1,7 @@
 (** Notification that can be used on the consumer side of a bounded queue *)
 
+module IO = Io_lwt
+
 type t = {
   notified: bool Atomic.t;
   cond: unit Lwt_condition.t;

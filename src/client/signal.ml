@@ -48,7 +48,9 @@ module Encode = struct
     let x = ctor resource in
     let@ _sc = Self_trace.with_ ~kind:Span.Span_kind_internal "encode-proto" in
     enc x encoder;
-    Pbrt.Encoder.to_string encoder
+    let data = Pbrt.Encoder.to_string encoder in
+    Pbrt.Encoder.reset encoder;
+    data
 
   let logs ?encoder resource_logs =
     resource_to_string ~encoder resource_logs
