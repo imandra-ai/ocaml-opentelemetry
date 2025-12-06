@@ -10,15 +10,32 @@ val set_headers : (string * string) list -> unit
 
 module Config = Config
 
-val create_backend :
-  sw:Eio.Switch.t ->
+val create_consumer :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
-  Eio_unix.Stdenv.base ->
-  (module Opentelemetry.Collector.BACKEND)
-(** Create a new backend using Cohttp_eio
+  sw:Eio.Switch.t ->
+  env:Eio_unix.Stdenv.base ->
+  unit ->
+  Opentelemetry_client.Consumer.any_resource_builder
+(** Consumer that pulls from a queue *)
 
-    NOTE [after_cleanup] optional parameter removed @since 0.12 *)
+val create_exporter :
+  ?stop:bool Atomic.t ->
+  ?config:Config.t ->
+  sw:Eio.Switch.t ->
+  env:Eio_unix.Stdenv.base ->
+  unit ->
+  Opentelemetry.Exporter.t
+(** NOTE [after_cleanup] optional parameter removed @since 0.12 *)
+
+val create_backend :
+  ?stop:bool Atomic.t ->
+  ?config:Config.t ->
+  sw:Eio.Switch.t ->
+  env:Eio_unix.Stdenv.base ->
+  unit ->
+  Opentelemetry.Exporter.t
+[@@deprecated "use create_exporter"]
 
 val setup :
   ?stop:bool Atomic.t ->
