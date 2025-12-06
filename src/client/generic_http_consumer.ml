@@ -5,6 +5,34 @@ type error = Export_error.t
 (** Number of errors met during export *)
 let n_errors = Atomic.make 0
 
+(* TODO: put this somewhere with an interval limiter to 30s
+
+    (* there is a possible race condition here, as several threads might update
+       metrics at the same time. But that's harmless. *)
+    if add_own_metrics then (
+      Atomic.set last_sent_metrics now;
+      let open OT.Metrics in
+      [
+        make_resource_metrics
+          [
+            sum ~name:"otel.export.dropped" ~is_monotonic:true
+              [
+                int
+                  ~start_time_unix_nano:(Mtime.to_uint64_ns last_emit)
+                  ~now:(Mtime.to_uint64_ns now) (Atomic.get n_dropped);
+              ];
+            sum ~name:"otel.export.errors" ~is_monotonic:true
+              [
+                int
+                  ~start_time_unix_nano:(Mtime.to_uint64_ns last_emit)
+                  ~now:(Mtime.to_uint64_ns now) (Atomic.get n_errors);
+              ];
+          ];
+      ]
+    ) else
+      []
+*)
+
 module type IO = Generic_io.S_WITH_CONCURRENCY
 
 module type HTTPC = sig
