@@ -19,6 +19,14 @@ val add_metrics_cb : t -> (unit -> Metrics.t list) -> unit
 val add_to_exporter : Exporter.t -> t -> unit
 (** Make sure we export metrics at every [tick] of the exporter *)
 
+val with_set_added_to_exporter : Exporter.t -> (t -> 'a) -> 'a
+(** [with_set_added_to_exporter exp f] creates a set, adds it to the exporter,
+    and calls [f] on it *)
+
+val with_set_added_to_main_exporter : (t -> unit) -> unit
+(** If there is a main exporter, add a set to it and call [f set], else do not
+    call [f] at all *)
+
 module Main_set : sig
   val get : unit -> t
   (** The global set *)

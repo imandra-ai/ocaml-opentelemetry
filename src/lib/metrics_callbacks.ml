@@ -22,10 +22,20 @@ let add_to_exporter (exp : Exporter.t) (self : t) =
   in
   Exporter.on_tick exp on_tick
 
+let with_set_added_to_exporter (exp : Exporter.t) (f : t -> 'a) : 'a =
+  let set = create () in
+  add_to_exporter exp set;
+  f set
+
+let with_set_added_to_main_exporter (f : t -> unit) : unit =
+  match Main_exporter.get () with
+  | None -> ()
+  | Some exp -> with_set_added_to_exporter exp f
+
 module Main_set = struct
   let cur_set_ : t option Atomic.t = Atomic.make None
 
-  let rec get () =
+  let rec get () : t =
     match Atomic.get cur_set_ with
     | Some s -> s
     | None ->
