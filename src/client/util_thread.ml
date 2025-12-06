@@ -42,23 +42,3 @@ let setup_ticker_thread ~stop ~sleep_ms (exp : OTEL.Exporter.t) () =
         (Printexc.to_string exn)
   in
   start_bg_thread tick_loop
-
-module MCond = struct
-  type t = {
-    mutex: Mutex.t;
-    cond: Condition.t;
-  }
-
-  let create () : t = { mutex = Mutex.create (); cond = Condition.create () }
-
-  let signal self = Condition.signal self.cond
-
-  let[@inline] protect self f = Util_mutex.protect self.mutex f
-
-  (** NOTE: the mutex must be acquired *)
-  let wait self = Condition.wait self.cond self.mutex
-
-  (** Ensure we get signalled when the queue goes from empty to non-empty *)
-  let wakeup_from_bq (self : t) (bq : _ Bounded_queue.t) : unit =
-    Bounded_queue.on_non_empty bq (fun () -> signal self)
-end

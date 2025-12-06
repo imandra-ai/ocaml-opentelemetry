@@ -1,8 +1,21 @@
-include Util_thread.MCond
 module IO = Generic_io.Direct_style
+
+type t = {
+  mutex: Mutex.t;
+  cond: Condition.t;
+}
+
+let create () : t = { mutex = Mutex.create (); cond = Condition.create () }
+
+let trigger self = Condition.signal self.cond
 
 let delete = ignore
 
-let trigger = signal
+let[@inline] protect self f = Util_mutex.protect self.mutex f
 
-let register_bounded_queue = wakeup_from_bq
+(** NOTE: the mutex must be acquired *)
+let wait self = Condition.wait self.cond self.mutex
+
+(** Ensure we get signalled when the queue goes from empty to non-empty *)
+let register_bounded_queue (self : t) (bq : _ Bounded_queue.t) : unit =
+  Bounded_queue.on_non_empty bq (fun () -> trigger self)
