@@ -1,4 +1,4 @@
-module T = Opentelemetry
+module OT = Opentelemetry
 module Atomic = Opentelemetry_atomic.Atomic
 
 let spf = Printf.sprintf
@@ -23,13 +23,14 @@ let num_tr = Atomic.make 0
 
 let run_job () =
   let@ () = Fun.protect ~finally:(fun () -> Atomic.set stop true) in
+  let tracer = OT.Tracer.get_main () in
   let i = ref 0 in
   let cnt = ref 0 in
 
   while (not @@ Atomic.get stop) && !cnt < !n do
     let@ _scope =
       Atomic.incr num_tr;
-      T.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
+      OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_producer "loop.outer"
         ~attrs:[ "i", `Int !i ]
     in
 
@@ -40,7 +41,7 @@ let run_job () =
       (* parent scope is found via thread local storage *)
       let@ scope =
         Atomic.incr num_tr;
-        T.Trace.with_ ~kind:T.Span.Span_kind_internal
+        OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal
           ~attrs:[ "j", `Int j ]
           "loop.inner"
       in
@@ -48,18 +49,22 @@ let run_job () =
       Unix.sleepf !sleep_outer;
       Atomic.incr num_sleep;
 
-      T.Logs.(
-        emit
-          [
-            make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
-              ~severity:Severity_number_info "inner at %d" j;
-          ]);
+      let logger = OT.Logger.get_main () in
+      OT.Emitter.emit logger
+        [
+          OT.Log_record.make_strf ~trace_id:(OT.Span.trace_id scope)
+            ~span_id:(OT.Span.id scope) ~severity:Severity_number_info
+            "inner at %d" j;
+        ];
 
       incr i;
 
       try
         Atomic.incr num_tr;
-        let@ _ = T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope "alloc" in
+        let@ _ =
+          OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal ~parent:scope
+            "alloc"
+        in
         (* allocate some stuff *)
         if !stress_alloc_ then (
           let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
@@ -72,23 +77,23 @@ let run_job () =
         if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
         (* simulate a failure *)
-        Opentelemetry.Scope.add_event scope (fun () ->
-            T.Event.make "done with alloc")
+        OT.Span.add_event scope (OT.Event.make "done with alloc")
       with Failure _ -> ()
     done
   done
 
 let run () =
-  T.GC_metrics.basic_setup ();
+  OT.Gc_metrics.setup_on_main_exporter ();
 
-  T.Metrics_callbacks.register (fun () ->
-      T.Metrics.
-        [
-          sum ~name:"num-sleep" ~is_monotonic:true
-            [ int (Atomic.get num_sleep) ];
-          sum ~name:"otel.bytes-sent" ~is_monotonic:true ~unit_:"B"
-            [ int (Opentelemetry_client_ocurl.n_bytes_sent ()) ];
-        ]);
+  OT.Metrics_callbacks.with_set_added_to_main_exporter (fun set ->
+      OT.Metrics_callbacks.add_metrics_cb set (fun () ->
+          OT.Metrics.
+            [
+              sum ~name:"num-sleep" ~is_monotonic:true
+                [ int (Atomic.get num_sleep) ];
+              sum ~name:"otel.bytes-sent" ~is_monotonic:true ~unit_:"B"
+                [ int (Opentelemetry_client_ocurl.n_bytes_sent ()) ];
+            ]));
 
   let n_jobs = max 1 !n_jobs in
   Printf.printf "run %d jobs\n%!" n_jobs;
@@ -101,8 +106,8 @@ let run () =
   Array.iter Thread.join jobs
 
 let () =
-  T.Globals.service_name := "t1";
-  T.Globals.service_namespace := Some "ocaml-otel.test";
+  OT.Globals.service_name := "t1";
+  OT.Globals.service_namespace := Some "ocaml-otel.test";
   let ts_start = Unix.gettimeofday () in
 
   let debug = ref false in

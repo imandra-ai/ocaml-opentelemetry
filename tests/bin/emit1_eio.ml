@@ -82,12 +82,14 @@ let run_job clock _job_id iterations : unit =
 let run env proc iterations () : unit =
   OT.Gc_metrics.setup_on_main_exporter ();
 
-  OT.Metrics_callbacks.register (fun () ->
-      OT.Metrics.
-        [
-          sum ~name:"num-sleep" ~is_monotonic:true
-            [ int (Atomic.get num_sleep) ];
-        ]);
+  OT.Metrics_callbacks.(
+    with_set_added_to_main_exporter (fun set ->
+        add_metrics_cb set (fun () ->
+            OT.Metrics.
+              [
+                sum ~name:"num-sleep" ~is_monotonic:true
+                  [ int (Atomic.get num_sleep) ];
+              ])));
 
   let n_jobs = max 1 !n_jobs in
   Printf.printf "run %d jobs in proc %d\n%!" n_jobs proc;
@@ -172,4 +174,4 @@ let () =
            Eio.Fiber.fork ~sw @@ fun () ->
            Eio.Domain_manager.run dm (run env proc !n_iterations)
          done));
-  Opentelemetry.Collector.remove_backend () ~on_done:ignore
+  Opentelemetry.Main_exporter.remove () ~on_done:ignore
