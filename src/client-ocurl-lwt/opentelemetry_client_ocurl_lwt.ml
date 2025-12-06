@@ -12,10 +12,6 @@ let set_headers = Config.Env.set_headers
 
 let get_headers = Config.Env.get_headers
 
-external reraise : exn -> 'a = "%reraise"
-(** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to
-    use Lwt's latest version *)
-
 type error = Export_error.t
 
 (* TODO: emit this in a metric in [tick()] if self tracing is enabled? *)
@@ -109,21 +105,23 @@ module Consumer_impl = struct
       CNotifier.delete self.notify
     )
 
-  let send_http_ (self : state) (httpc : Httpc.t) ~url (data : string) :
-      unit Lwt.t =
+  let send_http_ (self : state) ~backoff (httpc : Httpc.t) ~url (data : string)
+      : unit Lwt.t =
     let* r = Httpc.send httpc ~url ~decode:(`Ret ()) data in
     match r with
-    | Ok () -> Lwt.return ()
+    | Ok () ->
+      Util_backoff.on_success backoff;
+      Lwt.return ()
     | Error `Sysbreak ->
       Printf.eprintf "ctrl-c captured, stopping\n%!";
       Atomic.set self.stop true;
       Lwt.return ()
     | Error err ->
-      (* TODO: log error _via_ otel? *)
       Atomic.incr n_errors;
+      let dur_s = Util_backoff.cur_duration_s backoff in
+      Util_backoff.on_error backoff;
       report_err_ err;
-      (* avoid crazy error loop *)
-      Lwt_unix.sleep 3.
+      Lwt_unix.sleep (dur_s +. Random.float (dur_s /. 10.))
 
   let send_metrics_http (st : state) client ~encoder
       (l : Proto.Metrics.resource_metrics list) =
@@ -147,6 +145,7 @@ module Consumer_impl = struct
   let start_worker (self : state) : unit =
     let client = Httpc.create () in
     let encoder = Pbrt.Encoder.create () in
+    let backoff = Util_backoff.create () in
 
     (* loop on [q] *)
     let rec loop () : unit Lwt.t =
@@ -159,9 +158,12 @@ module Consumer_impl = struct
             shutdown self;
             Lwt.return ()
           | `Empty -> CNotifier.wait self.notify
-          | `Item (R_logs logs) -> send_logs_http self client ~encoder logs
-          | `Item (R_metrics ms) -> send_metrics_http self client ~encoder ms
-          | `Item (R_spans spans) -> send_traces_http self client ~encoder spans
+          | `Item (R_logs logs) ->
+            send_logs_http self client ~backoff ~encoder logs
+          | `Item (R_metrics ms) ->
+            send_metrics_http self client ~encoder ~backoff ms
+          | `Item (R_spans spans) ->
+            send_traces_http self client ~encoder ~backoff spans
         in
         loop ()
     in
@@ -255,6 +257,6 @@ let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t
         res)
       (fun exn ->
         let* () = remove_backend () in
-        reraise exn)
+        Lwt.reraise exn)
   ) else
     f ()

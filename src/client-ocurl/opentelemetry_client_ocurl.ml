@@ -31,9 +31,17 @@ module Consumer_impl = struct
     (* wakeup sleepers *)
     Util_thread.MCond.signal self.mcond
 
-  let send_http_ (self : state) (client : Curl.t) ~url (data : string) : unit =
+  let send_http_ (self : state) (client : Curl.t) ~backoff ~url (data : string)
+      : unit =
     let@ _sc =
       Self_trace.with_ ~kind:Span_kind_producer "otel-ocurl.send-http"
+    in
+
+    (* avoid crazy error loop *)
+    let sleep_with_backoff () =
+      let dur_s = Util_backoff.cur_duration_s backoff in
+      Util_backoff.on_error backoff;
+      Thread.delay (dur_s +. Random.float (dur_s /. 10.))
     in
 
     if Config.Env.get_debug () then
@@ -50,6 +58,7 @@ module Consumer_impl = struct
       Ezcurl.post ~headers ~client ~params:[] ~url ~content:(`String data) ()
     with
     | Ok { code; _ } when code >= 200 && code < 300 ->
+      Util_backoff.on_success backoff;
       if Config.Env.get_debug () then
         Printf.eprintf "opentelemetry: got response code=%d\n%!" code
     | Ok { code; body; headers = _; info = _ } ->
@@ -61,20 +70,20 @@ module Consumer_impl = struct
         let err = Export_error.decode_invalid_http_response ~url ~code body in
         Export_error.report_err err;
         ()
-      )
+      );
+
+      sleep_with_backoff ()
     | exception Sys.Break ->
       Printf.eprintf "ctrl-c captured, stopping\n%!";
       shutdown self
     | Error (code, msg) ->
-      (* TODO: log error _via_ otel? *)
       Atomic.incr n_errors;
 
       Printf.eprintf
         "opentelemetry: export failed:\n  %s\n  curl code: %s\n  url: %s\n%!"
         msg (Curl.strerror code) url;
 
-      (* avoid crazy error loop *)
-      Thread.delay 3.
+      sleep_with_backoff ()
 
   (** The main loop of a thread that, reads from [bq] to get the next message to
       send via http *)
@@ -82,8 +91,9 @@ module Consumer_impl = struct
     Ezcurl.with_client ?set_opts:None @@ fun client ->
     (* we need exactly one encoder per thread *)
     let encoder = Pbrt.Encoder.create ~size:2048 () in
+    let backoff = Util_backoff.create () in
 
-    let send ~name ~url ~conv (signals : _ list) : unit =
+    let send ~name ~url ~conv ~backoff (signals : _ list) : unit =
       let@ _sp =
         Self_trace.with_ ~kind:Span_kind_producer name
           ~attrs:[ "n", `Int (List.length signals) ]
@@ -93,7 +103,7 @@ module Consumer_impl = struct
       Pbrt.Encoder.reset encoder;
 
       ignore (Atomic.fetch_and_add n_bytes_sent (String.length msg) : int);
-      send_http_ self client msg ~url;
+      send_http_ self client msg ~backoff ~url;
       ()
     in
     while not (Atomic.get self.stop) do
@@ -101,13 +111,13 @@ module Consumer_impl = struct
       | `Closed -> shutdown self
       | `Empty -> Util_thread.MCond.wait self.mcond
       | `Item (Any_resource.R_spans tr) ->
-        send ~name:"send-traces" ~conv:Signal.Encode.traces
+        send ~name:"send-traces" ~conv:Signal.Encode.traces ~backoff
           ~url:self.config.common.url_traces tr
       | `Item (Any_resource.R_metrics ms) ->
-        send ~name:"send-metrics" ~conv:Signal.Encode.metrics
+        send ~name:"send-metrics" ~conv:Signal.Encode.metrics ~backoff
           ~url:self.config.common.url_metrics ms
       | `Item (Any_resource.R_logs logs) ->
-        send ~name:"send-logs" ~conv:Signal.Encode.logs
+        send ~name:"send-logs" ~conv:Signal.Encode.logs ~backoff
           ~url:self.config.common.url_logs logs
     done
 
