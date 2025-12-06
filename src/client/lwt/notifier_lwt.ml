@@ -6,6 +6,7 @@ type t = {
   notified: bool Atomic.t;
   cond: unit Lwt_condition.t;
   notification: int;
+  lwt_tid: int;  (** thread ID where lwt runs *)
   deleted: bool Atomic.t;
 }
 
@@ -17,14 +18,20 @@ let create () : t =
         Atomic.set notified false;
         Lwt_condition.broadcast cond ())
   in
-  { notified; notification; cond; deleted = Atomic.make false }
+  let lwt_tid = Thread.id @@ Thread.self () in
+  { notified; notification; cond; lwt_tid; deleted = Atomic.make false }
 
 let delete self : unit =
   if not (Atomic.exchange self.deleted true) then
     Lwt_unix.stop_notification self.notification
 
 let trigger (self : t) : unit =
-  if not (Atomic.exchange self.notified true) then
+  let tid = Thread.id @@ Thread.self () in
+
+  if tid = self.lwt_tid then
+    (* in lwt thread, directly use the condition *)
+    Lwt_condition.broadcast self.cond ()
+  else if not (Atomic.exchange self.notified true) then
     Lwt_unix.send_notification self.notification
 
 let wait (self : t) : unit Lwt.t = Lwt_condition.wait self.cond
