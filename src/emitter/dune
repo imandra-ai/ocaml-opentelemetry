@@ -1,0 +1,6 @@
+(library
+ (name opentelemetry_emitter)
+ (public_name opentelemetry.emitter)
+ (libraries mtime mtime.clock.os opentelemetry.atomic)
+ (flags :standard -open Opentelemetry_atomic)
+ (synopsis "Modular emitters for a single signal at a time"))

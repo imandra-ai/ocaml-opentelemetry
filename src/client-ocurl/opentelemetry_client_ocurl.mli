@@ -3,22 +3,31 @@
    https://opentelemetry.io/docs/reference/specification/protocol/exporter/
    *)
 
+open Opentelemetry_atomic
+
 val get_headers : unit -> (string * string) list
 
 val set_headers : (string * string) list -> unit
 (** Set http headers that are sent on every http query to the collector. *)
 
-module Atomic = Opentelemetry_atomic.Atomic
 module Config = Config
 
 val n_bytes_sent : unit -> int
 (** Global counter of bytes sent (or attempted to be sent) *)
 
-val create_backend :
+val consumer :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
   unit ->
-  (module Opentelemetry.Collector.BACKEND)
+  Opentelemetry_client.Consumer.any_resource_builder
+(** Consumer that pulls from a queue *)
+
+val create_exporter :
+  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+
+val create_backend :
+  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+[@@deprecated "use create_exporter"]
 
 val setup :
   ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit

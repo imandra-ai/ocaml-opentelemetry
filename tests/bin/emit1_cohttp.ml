@@ -27,9 +27,10 @@ let i = ref 0
 
 let run_job job_id : unit Lwt.t =
   while%lwt not @@ Atomic.get stop do
+    let tracer = T.Tracer.get_main () in
     let@ scope =
       Atomic.incr num_tr;
-      T.Trace.with_ ~kind:T.Span.Span_kind_producer "loop.outer"
+      T.Tracer.with_ tracer ~kind:T.Span.Span_kind_producer "loop.outer"
         ~attrs:[ "i", `Int job_id ]
     in
 
@@ -39,9 +40,9 @@ let run_job job_id : unit Lwt.t =
         Lwt.return @@ Atomic.set stop true
       else
         (* parent scope is found via thread local storage *)
-        let@ scope =
+        let@ span =
           Atomic.incr num_tr;
-          T.Trace.with_ ~scope ~kind:T.Span.Span_kind_internal
+          T.Tracer.with_ tracer ~parent:scope ~kind:T.Span.Span_kind_internal
             ~attrs:[ "j", `Int j ]
             "loop.inner"
         in
@@ -49,19 +50,20 @@ let run_job job_id : unit Lwt.t =
         let* () = Lwt_unix.sleep !sleep_outer in
         Atomic.incr num_sleep;
 
-        T.Logs.(
-          emit
-            [
-              make_strf ~trace_id:scope.trace_id ~span_id:scope.span_id
-                ~severity:Severity_number_info "inner at %d" j;
-            ]);
+        Opentelemetry_emitter.Emitter.emit (T.Logger.get_main ())
+          [
+            T.Log_record.make_strf ~trace_id:(T.Span.trace_id span)
+              ~span_id:(T.Span.id span) ~severity:Severity_number_info
+              "inner at %d" j;
+          ];
 
         incr i;
 
         try%lwt
           Atomic.incr num_tr;
           let@ scope =
-            T.Trace.with_ ~kind:T.Span.Span_kind_internal ~scope "alloc"
+            T.Tracer.with_ tracer ~kind:T.Span.Span_kind_internal ~parent:span
+              "alloc"
           in
           (* allocate some stuff *)
           if !stress_alloc_ then (
@@ -75,22 +77,23 @@ let run_job job_id : unit Lwt.t =
           (* simulate a failure *)
           if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
-          Opentelemetry.Scope.add_event scope (fun () ->
-              T.Event.make "done with alloc");
+          T.Span.add_event scope (T.Event.make "done with alloc");
           Lwt.return ()
         with Failure _ -> Lwt.return ()
     done
   done
 
 let run () : unit Lwt.t =
-  T.GC_metrics.basic_setup ();
+  T.Gc_metrics.setup_on_main_exporter ();
 
-  T.Metrics_callbacks.register (fun () ->
-      T.Metrics.
-        [
-          sum ~name:"num-sleep" ~is_monotonic:true
-            [ int (Atomic.get num_sleep) ];
-        ]);
+  T.Metrics_callbacks.(
+    with_set_added_to_main_exporter (fun set ->
+        add_metrics_cb set (fun () ->
+            T.Metrics.
+              [
+                sum ~name:"num-sleep" ~is_monotonic:true
+                  [ int (Atomic.get num_sleep) ];
+              ])));
 
   let n_jobs = max 1 !n_jobs in
   Printf.printf "run %d jobs\n%!" n_jobs;

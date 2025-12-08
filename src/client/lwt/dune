@@ -1,0 +1,21 @@
+(library
+ (name opentelemetry_client_lwt)
+ (public_name opentelemetry-client.lwt)
+ (flags
+  :standard
+  -open
+  Opentelemetry_util
+  -open
+  Opentelemetry_client
+  -open
+  Opentelemetry_atomic)
+ (optional) ; lwt
+ (libraries
+  opentelemetry.core
+  opentelemetry.util
+  opentelemetry.atomic
+  opentelemetry.emitter
+  opentelemetry-client
+  lwt
+  lwt.unix)
+ (synopsis "Lwt-specific helpers for opentelemetry-client"))

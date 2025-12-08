@@ -4,7 +4,7 @@
  (libraries
   unix
   opentelemetry
-  opentelemetry.client
+  opentelemetry-client
   opentelemetry-client-ocurl))
 
 (executable
@@ -16,7 +16,7 @@
   unix
   opentelemetry
   opentelemetry-lwt
-  opentelemetry.client
+  opentelemetry-client
   opentelemetry-client-cohttp-lwt
   lwt.unix))
 
@@ -32,7 +32,7 @@
   logs.fmt
   logs.threaded
   opentelemetry
-  opentelemetry.client
+  opentelemetry-client
   opentelemetry-client-cohttp-eio))
 
 (executable

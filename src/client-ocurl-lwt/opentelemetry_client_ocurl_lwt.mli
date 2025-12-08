@@ -12,12 +12,20 @@ val set_headers : (string * string) list -> unit
 
 module Config = Config
 
-val create_backend :
+val create_consumer :
   ?stop:bool Atomic.t ->
   ?config:Config.t ->
   unit ->
-  (module Opentelemetry.Collector.BACKEND)
+  Opentelemetry_client.Consumer.any_resource_builder
+(** Consumer that pulls from a queue *)
+
+val create_exporter :
+  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
 (** Create a new backend using lwt and ezcurl-lwt *)
+
+val create_backend :
+  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+[@@deprecated "use create_exporter"]
 
 val setup :
   ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit

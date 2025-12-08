@@ -6,3 +6,4 @@ _opam
 .merlin
 *.install
 *.exe
+*.tmp

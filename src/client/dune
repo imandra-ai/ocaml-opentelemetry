@@ -1,5 +1,16 @@
 (library
  (name opentelemetry_client)
- (public_name opentelemetry.client)
- (libraries opentelemetry pbrt mtime mtime.clock.os)
- (synopsis "Common types and logic shared between client implementations"))
+ (public_name opentelemetry-client)
+ (flags :standard -open Opentelemetry_util)
+ (libraries
+  opentelemetry
+  opentelemetry.util
+  opentelemetry.emitter
+  opentelemetry.proto
+  opentelemetry.domain
+  pbrt
+  saturn
+  mtime
+  mtime.clock.os)
+ (synopsis
+  "Basic exporters, as well as common types and logic shared between exporters"))
