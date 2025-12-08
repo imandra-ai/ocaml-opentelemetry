@@ -1,4 +1,4 @@
-(** A thread-safe batch of resources to be popper when ready . *)
+(** A thread-safe batch of resources, to be sent together when ready . *)
 
 type 'a t
 
@@ -13,8 +13,7 @@ val make :
 
     @param batch
       the number of elements after which the batch will be considered {b full},
-      and ready to pop. Set to [0] to disable batching. It is required that
-      [batch >= 0]. Default [1].
+      and ready to pop. It is required that [batch >= 0]. Default [100].
 
     @param high_watermark
       the batch size limit after which new elements will be [`Dropped] by
