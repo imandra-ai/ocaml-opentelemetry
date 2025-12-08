@@ -3,10 +3,6 @@
 module Core = Opentelemetry_core
 (** Core types and definitions *)
 
-module Alist = Alist
-(** Atomic list, for internal usage
-    @since 0.7 *)
-
 module Interval_limiter = Interval_limiter
 (** Utility to limit the frequency of some event
     @since NEXT_RELEASE *)
@@ -87,8 +83,16 @@ module Logs = Logger [@@deprecated "use Logger"]
 (** {2 Utils} *)
 
 module Any_signal = Any_signal
+module Any_signal_l = Any_signal_l
 module Trace_context = Trace_context
 module Gc_metrics = Gc_metrics
+
+module Aswitch = Aswitch
+(** @since NEXT_RELEASE *)
+
+module Alist = Alist
+(** Atomic list, for internal usage
+    @since 0.7 *)
 
 (* *)
 

@@ -13,13 +13,16 @@ open struct
 end
 
 (** Remove current exporter, if any.
-      @param on_done see {!Main_exporter.shutdown}, @since 0.12 *)
+    @param on_done
+      called when this operation is done, including shutting down the exporter,
+      if any *)
 let remove ~on_done () : unit =
   match Atomic.exchange exporter None with
   | None -> on_done ()
   | Some exp ->
+    Aswitch.on_turn_off (Exporter.active exp) on_done;
     tick exp;
-    shutdown exp ~on_done
+    shutdown exp
 
 (** Is there a configured exporter? *)
 let present () : bool = Option.is_some (Atomic.get exporter)
@@ -56,22 +59,28 @@ module Util = struct
     { Emitter.enabled; closed; emit; tick; flush_and_close }
 end
 
+(** Aswitch of the current exporter, or {!Aswitch.dummy} *)
+let[@inline] active () : Aswitch.t =
+  match get () with
+  | None -> Aswitch.dummy
+  | Some e -> e.active ()
+
 (** This exporter uses the current "main exporter" using [get()] at every
     invocation. It is useful as a fallback or to port existing applications that
     expect a global singleton backend^W exporter.
     @since NEXT_RELEASE *)
 let dynamic_forward_to_main_exporter : Exporter.t =
-  let open Exporter in
   let emit_logs =
-    Util.dynamic_forward_to_main_exporter () ~get_emitter:(fun e -> e.emit_logs)
+    Util.dynamic_forward_to_main_exporter ()
+      ~get_emitter:Exporter.(fun e -> e.emit_logs)
   in
   let emit_metrics =
-    Util.dynamic_forward_to_main_exporter () ~get_emitter:(fun e ->
-        e.emit_metrics)
+    Util.dynamic_forward_to_main_exporter ()
+      ~get_emitter:Exporter.(fun e -> e.emit_metrics)
   in
   let emit_spans =
-    Util.dynamic_forward_to_main_exporter () ~get_emitter:(fun e ->
-        e.emit_spans)
+    Util.dynamic_forward_to_main_exporter ()
+      ~get_emitter:Exporter.(fun e -> e.emit_spans)
   in
   let on_tick f =
     match get () with
@@ -83,8 +92,16 @@ let dynamic_forward_to_main_exporter : Exporter.t =
     | None -> ()
     | Some exp -> exp.tick ()
   in
-  let shutdown ~on_done () = on_done () in
-  { Exporter.emit_metrics; emit_spans; emit_logs; on_tick; tick; shutdown }
+  let shutdown () = () in
+  {
+    Exporter.active;
+    emit_metrics;
+    emit_spans;
+    emit_logs;
+    on_tick;
+    tick;
+    shutdown;
+  }
 
 (** Set the global exporter *)
 let set (exp : t) : unit =
@@ -110,6 +127,7 @@ let with_setup_debug_backend ?(on_done = ignore) (exp : t) ?(enable = true) () f
     =
   if enable then (
     set exp;
-    Fun.protect f ~finally:(fun () -> shutdown exp ~on_done)
+    Aswitch.on_turn_off (Exporter.active exp) on_done;
+    Fun.protect f ~finally:(fun () -> Exporter.shutdown exp)
   ) else
     Fun.protect f ~finally:(fun () -> on_done ())
