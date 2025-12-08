@@ -12,12 +12,14 @@ let[@inline] is_empty self : bool =
 let get = Atomic.get
 
 let add self x =
+  let backoff = ref 1 in
   while
     let old = Atomic.get self in
     let l' = x :: old in
     not (Atomic.compare_and_set self old l')
   do
-    ()
+    Opentelemetry_domain.relax_loop !backoff;
+    backoff := min 128 (2 * !backoff)
   done
 
 let rec pop_all self =
