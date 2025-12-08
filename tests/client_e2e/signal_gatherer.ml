@@ -111,7 +111,7 @@ module Tested_program = struct
 end
 
 let default_port =
-  String.split_on_char ':' Client.Config.default_url |> function
+  String.split_on_char ':' Client.Client_config.default_url |> function
   (* Extracting the port from 'http://foo:<port>' *)
   | [ _; _; port ] -> int_of_string port
   | _ -> failwith "unexpected format in Client.Config.default_url"

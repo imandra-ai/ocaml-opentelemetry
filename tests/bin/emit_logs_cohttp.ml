@@ -22,8 +22,9 @@ let varied_tag_set =
     |> add string_list_tag [ "foo"; "bar"; "baz" ])
 
 let run () =
+  Opentelemetry.Globals.service_name := "emit_logs";
   let otel_reporter =
-    Opentelemetry_logs.otel_reporter ~service_name:"emit_logs"
+    Opentelemetry_logs.otel_reporter
       ~attributes:[ "my_reporter_attr", `String "foo" ]
       ()
   in
@@ -35,7 +36,9 @@ let run () =
   Logs.err (fun m -> m "emit_logs: error log");
   Logs.app (fun m -> m "emit_logs: app log");
   let%lwt () =
-    T.Trace.with_ ~kind:T.Span.Span_kind_producer "my_scope" (fun _scope ->
+    let tracer = T.Tracer.get_main () in
+    T.Tracer.with_ tracer ~kind:T.Span.Span_kind_producer "my_scope"
+      (fun _scope ->
         Logs.info (fun m ->
             m ~tags:varied_tag_set
               "emit_logs: this log is emitted with varied tags from a span");
@@ -50,7 +53,8 @@ let run () =
 
   let fmt_logger = Logs_fmt.reporter ~dst:Format.err_formatter () in
   let combined_logger =
-    Opentelemetry_logs.attach_otel_reporter ~service_name:"emit_logs_fmt"
+    Opentelemetry_logs.attach_otel_reporter
+    (* FIXME ~service_name:"emit_logs_fmt" *)
       ~attributes:[ "my_fmt_attr", `String "bar" ]
       fmt_logger
   in

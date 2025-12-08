@@ -1,5 +1,5 @@
 open Alcotest
-module Config = Opentelemetry_client.Config
+module Config = Opentelemetry_client.Client_config
 
 let test_config_printing () =
   let module Env = Config.Env () in
@@ -7,11 +7,12 @@ let test_config_printing () =
     Format.asprintf "%a" Config.pp @@ Env.make (fun common () -> common) ()
   in
   let expected =
-    {|{ debug=false;
- self_trace=false; url_traces="http://localhost:4318/v1/traces";
- url_metrics="http://localhost:4318/v1/metrics";
- url_logs="http://localhost:4318/v1/logs"; headers=; batch_traces=400;
- batch_metrics=20; batch_logs=400; batch_timeout_ms=2000 }|}
+    "{ debug=false;\n\
+    \ self_trace=false; url_traces=\"http://localhost:4318/v1/traces\";\n\
+    \ url_metrics=\"http://localhost:4318/v1/metrics\";\n\
+    \ url_logs=\"http://localhost:4318/v1/logs\"; headers=[]; batch_traces=400;\n\
+    \ batch_metrics=20; batch_logs=400; batch_timeout_ms=2000;\n\
+    \ http_concurrency_level=None }"
   in
   check' string ~msg:"is rendered correctly" ~actual ~expected
 
