@@ -141,11 +141,13 @@ let wrap_emitter (self : _ t) (e : _ Emitter.t) : _ Emitter.t =
   in
 
   let tick ~now =
-    (* first, check if batch has timed out *)
-    maybe_emit ~now;
+    if not (Atomic.get closed_here) then (
+      (* first, check if batch has timed out *)
+      maybe_emit ~now;
 
-    (* only then, tick the underlying emitter *)
-    Emitter.tick e ~now
+      (* only then, tick the underlying emitter *)
+      Emitter.tick e ~now
+    )
   in
 
   let emit l =

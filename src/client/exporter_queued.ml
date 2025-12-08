@@ -4,6 +4,10 @@ open Common_
 module BQ = Bounded_queue
 
 module BQ_emitters = struct
+  (* NOTE: these emitters, when closed, don't close the bounded
+     queue because we need to flush_and_close the other emitters first.
+     The bounded queue is a shared resource. *)
+
   let logs_emitter_of_bq ?service_name ?attrs
       (q : Any_resource.t Bounded_queue.t) : OTEL.Logger.t =
     Bounded_queue.to_emitter q ~close_queue_on_close:false

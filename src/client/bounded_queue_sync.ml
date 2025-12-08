@@ -87,7 +87,9 @@ let push (self : _ state) x =
     match
       Q.push_while_not_full self.q ~high_watermark:self.high_watermark x
     with
-    | Closed -> Printf.eprintf "bounded queue: warning: queue is closed\n%!"
+    | Closed ->
+      Printf.eprintf "bounded queue: warning: queue is closed\n%!";
+      ignore (Atomic.fetch_and_add self.n_discarded (List.length x) : int)
     | Pushed { num_discarded } ->
       if num_discarded > 0 then (
         Printf.eprintf "DISCARD %d items\n%!" num_discarded;
@@ -106,7 +108,11 @@ let to_bounded_queue (self : 'a state) : 'a BQ.t =
   let push x = push self x in
   let on_non_empty = Cb_set.register self.on_non_empty in
   let try_pop () = try_pop self in
-  let close () = Q.close self.q in
+  let close () =
+    Q.close self.q;
+    (* waiters will want to know *)
+    Cb_set.trigger self.on_non_empty
+  in
   { BQ.push; num_discarded; try_pop; on_non_empty; close; closed }
 
 let create ~high_watermark () : _ BQ.t =
