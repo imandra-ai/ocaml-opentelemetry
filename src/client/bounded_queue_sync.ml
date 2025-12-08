@@ -43,11 +43,6 @@ end = struct
     UM.protect self.mutex @@ fun () ->
     if not self.closed then self.closed <- true
 
-  let push (self : _ t) x : unit =
-    UM.protect self.mutex @@ fun () ->
-    if self.closed then raise Closed;
-    Queue.push x self.q
-
   let try_pop (self : 'a t) : 'a option =
     UM.protect self.mutex @@ fun () ->
     if self.closed then raise Closed;

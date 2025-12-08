@@ -1,5 +1,3 @@
-open Common_
-
 type t =
   [ `Status of int * Opentelemetry.Proto.Status.status
   | `Failure of string

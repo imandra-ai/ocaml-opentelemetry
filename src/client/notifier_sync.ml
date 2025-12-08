@@ -11,8 +11,6 @@ let trigger self = Condition.signal self.cond
 
 let delete = ignore
 
-let[@inline] protect self f = Util_mutex.protect self.mutex f
-
 let wait self =
   Mutex.lock self.mutex;
   Condition.wait self.cond self.mutex;

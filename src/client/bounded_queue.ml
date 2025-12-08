@@ -3,8 +3,6 @@
     After the high watermark is reached, pushing items into the queue will
     instead discard them. *)
 
-open Common_
-
 exception Closed
 (** Raised when pushing into a closed queue *)
 
