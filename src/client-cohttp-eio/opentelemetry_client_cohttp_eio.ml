@@ -50,8 +50,10 @@ struct
 
     let delete = ignore
 
-    (** NOTE: the mutex must be acquired *)
-    let wait self = Eio.Condition.await self.cond self.mutex
+    let wait self =
+      Eio.Mutex.lock self.mutex;
+      Eio.Condition.await self.cond self.mutex;
+      Eio.Mutex.unlock self.mutex
 
     (** Ensure we get signalled when the queue goes from empty to non-empty *)
     let register_bounded_queue (self : t) (bq : _ Bounded_queue.t) : unit =
