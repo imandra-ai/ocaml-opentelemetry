@@ -17,11 +17,11 @@ type t = {
   tick: unit -> unit;
       (** Call all the callbacks registered with [on_tick]. Should be triggered
           regularly for background processing, timeout checks, etc. *)
-  cleanup: on_done:(unit -> unit) -> unit -> unit;
-      (** [cleanup ~on_done ()] is called when the exporter is shut down, and is
+  shutdown: on_done:(unit -> unit) -> unit -> unit;
+      (** [shutdown ~on_done ()] is called when the exporter is shut down, and is
         responsible for sending remaining batches, flushing sockets, etc.
         @param on_done
-          callback invoked after the cleanup is done. @since 0.12 *)
+          callback invoked after the shutdown is done. @since 0.12 *)
 }
 (** Main exporter interface. *)
 
@@ -34,7 +34,7 @@ let dummy () : t =
     emit_logs = Emitter.dummy;
     on_tick = Cb_set.register ticker;
     tick = (fun () -> Cb_set.trigger ticker);
-    cleanup = (fun ~on_done () -> on_done ());
+    shutdown = (fun ~on_done () -> on_done ());
   }
 
 let[@inline] send_trace (self : t) (l : Proto.Trace.span list) =
@@ -61,4 +61,6 @@ let tick (self : t) =
   self.tick ();
   ()
 
-let[@inline] cleanup (self : t) ~on_done : unit = self.cleanup ~on_done ()
+let[@inline] shutdown (self : t) ~on_done : unit = self.shutdown ~on_done ()
+
+let (cleanup [@deprecated "use shutdown instead"]) = shutdown

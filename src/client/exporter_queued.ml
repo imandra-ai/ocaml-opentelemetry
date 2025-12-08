@@ -47,11 +47,11 @@ let create ?(resource_attributes = []) ~(q : Any_resource.t Bounded_queue.t)
 
   let consumer = consumer.start_consuming q in
 
-  let cleanup ~on_done () =
+  let shutdown ~on_done () =
     if not (Atomic.exchange closed true) then (
       Bounded_queue.close q;
       Consumer.shutdown consumer ~on_done
     ) else
       on_done ()
   in
-  { emit_logs; emit_metrics; emit_spans; tick; on_tick; cleanup }
+  { emit_logs; emit_metrics; emit_spans; tick; on_tick; shutdown }

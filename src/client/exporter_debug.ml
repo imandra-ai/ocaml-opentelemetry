@@ -1,32 +1,27 @@
 open Common_
 open Opentelemetry_emitter
 
-(** [debug exporter] behaves like [exporter], but will print signals on [stderr]
-    before passing them to [exporter] *)
-let debug ?(out = Format.err_formatter) (exp : OTEL.Exporter.t) :
-    OTEL.Exporter.t =
+(** [debug ?out ()] is an exporter that pretty-prints signals on [out].
+    @param out the formatter into which to print, default [stderr]. *)
+let debug ?(out = Format.err_formatter) () : OTEL.Exporter.t =
   let open Proto in
+  let ticker = Cb_set.create () in
   {
     emit_spans =
-      Emitter.tap
-        (fun sp -> Format.fprintf out "SPAN: %a@." Trace.pp_span sp)
-        exp.emit_spans;
+      Emitter.make_simple () ~emit:(fun sp ->
+          List.iter (Format.fprintf out "SPAN: %a@." Trace.pp_span) sp);
     emit_logs =
-      Emitter.tap
-        (fun log -> Format.fprintf out "LOG: %a@." Proto.Logs.pp_log_record log)
-        exp.emit_logs;
+      Emitter.make_simple () ~emit:(fun log ->
+          List.iter
+            (Format.fprintf out "LOG: %a@." Proto.Logs.pp_log_record)
+            log);
     emit_metrics =
-      Emitter.tap
-        (fun m -> Format.fprintf out "METRIC: %a@." Metrics.pp_metric m)
-        exp.emit_metrics;
-    on_tick = exp.on_tick;
-    tick = exp.tick;
-    cleanup =
+      Emitter.make_simple () ~emit:(fun m ->
+          List.iter (Format.fprintf out "METRIC: %a@." Metrics.pp_metric) m);
+    on_tick = Cb_set.register ticker;
+    tick = (fun () -> Cb_set.trigger ticker);
+    shutdown =
       (fun ~on_done () ->
         Format.fprintf out "CLEANUP@.";
-        exp.cleanup ~on_done ());
+        on_done ());
   }
-
-(** Exporter that simply debugs on [stderr] *)
-let debug_only : OTEL.Exporter.t =
-  debug ~out:Format.err_formatter @@ OTEL.Exporter.dummy ()

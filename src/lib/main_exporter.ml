@@ -13,13 +13,13 @@ open struct
 end
 
 (** Remove current exporter, if any.
-      @param on_done see {!t#cleanup}, @since 0.12 *)
+      @param on_done see {!Main_exporter.shutdown}, @since 0.12 *)
 let remove ~on_done () : unit =
   match Atomic.exchange exporter None with
-  | None -> ()
+  | None -> on_done ()
   | Some exp ->
     tick exp;
-    cleanup exp ~on_done
+    shutdown exp ~on_done
 
 (** Is there a configured exporter? *)
 let present () : bool = Option.is_some (Atomic.get exporter)
@@ -83,8 +83,8 @@ let dynamic_forward_to_main_exporter : Exporter.t =
     | None -> ()
     | Some exp -> exp.tick ()
   in
-  let cleanup ~on_done () = on_done () in
-  { Exporter.emit_metrics; emit_spans; emit_logs; on_tick; tick; cleanup }
+  let shutdown ~on_done () = on_done () in
+  { Exporter.emit_metrics; emit_spans; emit_logs; on_tick; tick; shutdown }
 
 (** Set the global exporter *)
 let set (exp : t) : unit =
@@ -110,6 +110,6 @@ let with_setup_debug_backend ?(on_done = ignore) (exp : t) ?(enable = true) () f
     =
   if enable then (
     set exp;
-    Fun.protect ~finally:(fun () -> cleanup exp ~on_done) f
+    Fun.protect f ~finally:(fun () -> shutdown exp ~on_done)
   ) else
-    f ()
+    Fun.protect f ~finally:(fun () -> on_done ())

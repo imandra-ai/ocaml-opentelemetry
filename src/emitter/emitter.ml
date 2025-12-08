@@ -56,6 +56,23 @@ let tap (f : 'a -> unit) (self : 'a t) : 'a t =
   in
   { self with emit }
 
+(** [make_simple ~emit ()] is an emitter that calls [emit]. *)
+let make_simple ?tick ?closed ?enabled ?(flush_and_close = ignore) ~emit () :
+    _ t =
+  let tick =
+    match tick with
+    | None -> fun ~now:_ -> ()
+    | Some f -> f
+  in
+  let closed, enabled =
+    match closed, enabled with
+    | None, None -> (fun () -> false), fun () -> true
+    | Some f, None -> f, fun () -> not (f ())
+    | None, Some f -> (fun () -> not (f ())), f
+    | Some f1, Some f2 -> f1, f2
+  in
+  { tick; emit; flush_and_close; closed; enabled }
+
 (** Dummy emitter, doesn't accept or emit anything. *)
 let dummy : _ t =
   {

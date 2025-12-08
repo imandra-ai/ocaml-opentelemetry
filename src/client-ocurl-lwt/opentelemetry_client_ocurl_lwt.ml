@@ -98,10 +98,12 @@ let setup_ ?stop ?config () : unit =
 let setup ?stop ?config ?(enable = true) () =
   if enable then setup_ ?stop ?config ()
 
-let remove_backend () : unit Lwt.t =
+let remove_exporter () : unit Lwt.t =
   let done_fut, done_u = Lwt.wait () in
   Main_exporter.remove ~on_done:(fun () -> Lwt.wakeup_later done_u ()) ();
   done_fut
+
+let remove_backend = remove_exporter
 
 let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t
     =

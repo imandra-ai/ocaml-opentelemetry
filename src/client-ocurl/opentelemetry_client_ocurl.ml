@@ -120,9 +120,11 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
         : Thread.t)
   )
 
-let remove_backend () : unit =
+let remove_exporter () : unit =
   (* we don't need the callback, this runs in the same thread *)
   OTEL.Main_exporter.remove () ~on_done:ignore
+
+let remove_backend = remove_exporter
 
 let setup ?stop ?config ?(enable = true) () =
   if enable then setup_ ?stop ?config ()

@@ -180,13 +180,16 @@ let create_exporter ?stop ?(config = Config.make ()) ~sw ~env () =
 let create_backend = create_exporter
 
 let setup_ ~sw ?stop ?config env : unit =
-  let backend = create_backend ?stop ?config ~sw ~env () in
-  Main_exporter.set backend
+  let exp = create_exporter ?stop ?config ~sw ~env () in
+  Main_exporter.set exp
 
 let setup ?stop ?config ?(enable = true) ~sw env =
   if enable then setup_ ~sw ?stop ?config env
 
-let remove_exporter () = Main_exporter.remove ~on_done:ignore ()
+let remove_exporter () =
+  let p, waker = Eio.Promise.create () in
+  Main_exporter.remove () ~on_done:(fun () -> Eio.Promise.resolve waker ());
+  Eio.Promise.await p
 
 let remove_backend = remove_exporter
 

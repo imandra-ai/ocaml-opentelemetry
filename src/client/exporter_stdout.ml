@@ -51,15 +51,25 @@ let stdout : OTEL.Exporter.t =
         Format.pp_print_flush out ()
     in
     let closed () = Atomic.get closed in
-
     { Emitter.emit; closed; enabled; tick; flush_and_close }
   in
 
+  let emit_spans = mk_emitter pp_span in
+  let emit_logs = mk_emitter Proto.Logs.pp_log_record in
+  let emit_metrics = mk_emitter Proto.Metrics.pp_metric in
+
+  let shutdown ~on_done () =
+    Emitter.flush_and_close emit_spans;
+    Emitter.flush_and_close emit_logs;
+    Emitter.flush_and_close emit_metrics;
+    on_done ()
+  in
+
   {
-    emit_spans = mk_emitter pp_span;
-    emit_logs = mk_emitter Proto.Logs.pp_log_record;
-    emit_metrics = mk_emitter Proto.Metrics.pp_metric;
+    emit_spans;
+    emit_logs;
+    emit_metrics;
     on_tick = Cb_set.register ticker;
     tick;
-    cleanup = (fun ~on_done () -> on_done ());
+    shutdown;
   }

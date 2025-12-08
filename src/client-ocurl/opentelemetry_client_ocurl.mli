@@ -24,6 +24,7 @@ val consumer :
 
 val create_exporter :
   ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+(** @since NEXT_RELEASE *)
 
 val create_backend :
   ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
@@ -40,7 +41,11 @@ val setup :
       an atomic boolean. When it becomes true, background threads will all stop
       after a little while. *)
 
+val remove_exporter : unit -> unit
+(** @since NEXT_RELEASE *)
+
 val remove_backend : unit -> unit
+[@@deprecated "use remove_exporter"]
 (** @since 0.12 *)
 
 val with_setup :

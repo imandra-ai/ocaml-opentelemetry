@@ -1,4 +1,4 @@
-(** Add batching to emitter based on client config *)
+(** Add batching to emitters *)
 
 open Common_
 
@@ -9,6 +9,7 @@ open struct
     Batch.wrap_emitter b emitter
 end
 
+(** Given an exporter, add batches for each emitter according to [config]. *)
 let add_batching ~(config : Client_config.t) (exp : OTEL.Exporter.t) :
     OTEL.Exporter.t =
   let timeout = Mtime.Span.(config.batch_timeout_ms * ms) in
