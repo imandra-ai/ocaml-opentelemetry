@@ -109,7 +109,6 @@ let shutdown_and_wait (self : OTEL.Exporter.t) : unit =
   let open Opentelemetry_client in
   let sq = Sync_queue.create () in
   OTEL.Aswitch.on_turn_off (OTEL.Exporter.active self) (fun () ->
-      Printf.eprintf "ocurl: push queue\n%!";
       Sync_queue.push sq ());
   OTEL.Exporter.shutdown self;
   Sync_queue.pop sq
