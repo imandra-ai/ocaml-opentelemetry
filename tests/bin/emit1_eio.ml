@@ -46,14 +46,13 @@ let run_job clock _job_id iterations : unit =
       let () = Eio.Time.sleep clock !sleep_outer in
       Atomic.incr num_sleep;
 
-      OT.Logger.(
-        let logger = OT.Logger.get_main () in
-        OT.Emitter.emit logger
-          [
-            OT.Log_record.make_strf ~trace_id:(OT.Span.trace_id scope)
-              ~span_id:(OT.Span.id scope) ~severity:Severity_number_info
-              "inner at %d" j;
-          ]);
+      (let logger = OT.Logger.get_main () in
+       OT.Emitter.emit logger
+         [
+           OT.Log_record.make_strf ~trace_id:(OT.Span.trace_id scope)
+             ~span_id:(OT.Span.id scope) ~severity:Severity_number_info
+             "inner at %d" j;
+         ]);
 
       Atomic.incr i;
 
@@ -163,15 +162,15 @@ let () =
   in
   Eio_main.run @@ fun env ->
   (if !n_procs < 2 then
-     Opentelemetry_client_cohttp_eio.with_setup ~stop ~config
+     Opentelemetry_client_cohttp_eio.with_setup ~config
        (run env 0 !n_iterations) env
    else
      Eio.Switch.run @@ fun sw ->
-     Opentelemetry_client_cohttp_eio.setup ~stop ~config ~sw env;
+     Opentelemetry_client_cohttp_eio.setup ~config ~sw env;
      let dm = Eio.Stdenv.domain_mgr env in
      Eio.Switch.run (fun sw ->
          for proc = 1 to !n_procs do
            Eio.Fiber.fork ~sw @@ fun () ->
            Eio.Domain_manager.run dm (run env proc !n_iterations)
          done));
-  Opentelemetry.Main_exporter.remove () ~on_done:ignore
+  OT.Main_exporter.remove () ~on_done:ignore

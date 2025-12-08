@@ -18,15 +18,14 @@ let num_sleep = Atomic.make 0
 
 let stress_alloc_ = ref true
 
-let stop = Atomic.make false
-
 let num_tr = Atomic.make 0
 
 (* Counter used to mark simulated failures *)
 let i = ref 0
 
 let run_job job_id : unit Lwt.t =
-  while%lwt not @@ Atomic.get stop do
+  let switch = T.Main_exporter.active () in
+  while%lwt T.Aswitch.is_on switch do
     let tracer = T.Tracer.get_main () in
     let@ scope =
       Atomic.incr num_tr;
@@ -37,7 +36,7 @@ let run_job job_id : unit Lwt.t =
     for%lwt j = 0 to !iterations do
       if j >= !iterations then
         (* Terminate program, having reached our max iterations *)
-        Lwt.return @@ Atomic.set stop true
+        T.Main_exporter.remove ()
       else
         (* parent scope is found via thread local storage *)
         let@ span =
@@ -165,5 +164,4 @@ let () =
         Printf.printf "\ndone. %d spans in %.4fs (%.4f/s)\n%!"
           (Atomic.get num_tr) elapsed n_per_sec)
   in
-  Opentelemetry_client_cohttp_lwt.with_setup ~stop ~config () run
-  |> Lwt_main.run
+  Opentelemetry_client_cohttp_lwt.with_setup ~config () run |> Lwt_main.run

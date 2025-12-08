@@ -17,17 +17,15 @@ let num_sleep = Atomic.make 0
 
 let stress_alloc_ = ref true
 
-let stop = Atomic.make false
-
 let num_tr = Atomic.make 0
 
 let run_job () =
-  let@ () = Fun.protect ~finally:(fun () -> Atomic.set stop true) in
+  let active = OT.Main_exporter.active () in
   let tracer = OT.Tracer.get_main () in
   let i = ref 0 in
   let cnt = ref 0 in
 
-  while (not @@ Atomic.get stop) && !cnt < !n do
+  while OT.Aswitch.is_on active && !cnt < !n do
     let@ _scope =
       Atomic.incr num_tr;
       OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_producer "loop.outer"
@@ -41,7 +39,7 @@ let run_job () =
       (* parent scope is found via thread local storage *)
       let@ scope =
         Atomic.incr num_tr;
-        OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal
+        OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal ~parent:_scope
           ~attrs:[ "j", `Int j ]
           "loop.inner"
       in
@@ -96,7 +94,7 @@ let run () =
             ]));
 
   let n_jobs = max 1 !n_jobs in
-  Printf.printf "run %d jobs\n%!" n_jobs;
+  Printf.printf "run %d job(s)\n%!" n_jobs;
 
   let jobs =
     Array.init n_jobs (fun _ ->
@@ -162,4 +160,4 @@ let () =
         Printf.printf "\ndone. %d spans in %.4fs (%.4f/s)\n%!"
           (Atomic.get num_tr) elapsed n_per_sec)
   in
-  Opentelemetry_client_ocurl.with_setup ~stop ~config () run
+  Opentelemetry_client_ocurl.with_setup ~config () run
