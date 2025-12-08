@@ -11,6 +11,9 @@ module Gc_metrics = Gc_metrics
 module Metrics_callbacks = Metrics_callbacks
 module Trace_context = Trace_context
 module GC_metrics = Gc_metrics [@@depecated "use Gc_metrics"]
+module Metrics_emitter = Metrics_emitter
+module Logger = Logger
+module Log_record = Log_record
 
 external reraise : exn -> 'a = "%reraise"
 (** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to
