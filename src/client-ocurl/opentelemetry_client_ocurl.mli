@@ -3,8 +3,6 @@
    https://opentelemetry.io/docs/reference/specification/protocol/exporter/
    *)
 
-open Opentelemetry_atomic
-
 val get_headers : unit -> (string * string) list
 
 val set_headers : (string * string) list -> unit
@@ -16,22 +14,16 @@ val n_bytes_sent : unit -> int
 (** Global counter of bytes sent (or attempted to be sent) *)
 
 val consumer :
-  ?stop:bool Atomic.t ->
-  ?config:Config.t ->
-  unit ->
-  Opentelemetry_client.Consumer.any_resource_builder
+  ?config:Config.t -> unit -> Opentelemetry_client.Consumer.any_resource_builder
 (** Consumer that pulls from a queue *)
 
-val create_exporter :
-  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+val create_exporter : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
 (** @since NEXT_RELEASE *)
 
-val create_backend :
-  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+val create_backend : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
 [@@deprecated "use create_exporter"]
 
-val setup :
-  ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit
+val setup : ?config:Config.t -> ?enable:bool -> unit -> unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.
     @param enable
       actually setup the backend (default true). This can be used to
@@ -48,12 +40,6 @@ val remove_backend : unit -> unit
 [@@deprecated "use remove_exporter"]
 (** @since 0.12 *)
 
-val with_setup :
-  ?stop:bool Atomic.t ->
-  ?config:Config.t ->
-  ?enable:bool ->
-  unit ->
-  (unit -> 'a) ->
-  'a
+val with_setup : ?config:Config.t -> ?enable:bool -> unit -> (unit -> 'a) -> 'a
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up after
     [f()] returns See {!setup} for more details. *)

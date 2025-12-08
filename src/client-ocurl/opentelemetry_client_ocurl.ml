@@ -5,8 +5,8 @@
 
 module Config = Config
 module OTELC = Opentelemetry_client
-open Common_
 module OTEL = Opentelemetry
+open Common_
 
 let get_headers = Config.Env.get_headers
 
@@ -81,7 +81,7 @@ end
 
 module Consumer_impl = OTELC.Generic_http_consumer.Make (IO) (Notifier) (Httpc)
 
-let consumer ?(stop = Atomic.make false) ?(config = Config.make ()) () :
+let consumer ?(config = Config.make ()) () :
     Opentelemetry_client.Consumer.any_resource_builder =
   let n_workers = max 2 (min 32 config.bg_threads) in
   let ticker_task =
@@ -90,11 +90,11 @@ let consumer ?(stop = Atomic.make false) ?(config = Config.make ()) () :
     else
       None
   in
-  Consumer_impl.consumer ~override_n_workers:n_workers ~ticker_task ~stop
+  Consumer_impl.consumer ~override_n_workers:n_workers ~ticker_task
     ~config:config.common ()
 
-let create_exporter ?stop ?(config = Config.make ()) () : OTEL.Exporter.t =
-  let consumer = consumer ?stop ~config () in
+let create_exporter ?(config = Config.make ()) () : OTEL.Exporter.t =
+  let consumer = consumer ~config () in
   let bq =
     OTELC.Bounded_queue_sync.create
       ~high_watermark:OTELC.Bounded_queue.Defaults.high_watermark ()
@@ -105,9 +105,17 @@ let create_exporter ?stop ?(config = Config.make ()) () : OTEL.Exporter.t =
 
 let create_backend = create_exporter
 
-let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
-    : unit =
-  let exporter = create_exporter ~stop ~config () in
+let shutdown_and_wait (self : OTEL.Exporter.t) : unit =
+  let open Opentelemetry_client in
+  let sq = Sync_queue.create () in
+  OTEL.Aswitch.on_turn_off (OTEL.Exporter.active self) (fun () ->
+      Printf.eprintf "ocurl: push queue\n%!";
+      Sync_queue.push sq ());
+  OTEL.Exporter.shutdown self;
+  Sync_queue.pop sq
+
+let setup_ ?(config : Config.t = Config.make ()) () : OTEL.Exporter.t =
+  let exporter = create_exporter ~config () in
   OTEL.Main_exporter.set exporter;
 
   OTELC.Self_trace.set_enabled config.common.self_trace;
@@ -115,24 +123,29 @@ let setup_ ?(stop = Atomic.make false) ?(config : Config.t = Config.make ()) ()
   if config.ticker_thread then (
     (* at most a minute *)
     let sleep_ms = min 60_000 (max 2 config.ticker_interval_ms) in
+    let active = OTEL.Exporter.active exporter in
     ignore
-      (OTELC.Util_thread.setup_ticker_thread ~stop ~sleep_ms exporter ()
+      (OTELC.Util_thread.setup_ticker_thread ~active ~sleep_ms exporter ()
         : Thread.t)
-  )
+  );
+  exporter
 
 let remove_exporter () : unit =
-  (* we don't need the callback, this runs in the same thread *)
-  OTEL.Main_exporter.remove () ~on_done:ignore
+  let open Opentelemetry_client in
+  (* used to wait *)
+  let sq = Sync_queue.create () in
+  OTEL.Main_exporter.remove () ~on_done:(fun () -> Sync_queue.push sq ());
+  Sync_queue.pop sq
 
 let remove_backend = remove_exporter
 
-let setup ?stop ?config ?(enable = true) () =
-  if enable then setup_ ?stop ?config ()
+let setup ?config ?(enable = true) () =
+  if enable then ignore (setup_ ?config () : OTEL.Exporter.t)
 
-let with_setup ?stop ?config ?(enable = true) () f =
+let with_setup ?config ?(enable = true) () f =
   if enable then (
-    setup_ ?stop ?config ();
-    Fun.protect ~finally:remove_backend f
+    let exp = setup_ ?config () in
+    Fun.protect f ~finally:(fun () -> shutdown_and_wait exp)
   ) else
     f ()
 

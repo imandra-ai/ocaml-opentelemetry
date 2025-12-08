@@ -11,7 +11,6 @@ val set_headers : (string * string) list -> unit
 module Config = Config
 
 val create_consumer :
-  ?stop:bool Atomic.t ->
   ?config:Config.t ->
   sw:Eio.Switch.t ->
   env:Eio_unix.Stdenv.base ->
@@ -20,7 +19,6 @@ val create_consumer :
 (** Consumer that pulls from a queue *)
 
 val create_exporter :
-  ?stop:bool Atomic.t ->
   ?config:Config.t ->
   sw:Eio.Switch.t ->
   env:Eio_unix.Stdenv.base ->
@@ -29,7 +27,6 @@ val create_exporter :
 (** NOTE [after_cleanup] optional parameter removed @since 0.12 *)
 
 val create_backend :
-  ?stop:bool Atomic.t ->
   ?config:Config.t ->
   sw:Eio.Switch.t ->
   env:Eio_unix.Stdenv.base ->
@@ -38,7 +35,6 @@ val create_backend :
 [@@deprecated "use create_exporter"]
 
 val setup :
-  ?stop:bool Atomic.t ->
   ?config:Config.t ->
   ?enable:bool ->
   sw:Eio.Switch.t ->
@@ -58,11 +54,6 @@ val remove_backend : unit -> unit
     @since 0.12 *)
 
 val with_setup :
-  ?stop:bool Atomic.t ->
-  ?config:Config.t ->
-  ?enable:bool ->
-  (unit -> 'a) ->
-  Eio_unix.Stdenv.base ->
-  'a
+  ?config:Config.t -> ?enable:bool -> (unit -> 'a) -> Eio_unix.Stdenv.base -> 'a
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up after
     [f()] returns See {!setup} for more details. *)

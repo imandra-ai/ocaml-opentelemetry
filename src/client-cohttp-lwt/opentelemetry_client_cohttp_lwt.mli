@@ -3,8 +3,6 @@
    https://opentelemetry.io/docs/reference/specification/protocol/exporter/
    *)
 
-open Common_
-
 val get_headers : unit -> (string * string) list
 
 val set_headers : (string * string) list -> unit
@@ -13,22 +11,16 @@ val set_headers : (string * string) list -> unit
 module Config = Config
 
 val create_consumer :
-  ?stop:bool Atomic.t ->
-  ?config:Config.t ->
-  unit ->
-  Opentelemetry_client.Consumer.any_resource_builder
+  ?config:Config.t -> unit -> Opentelemetry_client.Consumer.any_resource_builder
 (** Consumer that pulls from a queue *)
 
-val create_exporter :
-  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+val create_exporter : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
 (** Create a new backend using lwt and ezcurl-lwt *)
 
-val create_backend :
-  ?stop:bool Atomic.t -> ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+val create_backend : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
 [@@deprecated "use create_exporter"]
 
-val setup :
-  ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit
+val setup : ?config:Config.t -> ?enable:bool -> unit -> unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.
     @param enable
       actually setup the backend (default true). This can be used to
@@ -43,11 +35,6 @@ val remove_backend : unit -> unit Lwt.t
     @since 0.12 *)
 
 val with_setup :
-  ?stop:bool Atomic.t ->
-  ?config:Config.t ->
-  ?enable:bool ->
-  unit ->
-  (unit -> 'a Lwt.t) ->
-  'a Lwt.t
+  ?config:Config.t -> ?enable:bool -> unit -> (unit -> 'a Lwt.t) -> 'a Lwt.t
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up after
     [f()] returns See {!setup} for more details. *)

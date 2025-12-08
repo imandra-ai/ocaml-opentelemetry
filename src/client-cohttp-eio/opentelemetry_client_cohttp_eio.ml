@@ -93,7 +93,7 @@ struct
     (* send the content to the remote endpoint/path *)
     let send (client : t) ~url ~decode (body : string) :
         ('a, Export_error.t) result =
-      Switch.run @@ fun sw ->
+      Eio.Switch.run @@ fun sw ->
       let uri = Uri.of_string url in
 
       let open Cohttp in
@@ -158,18 +158,18 @@ struct
   end
 end
 
-let create_consumer ?(stop = Atomic.make false) ?(config = Config.make ()) ~sw
-    ~env () : Consumer.any_resource_builder =
+let create_consumer ?(config = Config.make ()) ~sw ~env () :
+    Consumer.any_resource_builder =
   let module M = Make (struct
     let sw = sw
 
     let env = env
   end) in
   let module C = Generic_http_consumer.Make (M.IO) (M.Notifier) (M.Httpc) in
-  C.consumer ~ticker_task:(Some 0.5) ~stop ~config ()
+  C.consumer ~ticker_task:(Some 0.5) ~config ()
 
-let create_exporter ?stop ?(config = Config.make ()) ~sw ~env () =
-  let consumer = create_consumer ?stop ~config ~sw ~env () in
+let create_exporter ?(config = Config.make ()) ~sw ~env () =
+  let consumer = create_consumer ~config ~sw ~env () in
   let bq =
     Bounded_queue_sync.create
       ~high_watermark:Bounded_queue.Defaults.high_watermark ()
@@ -179,12 +179,12 @@ let create_exporter ?stop ?(config = Config.make ()) ~sw ~env () =
 
 let create_backend = create_exporter
 
-let setup_ ~sw ?stop ?config env : unit =
-  let exp = create_exporter ?stop ?config ~sw ~env () in
+let setup_ ~sw ?config env : unit =
+  let exp = create_exporter ?config ~sw ~env () in
   Main_exporter.set exp
 
-let setup ?stop ?config ?(enable = true) ~sw env =
-  if enable then setup_ ~sw ?stop ?config env
+let setup ?config ?(enable = true) ~sw env =
+  if enable then setup_ ~sw ?config env
 
 let remove_exporter () =
   let p, waker = Eio.Promise.create () in
@@ -193,12 +193,12 @@ let remove_exporter () =
 
 let remove_backend = remove_exporter
 
-let with_setup ?stop ?config ?(enable = true) f env =
+let with_setup ?config ?(enable = true) f env =
   if enable then
-    Switch.run @@ fun sw ->
+    Eio.Switch.run @@ fun sw ->
     snd
     @@ Fiber.pair
-         (fun () -> setup_ ~sw ?stop ?config env)
+         (fun () -> setup_ ~sw ?config env)
          (fun () -> Fun.protect ~finally:(fun () -> remove_backend ()) f)
   else
     f ()

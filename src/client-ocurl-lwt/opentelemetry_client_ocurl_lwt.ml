@@ -76,11 +76,11 @@ module Consumer_impl =
   Generic_http_consumer.Make (IO) (Opentelemetry_client_lwt.Notifier_lwt)
     (Httpc)
 
-let create_consumer ?(stop = Atomic.make false) ?(config = Config.make ()) () =
-  Consumer_impl.consumer ~ticker_task:(Some 0.5) ~stop ~config ()
+let create_consumer ?(config = Config.make ()) () =
+  Consumer_impl.consumer ~ticker_task:(Some 0.5) ~config ()
 
-let create_exporter ?stop ?(config = Config.make ()) () =
-  let consumer = create_consumer ?stop ~config () in
+let create_exporter ?(config = Config.make ()) () =
+  let consumer = create_consumer ~config () in
   let bq =
     Bounded_queue_sync.create
       ~high_watermark:Bounded_queue.Defaults.high_watermark ()
@@ -90,13 +90,12 @@ let create_exporter ?stop ?(config = Config.make ()) () =
 
 let create_backend = create_exporter
 
-let setup_ ?stop ?config () : unit =
-  let exp = create_backend ?stop ?config () in
+let setup_ ?config () : unit =
+  let exp = create_backend ?config () in
   Main_exporter.set exp;
   ()
 
-let setup ?stop ?config ?(enable = true) () =
-  if enable then setup_ ?stop ?config ()
+let setup ?config ?(enable = true) () = if enable then setup_ ?config ()
 
 let remove_exporter () : unit Lwt.t =
   let done_fut, done_u = Lwt.wait () in
@@ -105,11 +104,10 @@ let remove_exporter () : unit Lwt.t =
 
 let remove_backend = remove_exporter
 
-let with_setup ?stop ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t
-    =
+let with_setup ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t =
   if enable then (
     let open Lwt.Syntax in
-    setup_ ?stop ~config ();
+    setup_ ~config ();
 
     Lwt.catch
       (fun () ->
