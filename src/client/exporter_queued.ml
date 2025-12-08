@@ -6,19 +6,19 @@ module BQ = Bounded_queue
 module BQ_emitters = struct
   let logs_emitter_of_bq ?service_name ?attrs
       (q : Any_resource.t Bounded_queue.t) : OTEL.Logger.t =
-    Bounded_queue.to_emitter q
+    Bounded_queue.to_emitter q ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map
          (Any_resource.of_logs_or_empty ?service_name ?attrs)
 
   let spans_emitter_of_bq ?service_name ?attrs
       (q : Any_resource.t Bounded_queue.t) : OTEL.Tracer.t =
-    Bounded_queue.to_emitter q
+    Bounded_queue.to_emitter q ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map
          (Any_resource.of_spans_or_empty ?service_name ?attrs)
 
   let metrics_emitter_of_bq ?service_name ?attrs
       (q : Any_resource.t Bounded_queue.t) : OTEL.Metrics_emitter.t =
-    Bounded_queue.to_emitter q
+    Bounded_queue.to_emitter q ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map
          (Any_resource.of_metrics_or_empty ?service_name ?attrs)
 end
@@ -31,6 +31,11 @@ end
     @param resource_attributes attributes added to every "resource" batch *)
 let create ?(resource_attributes = []) ~(q : Any_resource.t Bounded_queue.t)
     ~(consumer : Consumer.any_resource_builder) () : OTEL.Exporter.t =
+  let open Opentelemetry_emitter in
+  let shutdown_started = Atomic.make false in
+  let active, trigger = Aswitch.create () in
+  let consumer = consumer.start_consuming q in
+
   let emit_spans =
     BQ_emitters.spans_emitter_of_bq ~attrs:resource_attributes q
   in
@@ -43,15 +48,25 @@ let create ?(resource_attributes = []) ~(q : Any_resource.t Bounded_queue.t)
   let tick () = Cb_set.trigger tick_set in
   let on_tick f = Cb_set.register tick_set f in
 
-  let closed = Atomic.make false in
+  let shutdown () =
+    if Aswitch.is_on active && not (Atomic.exchange shutdown_started true) then (
+      (* flush all emitters *)
+      Emitter.flush_and_close emit_spans;
+      Emitter.flush_and_close emit_logs;
+      Emitter.flush_and_close emit_metrics;
 
-  let consumer = consumer.start_consuming q in
-
-  let shutdown ~on_done () =
-    if not (Atomic.exchange closed true) then (
+      (* first, prevent further pushes to the queue. Consumer workers
+       can still drain it. *)
       Bounded_queue.close q;
-      Consumer.shutdown consumer ~on_done
-    ) else
-      on_done ()
+
+      (* shutdown consumer; once it's down it'll turn our switch off too *)
+      Aswitch.link (Consumer.active consumer) trigger;
+      Consumer.shutdown consumer
+    )
   in
-  { emit_logs; emit_metrics; emit_spans; tick; on_tick; shutdown }
+
+  (* if consumer shuts down for some reason, we also must *)
+  Aswitch.on_turn_off (Consumer.active consumer) shutdown;
+
+  let active () = active in
+  { active; emit_logs; emit_metrics; emit_spans; tick; on_tick; shutdown }

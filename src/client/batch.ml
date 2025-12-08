@@ -1,5 +1,4 @@
 open Opentelemetry_atomic
-module Domain = Opentelemetry_domain
 
 type 'a state = {
   start: Mtime.t;
@@ -49,27 +48,10 @@ let timeout_expired_ ~now ~timeout (self : _ state) : bool =
 (** Big enough to send? *)
 let[@inline] is_full_ ~batch (self : _ state) : bool = self.size >= batch
 
-let[@inline] atomic_update_loop_ (type res) (self : _ t)
-    (f : 'a state -> 'a state * res) : res =
-  let exception Return of res in
-  try
-    let backoff = ref 1 in
-    while true do
-      let st = Atomic.get self.st in
-      let new_st, res = f st in
-      if Atomic.compare_and_set self.st st new_st then
-        raise_notrace (Return res);
-
-      (* poor man's backoff strategy *)
-      Domain.relax_loop !backoff;
-      backoff := min 128 (2 * !backoff)
-    done
-  with Return res -> res
-
 let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
   let rev_batch_opt =
     (* update state. When uncontended this runs only once. *)
-    atomic_update_loop_ self @@ fun state ->
+    Util_atomic.update_cas self.st @@ fun state ->
     (* *)
 
     (* check if the batch is ready *)
@@ -84,9 +66,9 @@ let pop_if_ready ?(force = false) ~now (self : _ t) : _ list option =
       assert (state.q <> []);
       let batch = state.q in
       let new_st = _empty_state in
-      new_st, Some batch
+      Some batch, new_st
     ) else
-      state, None
+      None, state
   in
   match rev_batch_opt with
   | None -> None
@@ -99,10 +81,10 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
     `Ok
   else (
     let now = lazy (Mtime_clock.now ()) in
-    atomic_update_loop_ self @@ fun state ->
+    Util_atomic.update_cas self.st @@ fun state ->
     if state.size >= self.high_watermark then
       (* drop this to prevent queue from growing too fast *)
-      state, `Dropped
+      `Dropped, state
     else (
       let start =
         if state.size = 0 && Option.is_some self.timeout then
@@ -120,7 +102,7 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
         }
       in
 
-      state, `Ok
+      `Ok, state
     )
   )
 
@@ -134,8 +116,8 @@ let wrap_emitter (self : _ t) (e : _ Emitter.t) : _ Emitter.t =
      then [e] itself will be closed. *)
   let closed_here = Atomic.make false in
 
-  let enabled () = e.enabled () in
-  let closed () = e.closed () in
+  let enabled () = (not (Atomic.get closed_here)) && e.enabled () in
+  let closed () = Atomic.get closed_here || e.closed () in
   let flush_and_close () =
     if not (Atomic.exchange closed_here true) then (
       (* NOTE: we need to close this wrapping emitter first, to prevent
@@ -145,6 +127,7 @@ let wrap_emitter (self : _ t) (e : _ Emitter.t) : _ Emitter.t =
       | None -> ()
       | Some l -> Emitter.emit e l);
 
+      (* now we can close [e], nothing remains in [self] *)
       Emitter.flush_and_close e
     )
   in

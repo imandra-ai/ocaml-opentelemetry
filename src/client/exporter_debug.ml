@@ -5,8 +5,10 @@ open Opentelemetry_emitter
     @param out the formatter into which to print, default [stderr]. *)
 let debug ?(out = Format.err_formatter) () : OTEL.Exporter.t =
   let open Proto in
+  let active, trigger = Aswitch.create () in
   let ticker = Cb_set.create () in
   {
+    active = (fun () -> active);
     emit_spans =
       Emitter.make_simple () ~emit:(fun sp ->
           List.iter (Format.fprintf out "SPAN: %a@." Trace.pp_span) sp);
@@ -21,7 +23,7 @@ let debug ?(out = Format.err_formatter) () : OTEL.Exporter.t =
     on_tick = Cb_set.register ticker;
     tick = (fun () -> Cb_set.trigger ticker);
     shutdown =
-      (fun ~on_done () ->
+      (fun () ->
         Format.fprintf out "CLEANUP@.";
-        on_done ());
+        Aswitch.turn_off trigger);
   }

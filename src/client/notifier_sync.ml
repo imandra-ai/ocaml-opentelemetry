@@ -7,7 +7,7 @@ type t = {
 
 let create () : t = { mutex = Mutex.create (); cond = Condition.create () }
 
-let trigger self = Condition.signal self.cond
+let[@inline] trigger self = Condition.broadcast self.cond
 
 let delete = ignore
 

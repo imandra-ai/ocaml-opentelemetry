@@ -1,6 +1,8 @@
 module BQ = Bounded_queue
 
-exception Closed = Bounded_queue.Closed
+type push_res =
+  | Closed
+  | Pushed of { num_discarded: int }
 
 (* a variant of {!Sync_queue} with more bespoke pushing behavior *)
 module Q : sig
@@ -12,9 +14,9 @@ module Q : sig
 
   val closed : _ t -> bool
 
-  val try_pop : 'a t -> 'a option
+  val try_pop : 'a t -> 'a BQ.pop_result
 
-  val push_while_not_full : high_watermark:int -> 'a t -> 'a list -> int * int
+  val push_while_not_full : high_watermark:int -> 'a t -> 'a list -> push_res
   (** [push_while_not_full q ~high_watermark xs] tries to push each item of [x]
       into [q].
 
@@ -43,30 +45,34 @@ end = struct
     UM.protect self.mutex @@ fun () ->
     if not self.closed then self.closed <- true
 
-  let try_pop (self : 'a t) : 'a option =
+  let try_pop (self : 'a t) : 'a BQ.pop_result =
     UM.protect self.mutex @@ fun () ->
-    if self.closed then raise Closed;
-    try Some (Queue.pop self.q) with Queue.Empty -> None
+    if self.closed then
+      `Closed
+    else (
+      try `Item (Queue.pop self.q) with Queue.Empty -> `Empty
+    )
 
   let push_while_not_full ~high_watermark (self : 'a t) (xs : 'a list) :
-      int * int =
+      push_res =
     UM.protect self.mutex @@ fun () ->
-    if self.closed then raise Closed;
+    if self.closed then
+      Closed
+    else (
+      let xs = ref xs in
 
-    let old_size = Queue.length self.q in
-    let xs = ref xs in
+      let continue = ref true in
+      while !continue && Queue.length self.q < high_watermark do
+        match !xs with
+        | [] -> continue := false
+        | x :: tl_xs ->
+          xs := tl_xs;
+          Queue.push x self.q
+      done;
 
-    let continue = ref true in
-    while !continue && Queue.length self.q < high_watermark do
-      match !xs with
-      | [] -> continue := false
-      | x :: tl_xs ->
-        xs := tl_xs;
-        Queue.push x self.q
-    done;
-
-    let n_discarded = List.length !xs in
-    n_discarded, old_size
+      let num_discarded = List.length !xs in
+      Pushed { num_discarded }
+    )
 end
 
 type 'a state = {
@@ -77,23 +83,22 @@ type 'a state = {
 }
 
 let push (self : _ state) x =
-  let discarded, old_size =
-    try Q.push_while_not_full self.q ~high_watermark:self.high_watermark x
-    with Sync_queue.Closed -> raise BQ.Closed
-  in
+  if x <> [] then (
+    match
+      Q.push_while_not_full self.q ~high_watermark:self.high_watermark x
+    with
+    | Closed -> Printf.eprintf "bounded queue: warning: queue is closed\n%!"
+    | Pushed { num_discarded } ->
+      if num_discarded > 0 then (
+        Printf.eprintf "DISCARD %d items\n%!" num_discarded;
+        ignore (Atomic.fetch_and_add self.n_discarded num_discarded : int)
+      );
 
-  if discarded > 0 then
-    ignore (Atomic.fetch_and_add self.n_discarded discarded : int);
+      (* wake up potentially asleep consumers *)
+      Cb_set.trigger self.on_non_empty
+  )
 
-  (* wake up lagards if the queue was empty *)
-  if old_size = 0 then Cb_set.trigger self.on_non_empty;
-  ()
-
-let try_pop (self : _ state) : _ BQ.pop_result =
-  match Q.try_pop self.q with
-  | Some x -> `Item x
-  | None -> `Empty
-  | exception Sync_queue.Closed -> `Closed
+let[@inline] try_pop (self : _ state) : _ BQ.pop_result = Q.try_pop self.q
 
 let to_bounded_queue (self : 'a state) : 'a BQ.t =
   let closed () = Q.closed self.q in

@@ -1,19 +1,14 @@
-open Opentelemetry
 open Lwt.Syntax
-module Span_id = Span_id
-module Trace_id = Trace_id
-module Event = Event
-module Span = Span
-module Span_link = Span_link
-module Globals = Globals
-module Timestamp_ns = Timestamp_ns
-module Gc_metrics = Gc_metrics
-module Metrics_callbacks = Metrics_callbacks
-module Trace_context = Trace_context
-module GC_metrics = Gc_metrics [@@depecated "use Gc_metrics"]
-module Metrics_emitter = Metrics_emitter
-module Logger = Logger
-module Log_record = Log_record
+include Opentelemetry
+
+module Main_exporter = struct
+  include Main_exporter
+
+  let remove () : unit Lwt.t =
+    let p, resolve = Lwt.wait () in
+    Aswitch.on_turn_off (active ()) (fun () -> Lwt.wakeup_later resolve ());
+    p
+end
 
 external reraise : exn -> 'a = "%reraise"
 (** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to

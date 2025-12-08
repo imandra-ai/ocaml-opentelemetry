@@ -39,8 +39,9 @@ let pp out (self : t) : unit =
   in
   Format.fprintf out
     "{@[ debug=%B;@ self_trace=%B; url_traces=%S;@ url_metrics=%S;@ \
-     url_logs=%S;@ headers=%a;@ batch_traces=%a;@ batch_metrics=%a;@ \
-     batch_logs=%a;@ batch_timeout_ms=%d;@ http_concurrency_level=%a @]}"
+     url_logs=%S;@ @[<2>headers=@,\
+     %a@];@ batch_traces=%a;@ batch_metrics=%a;@ batch_logs=%a;@ \
+     batch_timeout_ms=%d;@ http_concurrency_level=%a @]}"
     debug self_trace url_traces url_metrics url_logs ppheaders headers ppiopt
     batch_traces ppiopt batch_metrics ppiopt batch_logs batch_timeout_ms ppiopt
     http_concurrency_level

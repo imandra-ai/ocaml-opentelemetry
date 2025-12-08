@@ -35,22 +35,22 @@ let stdout : OTEL.Exporter.t =
   let mutex = Mutex.create () in
   let ticker = Cb_set.create () in
 
-  let closed = Atomic.make false in
+  let active, trigger = Aswitch.create () in
   let tick () = Cb_set.trigger ticker in
 
   let mk_emitter pp_signal =
     let emit l =
-      if Atomic.get closed then raise Emitter.Closed;
+      if Aswitch.is_off active then raise Emitter.Closed;
       pp_vlist mutex pp_signal out l
     in
-    let enabled () = not (Atomic.get closed) in
+    let enabled () = Aswitch.is_on active in
     let tick ~now:_ = () in
     let flush_and_close () =
-      if not (Atomic.exchange closed true) then
+      if Aswitch.is_on active then
         let@ () = Util_mutex.protect mutex in
         Format.pp_print_flush out ()
     in
-    let closed () = Atomic.get closed in
+    let closed () = Aswitch.is_off active in
     { Emitter.emit; closed; enabled; tick; flush_and_close }
   in
 
@@ -58,14 +58,15 @@ let stdout : OTEL.Exporter.t =
   let emit_logs = mk_emitter Proto.Logs.pp_log_record in
   let emit_metrics = mk_emitter Proto.Metrics.pp_metric in
 
-  let shutdown ~on_done () =
+  let shutdown () =
     Emitter.flush_and_close emit_spans;
     Emitter.flush_and_close emit_logs;
     Emitter.flush_and_close emit_metrics;
-    on_done ()
+    Aswitch.turn_off trigger
   in
 
   {
+    active = (fun () -> active);
     emit_spans;
     emit_logs;
     emit_metrics;

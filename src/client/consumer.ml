@@ -1,21 +1,29 @@
 (** Consumer that accepts items from a bounded queue *)
 
+open Common_
+
 type 'a t = {
-  active: unit -> bool;  (** Still running? Must be fast and thread-safe *)
+  active: unit -> Aswitch.t;
+  shutdown: unit -> unit;
+      (** Shutdown the consumer as soon as possible. [active] will be turned off
+          once the consumer is fully shut down. *)
   tick: unit -> unit;
       (** Regularly called, eg to emit metrics, check timeouts, etc. Must be
           thread safe. *)
-  shutdown: on_done:(unit -> unit) -> unit;
-      (** Shutdown the consumer as soon as possible, call [on_done()] once it's
-          done. *)
+  self_metrics: unit -> OTEL.Metrics.t list;  (** Self observing metrics *)
 }
 (** A consumer for signals of type ['a] *)
 
 type 'a consumer = 'a t
 
-let[@inline] active (self : _ t) = self.active ()
+let[@inline] active (self : _ t) : Aswitch.t = self.active ()
 
-let[@inline] shutdown (self : _ t) ~on_done = self.shutdown ~on_done
+let[@inline] shutdown (self : _ t) : unit = self.shutdown ()
+
+let[@inline] self_metrics self : _ list = self.self_metrics ()
+
+(** [on_stop e f] calls [f()] when [e] stops, or now if it's already stopped *)
+let on_stop self f = Aswitch.on_turn_off (self.active ()) f
 
 module Builder = struct
   type 'a t = { start_consuming: 'a Bounded_queue.t -> 'a consumer }

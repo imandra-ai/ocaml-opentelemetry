@@ -49,8 +49,11 @@ let[@inline] close (self : _ t) : unit = self.close ()
 
 let[@inline] closed (self : _ t) : bool = self.closed ()
 
-(** Turn the writing end of the queue into an emitter. *)
-let to_emitter (self : 'a t) : 'a Opentelemetry_emitter.Emitter.t =
+(** Turn the writing end of the queue into an emitter.
+    @param close_queue_on_close
+      if true, closing the emitter will close the queue *)
+let to_emitter ~close_queue_on_close (self : 'a t) :
+    'a Opentelemetry_emitter.Emitter.t =
   let closed () = self.closed () in
   let enabled () = not (closed ()) in
   let emit x = if x <> [] then push self x in
@@ -58,7 +61,7 @@ let to_emitter (self : 'a t) : 'a Opentelemetry_emitter.Emitter.t =
 
   (* NOTE: we cannot actually flush, only close. Emptying the queue is
      fundamentally asynchronous because it's done by consumers *)
-  let flush_and_close () = close self in
+  let flush_and_close () = if close_queue_on_close then close self in
   { closed; enabled; emit; tick; flush_and_close }
 
 module Defaults = struct

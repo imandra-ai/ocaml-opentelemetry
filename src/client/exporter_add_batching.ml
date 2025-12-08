@@ -23,4 +23,24 @@ let add_batching ~(config : Client_config.t) (exp : OTEL.Exporter.t) :
   let emit_metrics = add_batch_opt config.batch_metrics exp.emit_metrics in
   let emit_logs = add_batch_opt config.batch_logs exp.emit_logs in
 
-  { exp with emit_spans; emit_metrics; emit_logs }
+  let active = exp.active in
+  let tick = exp.tick in
+  let on_tick = exp.on_tick in
+  let shutdown () =
+    let open Opentelemetry_emitter in
+    Emitter.flush_and_close emit_spans;
+    Emitter.flush_and_close emit_metrics;
+    Emitter.flush_and_close emit_logs;
+
+    exp.shutdown ()
+  in
+
+  {
+    OTEL.Exporter.active;
+    emit_spans;
+    emit_metrics;
+    emit_logs;
+    on_tick;
+    tick;
+    shutdown;
+  }
