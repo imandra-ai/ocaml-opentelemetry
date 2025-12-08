@@ -13,9 +13,15 @@ type t = {
 }
 
 let pp out (self : t) : unit =
-  let ppiopt = Format.pp_print_option Format.pp_print_int in
+  let ppiopt out i =
+    match i with
+    | None -> Format.fprintf out "None"
+    | Some i -> Format.fprintf out "%d" i
+  in
   let pp_header ppf (a, b) = Format.fprintf ppf "@[%s: @,%s@]@." a b in
-  let ppheaders = Format.pp_print_list pp_header in
+  let ppheaders out l =
+    Format.fprintf out "[@[%a@]]" (Format.pp_print_list pp_header) l
+  in
   let {
     debug;
     self_trace;
