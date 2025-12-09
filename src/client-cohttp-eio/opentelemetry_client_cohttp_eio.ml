@@ -56,8 +56,8 @@ struct
       Eio.Mutex.unlock self.mutex
 
     (** Ensure we get signalled when the queue goes from empty to non-empty *)
-    let register_bounded_queue (self : t) (bq : _ Bounded_queue.t) : unit =
-      Bounded_queue.on_non_empty bq (fun () -> trigger self)
+    let register_bounded_queue (self : t) (bq : _ Bounded_queue.Recv.t) : unit =
+      Bounded_queue.Recv.on_non_empty bq (fun () -> trigger self)
   end
 
   module Httpc : Generic_http_consumer.HTTPC with module IO = IO = struct
@@ -159,7 +159,7 @@ struct
 end
 
 let create_consumer ?(config = Config.make ()) ~sw ~env () :
-    Consumer.any_resource_builder =
+    _ Consumer.Builder.t =
   let module M = Make (struct
     let sw = sw
 

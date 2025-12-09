@@ -18,15 +18,7 @@ type error = OTELC.Export_error.t
 
 open struct
   module Notifier = OTELC.Notifier_sync
-
-  module IO : OTELC.Generic_io.S_WITH_CONCURRENCY with type 'a t = 'a = struct
-    include OTELC.Generic_io.Direct_style
-
-    let sleep_s = Thread.delay
-
-    let[@inline] spawn f =
-      ignore (OTELC.Util_thread.start_bg_thread f : Thread.t)
-  end
+  module IO = OTELC.Io_sync
 end
 
 module Httpc : OTELC.Generic_http_consumer.HTTPC with module IO = IO = struct
@@ -82,7 +74,7 @@ end
 module Consumer_impl = OTELC.Generic_http_consumer.Make (IO) (Notifier) (Httpc)
 
 let consumer ?(config = Config.make ()) () :
-    Opentelemetry_client.Consumer.any_resource_builder =
+    Opentelemetry_client.Consumer.any_signal_l_builder =
   let n_workers = max 2 (min 32 config.bg_threads) in
   let ticker_task =
     if config.ticker_thread then

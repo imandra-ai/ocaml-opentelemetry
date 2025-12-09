@@ -11,7 +11,7 @@ val set_headers : (string * string) list -> unit
 module Config = Config
 
 val create_consumer :
-  ?config:Config.t -> unit -> Opentelemetry_client.Consumer.any_resource_builder
+  ?config:Config.t -> unit -> Opentelemetry_client.Consumer.any_signal_l_builder
 (** Consumer that pulls from a queue *)
 
 val create_exporter : ?config:Config.t -> unit -> Opentelemetry.Exporter.t

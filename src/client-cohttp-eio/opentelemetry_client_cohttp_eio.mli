@@ -15,7 +15,7 @@ val create_consumer :
   sw:Eio.Switch.t ->
   env:Eio_unix.Stdenv.base ->
   unit ->
-  Opentelemetry_client.Consumer.any_resource_builder
+  Opentelemetry_client.Consumer.any_signal_l_builder
 (** Consumer that pulls from a queue *)
 
 val create_exporter :
