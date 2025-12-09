@@ -8,6 +8,14 @@
   opentelemetry-client-ocurl))
 
 (executable
+ (name emit1_stdout)
+ (modules emit1_stdout)
+ (libraries
+  unix
+  opentelemetry
+  opentelemetry-client))
+
+(executable
  (name emit1_cohttp)
  (modules emit1_cohttp)
  (preprocess
