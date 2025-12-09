@@ -17,7 +17,6 @@ depends: [
   "opentelemetry" {= version}
   "odoc" {with-doc}
   "alcotest" {with-test}
-  "saturn" {>= "1.0" & < "2.0"}
   "thread-local-storage" {>= "0.2" & < "0.3"}
 ]
 build: [

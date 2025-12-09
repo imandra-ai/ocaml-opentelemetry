@@ -57,10 +57,6 @@
    (= :version))
   (odoc :with-doc)
   (alcotest :with-test)
-  (saturn
-   (and
-    (>= 1.0)
-    (< 2.0)))
   (thread-local-storage
    (and
     (>= 0.2)
