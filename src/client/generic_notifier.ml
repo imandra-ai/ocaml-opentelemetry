@@ -13,5 +13,5 @@ module type S = sig
 
   val wait : t -> unit IO.t
 
-  val register_bounded_queue : t -> _ Bounded_queue.t -> unit
+  val register_bounded_queue : t -> _ Bounded_queue.Recv.t -> unit
 end

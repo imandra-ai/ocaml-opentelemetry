@@ -9,7 +9,6 @@
   opentelemetry.proto
   opentelemetry.domain
   pbrt
-  saturn
   mtime
   mtime.clock.os)
  (synopsis

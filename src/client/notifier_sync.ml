@@ -17,5 +17,5 @@ let wait self =
   Mutex.unlock self.mutex
 
 (** Ensure we get signalled when the queue goes from empty to non-empty *)
-let register_bounded_queue (self : t) (bq : _ Bounded_queue.t) : unit =
-  Bounded_queue.on_non_empty bq (fun () -> trigger self)
+let register_bounded_queue (self : t) (bq : _ Bounded_queue.Recv.t) : unit =
+  Bounded_queue.Recv.on_non_empty bq (fun () -> trigger self)

@@ -26,7 +26,7 @@ end = struct
     active: Aswitch.t;  (** Public facing switch *)
     active_trigger: Aswitch.trigger;
     status: status Atomic.t;  (** Internal state, including shutdown *)
-    q: OTEL.Any_signal_l.t Bounded_queue.t;
+    q: OTEL.Any_signal_l.t Bounded_queue.Recv.t;
     notify: Notifier.t;
     exp: OTEL.Exporter.t;
   }
@@ -62,7 +62,7 @@ end = struct
   let start_worker (self : state) : unit =
     (* loop on [q] *)
     let rec loop () : unit IO.t =
-      match Bounded_queue.try_pop self.q with
+      match Bounded_queue.Recv.try_pop self.q with
       | `Closed ->
         shutdown_worker self;
         IO.return ()
@@ -118,11 +118,12 @@ end = struct
       sum ~name:"otel-ocaml.export.discarded-by-bounded-queue"
         ~is_monotonic:true
         [
-          int ~now:(Mtime.to_uint64_ns now) (Bounded_queue.num_discarded self.q);
+          int ~now:(Mtime.to_uint64_ns now)
+            (Bounded_queue.Recv.num_discarded self.q);
         ];
     ]
 
-  let to_consumer (self : state) : _ Consumer.t =
+  let to_consumer (self : state) : Consumer.t =
     let shutdown () = shutdown self in
     let tick () = tick self in
     let self_metrics () = self_metrics self in

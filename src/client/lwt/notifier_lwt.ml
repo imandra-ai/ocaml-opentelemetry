@@ -36,5 +36,5 @@ let trigger (self : t) : unit =
 
 let wait (self : t) : unit Lwt.t = Lwt_condition.wait self.cond
 
-let register_bounded_queue (self : t) (q : _ Bounded_queue.t) : unit =
-  Bounded_queue.on_non_empty q (fun () -> trigger self)
+let register_bounded_queue (self : t) (q : _ Bounded_queue.Recv.t) : unit =
+  Bounded_queue.Recv.on_non_empty q (fun () -> trigger self)

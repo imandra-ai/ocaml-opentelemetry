@@ -77,6 +77,12 @@ module Encode = struct
       ~ctor:(fun r ->
         Trace_service.make_export_trace_service_request ~resource_spans:r ())
       ~enc:Trace_service.encode_pb_export_trace_service_request
+
+  let any ?encoder (r : Any_resource.t) : string =
+    match r with
+    | R_logs l -> logs ?encoder l
+    | R_spans sp -> traces ?encoder sp
+    | R_metrics ms -> metrics ?encoder ms
 end
 
 module Decode = struct

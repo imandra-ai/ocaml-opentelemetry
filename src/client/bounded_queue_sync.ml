@@ -113,7 +113,11 @@ let to_bounded_queue (self : 'a state) : 'a BQ.t =
     (* waiters will want to know *)
     Cb_set.trigger self.on_non_empty
   in
-  { BQ.push; num_discarded; try_pop; on_non_empty; close; closed }
+  let common = { BQ.Common.closed; num_discarded } in
+  {
+    BQ.send = { push; close; common };
+    recv = { try_pop; on_non_empty; common };
+  }
 
 let create ~high_watermark () : _ BQ.t =
   let st =

@@ -1,3 +1,4 @@
+open Common_
 open Opentelemetry.Proto
 
 (** A resource *)
@@ -31,3 +32,9 @@ let of_metrics ?service_name ?attrs m : t =
 
 let of_metrics_or_empty ?service_name ?attrs ms =
   of_x_or_empty ?service_name ?attrs ~f:of_metrics ms
+
+let of_signal_l ?service_name ?attrs (s : OTEL.Any_signal_l.t) : t =
+  match s with
+  | Logs logs -> of_logs ?service_name ?attrs logs
+  | Spans sp -> of_spans ?service_name ?attrs sp
+  | Metrics ms -> of_metrics ?service_name ?attrs ms

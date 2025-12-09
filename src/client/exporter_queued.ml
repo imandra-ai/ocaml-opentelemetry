@@ -8,23 +8,22 @@ module BQ_emitters = struct
      queue because we need to flush_and_close the other emitters first.
      The bounded queue is a shared resource. *)
 
-  let logs_emitter_of_bq ?service_name ?attrs
-      (q : Any_resource.t Bounded_queue.t) : OTEL.Logger.t =
-    Bounded_queue.to_emitter q ~close_queue_on_close:false
-    |> Opentelemetry_emitter.Emitter.flat_map
-         (Any_resource.of_logs_or_empty ?service_name ?attrs)
+  let logs_emitter_of_bq (q : OTEL.Any_signal_l.t Bounded_queue.Send.t) :
+      OTEL.Logger.t =
+    Bounded_queue.Send.to_emitter q ~close_queue_on_close:false
+    |> Opentelemetry_emitter.Emitter.flat_map OTEL.Any_signal_l.of_logs_or_empty
 
-  let spans_emitter_of_bq ?service_name ?attrs
-      (q : Any_resource.t Bounded_queue.t) : OTEL.Tracer.t =
-    Bounded_queue.to_emitter q ~close_queue_on_close:false
+  let spans_emitter_of_bq (q : OTEL.Any_signal_l.t Bounded_queue.Send.t) :
+      OTEL.Tracer.t =
+    Bounded_queue.Send.to_emitter q ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map
-         (Any_resource.of_spans_or_empty ?service_name ?attrs)
+         OTEL.Any_signal_l.of_spans_or_empty
 
-  let metrics_emitter_of_bq ?service_name ?attrs
-      (q : Any_resource.t Bounded_queue.t) : OTEL.Metrics_emitter.t =
-    Bounded_queue.to_emitter q ~close_queue_on_close:false
+  let metrics_emitter_of_bq (q : OTEL.Any_signal_l.t Bounded_queue.Send.t) :
+      OTEL.Metrics_emitter.t =
+    Bounded_queue.Send.to_emitter q ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map
-         (Any_resource.of_metrics_or_empty ?service_name ?attrs)
+         OTEL.Any_signal_l.of_metrics_or_empty
 end
 
 (** Pair a queue with a consumer to build an exporter.
@@ -33,20 +32,16 @@ end
     bounded queue; while the consumer takes them from the queue to forward them
     somewhere else, store them, etc.
     @param resource_attributes attributes added to every "resource" batch *)
-let create ?(resource_attributes = []) ~(q : Any_resource.t Bounded_queue.t)
-    ~(consumer : Consumer.any_resource_builder) () : OTEL.Exporter.t =
+let create ~(q : OTEL.Any_signal_l.t Bounded_queue.t)
+    ~(consumer : Consumer.any_signal_l_builder) () : OTEL.Exporter.t =
   let open Opentelemetry_emitter in
   let shutdown_started = Atomic.make false in
   let active, trigger = Aswitch.create () in
-  let consumer = consumer.start_consuming q in
+  let consumer = consumer.start_consuming q.recv in
 
-  let emit_spans =
-    BQ_emitters.spans_emitter_of_bq ~attrs:resource_attributes q
-  in
-  let emit_logs = BQ_emitters.logs_emitter_of_bq ~attrs:resource_attributes q in
-  let emit_metrics =
-    BQ_emitters.metrics_emitter_of_bq ~attrs:resource_attributes q
-  in
+  let emit_spans = BQ_emitters.spans_emitter_of_bq q.send in
+  let emit_logs = BQ_emitters.logs_emitter_of_bq q.send in
+  let emit_metrics = BQ_emitters.metrics_emitter_of_bq q.send in
 
   let tick_set = Cb_set.create () in
   let tick () = Cb_set.trigger tick_set in
@@ -61,7 +56,7 @@ let create ?(resource_attributes = []) ~(q : Any_resource.t Bounded_queue.t)
 
       (* first, prevent further pushes to the queue. Consumer workers
        can still drain it. *)
-      Bounded_queue.close q;
+      Bounded_queue.Send.close q.send;
 
       (* shutdown consumer; once it's down it'll turn our switch off too *)
       Aswitch.link (Consumer.active consumer) trigger;
