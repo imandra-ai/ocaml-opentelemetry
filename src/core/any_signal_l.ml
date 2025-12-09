@@ -18,3 +18,15 @@ let pp out = function
   | Spans s -> pp_list Proto.Trace.pp_span out s
   | Metrics m -> pp_list Proto.Metrics.pp_metric out m
   | Logs l -> pp_list Proto.Logs.pp_log_record out l
+
+let of_logs_or_empty = function
+  | [] -> []
+  | l -> [ Logs l ]
+
+let of_metrics_or_empty = function
+  | [] -> []
+  | l -> [ Metrics l ]
+
+let of_spans_or_empty = function
+  | [] -> []
+  | l -> [ Spans l ]
