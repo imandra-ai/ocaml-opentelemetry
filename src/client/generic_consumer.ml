@@ -35,7 +35,6 @@ module Make
       queue of signals, and start a consumer to process these signals and send
       them somewhere using HTTP. *)
 end = struct
-  module Proto = Opentelemetry_proto
   open IO
 
   type config = {

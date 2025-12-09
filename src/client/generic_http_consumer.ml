@@ -41,9 +41,6 @@ module Make
         controls whether we start a task to call [tick] at the given interval in
         seconds, or [None] to not start such a task at all. *)
 end = struct
-  module Proto = Opentelemetry_proto
-  open IO
-
   module Sender :
     Generic_consumer.SENDER
       with module IO = IO
