@@ -22,6 +22,8 @@ type kind = Span_kind.t =
 
 type key_value = Key_value.t
 
+val pp : Format.formatter -> t -> unit
+
 val make :
   ?kind:kind ->
   ?trace_state:string ->

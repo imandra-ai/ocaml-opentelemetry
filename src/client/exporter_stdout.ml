@@ -1,7 +1,6 @@
 (** A simple exporter that prints on stdout *)
 
 open Common_
-open Opentelemetry_util
 open Opentelemetry_emitter
 
 open struct
