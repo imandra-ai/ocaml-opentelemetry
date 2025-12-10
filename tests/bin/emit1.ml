@@ -59,15 +59,16 @@ let run_job () =
 
       try
         Atomic.incr num_tr;
-        let@ _ =
-          OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal ~parent:scope
-            "alloc"
-        in
         (* allocate some stuff *)
-        if !stress_alloc_ then (
-          let _arr = Sys.opaque_identity @@ Array.make (25 * 25551) 42.0 in
-          ignore _arr
-        );
+        (if !stress_alloc_ then
+           let@ _ =
+             OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal
+               ~parent:scope "alloc"
+           in
+           let _arr : _ array =
+             Sys.opaque_identity @@ Array.make (25 * 25551) 42.0
+           in
+           ignore _arr);
 
         Unix.sleepf !sleep_inner;
         Atomic.incr num_sleep;
@@ -78,7 +79,9 @@ let run_job () =
         OT.Span.add_event scope (OT.Event.make "done with alloc")
       with Failure _ -> ()
     done
-  done
+  done;
+  (* Printf.eprintf "emit1.run_job: exit\n%!"; *)
+  ()
 
 let run () =
   OT.Gc_metrics.setup_on_main_exporter ();
@@ -113,6 +116,7 @@ let () =
   let batch_traces = ref 400 in
   let batch_metrics = ref 3 in
   let batch_logs = ref 400 in
+  let self_trace = ref true in
 
   let n_bg_threads = ref 0 in
   let opts =
@@ -130,6 +134,7 @@ let () =
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
       "--bg-threads", Arg.Set_int n_bg_threads, " number of background threads";
+      "--no-self-trace", Arg.Clear self_trace, " disable self tracing";
       "-n", Arg.Set_int n, " number of iterations (default ∞)";
     ]
     |> Arg.align
@@ -144,7 +149,7 @@ let () =
       None
   in
   let config =
-    Opentelemetry_client_ocurl.Config.make ~debug:!debug ~self_trace:true
+    Opentelemetry_client_ocurl.Config.make ~debug:!debug ~self_trace:!self_trace
       ?bg_threads:(some_if_nzero n_bg_threads)
       ~batch_traces:(some_if_nzero batch_traces)
       ~batch_metrics:(some_if_nzero batch_metrics)
