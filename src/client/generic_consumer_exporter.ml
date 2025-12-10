@@ -104,7 +104,9 @@ end = struct
       }
     in
 
-    (* if [exporter] turns off, shut us down too *)
+    (* if [exporter] turns off, shut us down too. Note that [shutdown]
+       is idempotent so it won't lead to divergence when it shuts the
+       exporter down. *)
     Aswitch.on_turn_off (OTEL.Exporter.active exporter) (fun () ->
         shutdown self);
 
