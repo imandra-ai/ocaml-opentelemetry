@@ -42,7 +42,7 @@
     (< 0.28)))
   (mtime
    (>= "1.4")))
- (depopts atomic trace thread-local-storage lwt eio)
+ (depopts atomic trace thread-local-storage lwt eio picos)
  (conflicts
   (trace
    (< 0.10)))
