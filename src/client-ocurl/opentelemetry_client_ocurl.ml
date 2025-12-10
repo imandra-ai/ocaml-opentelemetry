@@ -97,13 +97,16 @@ let create_exporter ?(config = Config.make ()) () : OTEL.Exporter.t =
 
 let create_backend = create_exporter
 
-let shutdown_and_wait (self : OTEL.Exporter.t) : unit =
+let shutdown_and_wait ?(after_shutdown = ignore) (self : OTEL.Exporter.t) : unit
+    =
   let open Opentelemetry_client in
   let sq = Sync_queue.create () in
   OTEL.Aswitch.on_turn_off (OTEL.Exporter.active self) (fun () ->
       Sync_queue.push sq ());
   OTEL.Exporter.shutdown self;
-  Sync_queue.pop sq
+  Sync_queue.pop sq;
+  after_shutdown self;
+  ()
 
 let setup_ ?(config : Config.t = Config.make ()) () : OTEL.Exporter.t =
   let exporter = create_exporter ~config () in
@@ -133,10 +136,10 @@ let remove_backend = remove_exporter
 let setup ?config ?(enable = true) () =
   if enable then ignore (setup_ ?config () : OTEL.Exporter.t)
 
-let with_setup ?config ?(enable = true) () f =
+let with_setup ?after_shutdown ?config ?(enable = true) () f =
   if enable then (
     let exp = setup_ ?config () in
-    Fun.protect f ~finally:(fun () -> shutdown_and_wait exp)
+    Fun.protect f ~finally:(fun () -> shutdown_and_wait ?after_shutdown exp)
   ) else
     f ()
 

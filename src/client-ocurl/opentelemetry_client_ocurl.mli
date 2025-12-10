@@ -40,6 +40,12 @@ val remove_backend : unit -> unit
 [@@deprecated "use remove_exporter"]
 (** @since 0.12 *)
 
-val with_setup : ?config:Config.t -> ?enable:bool -> unit -> (unit -> 'a) -> 'a
+val with_setup :
+  ?after_shutdown:(Opentelemetry.Exporter.t -> unit) ->
+  ?config:Config.t ->
+  ?enable:bool ->
+  unit ->
+  (unit -> 'a) ->
+  'a
 (** [with_setup () f] is like [setup(); f()] but takes care of cleaning up after
     [f()] returns See {!setup} for more details. *)
