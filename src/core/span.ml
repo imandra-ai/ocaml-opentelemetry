@@ -28,6 +28,8 @@ let[@inline] trace_id self = Trace_id.of_bytes self.trace_id
 
 let[@inline] is_not_dummy self = Span_id.is_valid (id self)
 
+let pp = Proto.Trace.pp_span
+
 let default_kind = ref Proto.Trace.Span_kind_unspecified
 
 let make ?(kind = !default_kind) ?trace_state ?(attrs = []) ?(events = [])

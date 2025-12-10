@@ -194,12 +194,6 @@ end = struct
     [
       sum ~name:"otel-ocaml.export.errors" ~is_monotonic:true
         [ int ~now:(Mtime.to_uint64_ns now) (Atomic.get n_errors) ];
-      sum ~name:"otel-ocaml.export.discarded-by-bounded-queue"
-        ~is_monotonic:true
-        [
-          int ~now:(Mtime.to_uint64_ns now)
-            (Bounded_queue.Recv.num_discarded self.q);
-        ];
     ]
 
   let to_consumer (self : state) : Consumer.t =

@@ -53,6 +53,9 @@ val push : 'a t -> 'a list -> [ `Dropped | `Ok ]
 val push' : 'a t -> 'a list -> unit
 (** Like {!push} but ignores the result *)
 
+val cur_size : _ t -> int
+(** Number of elements in the current batch *)
+
 open Opentelemetry_emitter
 
 val wrap_emitter : 'a t -> 'a Emitter.t -> 'a Emitter.t

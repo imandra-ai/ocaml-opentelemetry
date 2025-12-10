@@ -22,6 +22,7 @@ let debug ?(out = Format.err_formatter) () : OTEL.Exporter.t =
           List.iter (Format.fprintf out "METRIC: %a@." Metrics.pp_metric) m);
     on_tick = Cb_set.register ticker;
     tick = (fun () -> Cb_set.trigger ticker);
+    self_metrics = (fun () -> []);
     shutdown =
       (fun () ->
         Format.fprintf out "CLEANUP@.";

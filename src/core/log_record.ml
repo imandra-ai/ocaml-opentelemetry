@@ -45,6 +45,8 @@ type flags = Proto.Logs.log_record_flags =
 
 let pp_flags = Proto.Logs.pp_log_record_flags
 
+let pp = Proto.Logs.pp_log_record
+
 (** Make a single log entry *)
 let make ?time ?(observed_time_unix_nano = Timestamp_ns.now_unix_ns ())
     ?severity ?log_level ?flags ?trace_id ?span_id ?(attrs = [])

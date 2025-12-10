@@ -30,6 +30,8 @@ let combine_l (es : OTEL.Exporter.t list) : OTEL.Exporter.t =
       on_tick = (fun f -> List.iter (fun e -> e.on_tick f) es);
       tick = (fun () -> List.iter tick es);
       shutdown = (fun () -> shutdown_l es ~trigger);
+      self_metrics =
+        (fun () -> List.fold_left (fun acc e -> e.self_metrics () @ acc) [] es);
     }
   )
 

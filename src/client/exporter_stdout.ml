@@ -64,6 +64,7 @@ let stdout : OTEL.Exporter.t =
   let emit_logs = mk_emitter pp_log in
   let emit_metrics = mk_emitter pp_metric in
 
+  let self_metrics () = [] in
   let shutdown () =
     Emitter.flush_and_close emit_spans;
     Emitter.flush_and_close emit_logs;
@@ -77,6 +78,7 @@ let stdout : OTEL.Exporter.t =
     emit_logs;
     emit_metrics;
     on_tick = Cb_set.register ticker;
+    self_metrics;
     tick;
     shutdown;
   }

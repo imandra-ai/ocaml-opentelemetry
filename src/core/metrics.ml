@@ -13,6 +13,8 @@ type t = Metrics.metric
     distribution. It is composed of one or more data points that have precise
     values and time stamps. Each distinct metric should have a distinct name. *)
 
+let pp = Proto.Metrics.pp_metric
+
 open struct
   let _program_start = Timestamp_ns.now_unix_ns ()
 end

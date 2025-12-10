@@ -24,6 +24,7 @@ type t = {
           responsible for sending remaining batches, flushing sockets, etc. To
           know when shutdown is complete, register callbacks on [active].
           @since 0.12 *)
+  self_metrics: unit -> Metrics.t list;  (** metrics about the exporter itself *)
 }
 (** Main exporter interface. *)
 
@@ -39,6 +40,7 @@ let dummy () : t =
     on_tick = Cb_set.register ticker;
     tick = (fun () -> Cb_set.trigger ticker);
     shutdown = (fun () -> Aswitch.turn_off trigger);
+    self_metrics = (fun () -> []);
   }
 
 let[@inline] send_trace (self : t) (l : Proto.Trace.span list) =
@@ -73,3 +75,5 @@ let on_stop self f = Aswitch.on_turn_off (self.active ()) f
 let[@inline] shutdown (self : t) : unit = self.shutdown ()
 
 let (cleanup [@deprecated "use shutdown instead"]) = shutdown
+
+let[@inline] self_metrics (self : t) : _ list = self.self_metrics ()

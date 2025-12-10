@@ -22,6 +22,8 @@ let _dummy_start = Mtime.min_stamp
 
 let _empty_state : _ state = { q = []; size = 0; start = _dummy_start }
 
+let[@inline] cur_size (self : _ t) : int = (Atomic.get self.st).size
+
 let make ?(batch = 100) ?high_watermark ?now ?timeout () : _ t =
   let batch = min batch max_batch_size in
   let high_watermark =

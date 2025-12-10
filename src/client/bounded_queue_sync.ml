@@ -12,6 +12,8 @@ module Q : sig
 
   val close : _ t -> unit
 
+  val size : _ t -> int
+
   val closed : _ t -> bool
 
   val try_pop : 'a t -> 'a BQ.pop_result
@@ -40,6 +42,9 @@ end = struct
   (* NOTE: the race condition here is benign, assuming no tearing of
     a value of type [bool] which OCaml's memory model should guarantee. *)
   let[@inline] closed self = self.closed
+
+  (* NOTE: race condition here is also benign in absoence of tearing. *)
+  let[@inline] size self = Queue.length self.q
 
   let close (self : _ t) =
     UM.protect self.mutex @@ fun () ->
@@ -73,7 +78,8 @@ end = struct
       done;
 
       let num_discarded = List.length !to_push in
-      (* Printf.eprintf "bq: pushed %d items\n%!" (List.length xs - num_discarded); *)
+      (* Printf.eprintf "bq: pushed %d items (discarded: %d)\n%!" (List.length xs - num_discarded) num_discarded; *)
+
       Pushed { num_discarded }
     )
 end
@@ -108,12 +114,13 @@ let to_bounded_queue (self : 'a state) : 'a BQ.t =
   let push x = push self x in
   let on_non_empty = Cb_set.register self.on_non_empty in
   let try_pop () = try_pop self in
+  let size () = Q.size self.q in
   let close () =
     Q.close self.q;
     (* waiters will want to know *)
     Cb_set.trigger self.on_non_empty
   in
-  let common = { BQ.Common.closed; num_discarded } in
+  let common = { BQ.Common.closed; num_discarded; size } in
   {
     BQ.send = { push; close; common };
     recv = { try_pop; on_non_empty; common };

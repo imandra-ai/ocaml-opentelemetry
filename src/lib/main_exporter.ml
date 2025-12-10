@@ -92,6 +92,11 @@ let dynamic_forward_to_main_exporter : Exporter.t =
     | None -> ()
     | Some exp -> exp.tick ()
   in
+  let self_metrics () =
+    match get () with
+    | None -> []
+    | Some exp -> exp.self_metrics ()
+  in
   let shutdown () = () in
   {
     Exporter.active;
@@ -101,7 +106,11 @@ let dynamic_forward_to_main_exporter : Exporter.t =
     on_tick;
     tick;
     shutdown;
+    self_metrics;
   }
+
+let self_metrics () : Metrics.t list =
+  dynamic_forward_to_main_exporter.self_metrics ()
 
 (** Set the global exporter *)
 let set (exp : t) : unit =

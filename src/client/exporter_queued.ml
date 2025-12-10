@@ -47,6 +47,20 @@ let create ~(q : OTEL.Any_signal_l.t Bounded_queue.t)
   let tick () = Cb_set.trigger tick_set in
   let on_tick f = Cb_set.register tick_set f in
 
+  let self_metrics () : _ list =
+    let now = OTEL.Timestamp_ns.now_unix_ns () in
+    let m_size =
+      OTEL.Metrics.gauge ~name:"otel-ocaml.exporter-queue.size"
+        [ OTEL.Metrics.int ~now (Bounded_queue.Recv.size q.recv) ]
+    in
+    let m_discarded =
+      OTEL.Metrics.sum ~is_monotonic:true
+        ~name:"otel-ocaml.exporter-queue.discarded"
+        [ OTEL.Metrics.int ~now (Bounded_queue.Recv.num_discarded q.recv) ]
+    in
+    m_size :: m_discarded :: Consumer.self_metrics consumer
+  in
+
   let shutdown () =
     if Aswitch.is_on active && not (Atomic.exchange shutdown_started true) then (
       (* flush all emitters *)
@@ -68,4 +82,13 @@ let create ~(q : OTEL.Any_signal_l.t Bounded_queue.t)
   Aswitch.on_turn_off (Consumer.active consumer) shutdown;
 
   let active () = active in
-  { active; emit_logs; emit_metrics; emit_spans; tick; on_tick; shutdown }
+  {
+    active;
+    emit_logs;
+    emit_metrics;
+    emit_spans;
+    self_metrics;
+    tick;
+    on_tick;
+    shutdown;
+  }
