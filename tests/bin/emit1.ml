@@ -44,8 +44,10 @@ let run_job () =
           "loop.inner"
       in
 
-      Unix.sleepf !sleep_outer;
-      Atomic.incr num_sleep;
+      if !sleep_outer > 0. then (
+        Unix.sleepf !sleep_outer;
+        Atomic.incr num_sleep
+      );
 
       let logger = OT.Logger.get_main () in
       OT.Emitter.emit logger
@@ -70,8 +72,10 @@ let run_job () =
            in
            ignore _arr);
 
-        Unix.sleepf !sleep_inner;
-        Atomic.incr num_sleep;
+        if !sleep_inner > 0. then (
+          Unix.sleepf !sleep_inner;
+          Atomic.incr num_sleep
+        );
 
         if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
