@@ -57,6 +57,8 @@ end = struct
     active_trigger: Aswitch.trigger;
     config: config;
     sender_config: Sender.config;
+    m_spans: int Atomic.t;
+    m_logs: int Atomic.t;
   }
 
   let shutdown self : unit =
@@ -100,6 +102,12 @@ end = struct
 
   let send_signals (self : state) (sender : Sender.t) ~backoff
       (sigs : OTEL.Any_signal_l.t) : unit IO.t =
+    (match sigs with
+    | Spans l ->
+      ignore (Atomic.fetch_and_add self.m_spans (List.length l) : int)
+    | Logs l -> ignore (Atomic.fetch_and_add self.m_logs (List.length l) : int)
+    | Metrics _l -> ());
+
     let* r = Sender.send sender sigs in
     match r with
     | Ok () ->
@@ -174,6 +182,8 @@ end = struct
         notify = Notifier.create ();
         config;
         sender_config;
+        m_spans = Atomic.make 0;
+        m_logs = Atomic.make 0;
       }
     in
 
@@ -194,12 +204,17 @@ end = struct
 
     self
 
-  let self_metrics (_self : state) : OTEL.Metrics.t list =
+  let self_metrics (self : state) : OTEL.Metrics.t list =
     let open OTEL.Metrics in
-    let now = Mtime_clock.now () in
+    let now = OTEL.Timestamp_ns.now_unix_ns () in
+    let attrs = [ "otel.component.name", `String "otel_ocaml" ] in
     [
-      sum ~name:"otel_ocaml.export.errors" ~is_monotonic:true
-        [ int ~now:(Mtime.to_uint64_ns now) (Atomic.get n_errors) ];
+      sum ~name:"otel.sd.exporter.errors" ~is_monotonic:true
+        [ int ~now (Atomic.get n_errors) ~attrs ];
+      sum ~name:"otel.sdk.exporter.span.exported" ~is_monotonic:true
+        [ int ~now (Atomic.get self.m_spans) ~attrs ];
+      sum ~name:"otel.sdk.exporter.log.exported" ~is_monotonic:true
+        [ int ~now (Atomic.get self.m_logs) ~attrs ];
     ]
 
   let to_consumer (self : state) : Consumer.t =
