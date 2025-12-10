@@ -14,6 +14,7 @@ module Extensions = struct
         bt: Printexc.raw_backtrace;
       }
     | Ev_set_span_kind of Otrace.explicit_span * OTEL.Span_kind.t
+    | Ev_set_span_status of Otrace.explicit_span * OTEL.Span_status.t
 end
 
 open Extensions
@@ -243,6 +244,10 @@ module Make_collector (A : COLLECTOR_ARG) = struct
       (match get_span_ sp with
       | None -> !on_internal_error "could not find scope for OTEL span"
       | Some sc -> OTEL.Span.set_kind sc k)
+    | Ev_set_span_status (sp, st) ->
+      (match get_span_ sp with
+      | None -> !on_internal_error "could not find scope for OTEL span"
+      | Some sc -> OTEL.Span.set_status sc st)
     | Ev_record_exn { sp; exn; bt } ->
       (match get_span_ sp with
       | None -> !on_internal_error "could not find scope for OTEL span"
@@ -266,8 +271,12 @@ let link_spans (sp1 : Otrace.explicit_span) (sp2 : Otrace.explicit_span) : unit
   if Otrace.enabled () then Otrace.extension_event @@ Ev_link_span (sp1, sp2)
   *)
 
-let set_span_kind sp k : unit =
+let[@inline] set_span_kind sp k : unit =
   if Otrace.enabled () then Otrace.extension_event @@ Ev_set_span_kind (sp, k)
+
+let[@inline] set_span_status sp status : unit =
+  if Otrace.enabled () then
+    Otrace.extension_event @@ Ev_set_span_status (sp, status)
 
 let record_exception sp exn bt : unit =
   if Otrace.enabled () then

@@ -49,6 +49,7 @@ module Extensions : sig
       }
           (** Record exception and potentially turn span to an error *)
     | Ev_set_span_kind of Otrace.explicit_span * OTEL.Span_kind.t
+    | Ev_set_span_status of Otrace.explicit_span * OTEL.Span_status.t
 end
 
 val on_internal_error : (string -> unit) ref
@@ -91,6 +92,9 @@ val link_span_to_otel_ctx : Otrace.explicit_span -> OTEL.Span_ctx.t -> unit
 val set_span_kind : Otrace.explicit_span -> OTEL.Span.kind -> unit
 (** [set_span_kind sp k] sets the span's kind.
     @since 0.11 *)
+
+val set_span_status : Otrace.explicit_span -> OTEL.Span_status.t -> unit
+(** @since NEXT_RELEASE *)
 
 val record_exception :
   Otrace.explicit_span -> exn -> Printexc.raw_backtrace -> unit
