@@ -13,18 +13,24 @@ type 'a t = {
   timeout: Mtime.span option;
 }
 
-let default_high_watermark batch_size = max 10 (min (batch_size * 10) 1_000_000)
+let max_batch_size = 100_000
+
+let default_high_watermark batch_size =
+  max 10 (min (batch_size * 10) max_batch_size)
 
 let _dummy_start = Mtime.min_stamp
 
 let _empty_state : _ state = { q = []; size = 0; start = _dummy_start }
 
 let make ?(batch = 100) ?high_watermark ?now ?timeout () : _ t =
+  let batch = min batch max_batch_size in
   let high_watermark =
     match high_watermark with
-    | Some x -> x
+    | Some x -> max x batch (* high watermark must be >= batch *)
     | None -> default_high_watermark batch
   in
+  assert (high_watermark >= batch);
+
   let start =
     match now with
     | Some x -> x
