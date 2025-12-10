@@ -175,11 +175,13 @@ let () =
       elapsed n_per_sec
   in
   let after_exp_shutdown exp =
-    if !final_stats then
-      (* print some stats *)
+    (* print some stats *)
+    if !final_stats then (
+      let ms = OT.Exporter.self_metrics exp in
       Format.eprintf "@[exporter metrics:@ %a@]@."
         (Format.pp_print_list Opentelemetry.Metrics.pp)
-        (OT.Exporter.self_metrics exp)
+        ms
+    )
   in
 
   let@ () = Fun.protect ~finally in
