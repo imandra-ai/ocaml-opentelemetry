@@ -15,6 +15,8 @@ let n = ref max_int
 
 let num_sleep = Atomic.make 0
 
+let stress_alloc_ = ref true
+
 let num_tr = Atomic.make 0
 
 let run_job () =
@@ -42,8 +44,10 @@ let run_job () =
           "loop.inner"
       in
 
-      Unix.sleepf !sleep_outer;
-      Atomic.incr num_sleep;
+      if !sleep_outer > 0. then (
+        Unix.sleepf !sleep_outer;
+        Atomic.incr num_sleep
+      );
 
       let logger = OT.Logger.get_main () in
       OT.Emitter.emit logger
@@ -57,13 +61,21 @@ let run_job () =
 
       try
         Atomic.incr num_tr;
-        let@ _ =
-          OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal ~parent:scope
-            "alloc"
-        in
+        (* allocate some stuff *)
+        (if !stress_alloc_ then
+           let@ _ =
+             OT.Tracer.with_ tracer ~kind:OT.Span.Span_kind_internal
+               ~parent:scope "alloc"
+           in
+           let _arr : _ array =
+             Sys.opaque_identity @@ Array.make (25 * 25551) 42.0
+           in
+           ignore _arr);
 
-        Unix.sleepf !sleep_inner;
-        Atomic.incr num_sleep;
+        if !sleep_inner > 0. then (
+          Unix.sleepf !sleep_inner;
+          Atomic.incr num_sleep
+        );
 
         if j = 4 && !i mod 13 = 0 then failwith "oh no";
 
@@ -71,7 +83,9 @@ let run_job () =
         OT.Span.add_event scope (OT.Event.make "done with alloc")
       with Failure _ -> ()
     done
-  done
+  done;
+  (* Printf.eprintf "emit1.run_job: exit\n%!"; *)
+  ()
 
 let run () =
   OT.Gc_metrics.setup_on_main_exporter ();
@@ -108,11 +122,15 @@ let () =
   let batch_metrics = ref 3 in
   let batch_logs = ref 400 in
   let queued = ref false in
+  let self_trace = ref true in
 
   let n_bg_threads = ref 0 in
   let opts =
     [
       "--debug", Arg.Bool (( := ) debug), " enable debug output";
+      ( "--stress-alloc",
+        Arg.Bool (( := ) stress_alloc_),
+        " perform heavy allocs in inner loop" );
       ( "--batch-metrics",
         Arg.Int (( := ) batch_metrics),
         " size of metrics batch" );
@@ -122,6 +140,7 @@ let () =
       "--sleep-outer", Arg.Set_float sleep_outer, " sleep (in s) in outer loop";
       "-j", Arg.Set_int n_jobs, " number of parallel jobs";
       "--bg-threads", Arg.Set_int n_bg_threads, " number of background threads";
+      "--no-self-trace", Arg.Clear self_trace, " disable self tracing";
       "-n", Arg.Set_int n, " number of iterations (default ∞)";
       "--queued", Arg.Set queued, " queue exporter";
     ]
@@ -145,6 +164,8 @@ let () =
   in
 
   OT.Main_exporter.set exporter;
+
+  if !self_trace then Opentelemetry_client.Self_trace.set_enabled true;
 
   let@ () =
     Fun.protect ~finally:(fun () ->
