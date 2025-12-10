@@ -13,7 +13,7 @@ type 'a t = {
   timeout: Mtime.span option;
 }
 
-let default_high_watermark batch_size = min 10 (max (batch_size * 10) 1_000_000)
+let default_high_watermark batch_size = max 10 (min (batch_size * 10) 1_000_000)
 
 let _dummy_start = Mtime.min_stamp
 
@@ -83,8 +83,9 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
     let now = lazy (Mtime_clock.now ()) in
     Util_atomic.update_cas self.st @@ fun state ->
     if state.size >= self.high_watermark then
-      (* drop this to prevent queue from growing too fast *)
-      `Dropped, state
+      ( (* drop this to prevent queue from growing too fast *)
+        `Dropped,
+        state )
     else (
       let start =
         if state.size = 0 && Option.is_some self.timeout then
