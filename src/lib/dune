@@ -13,11 +13,11 @@
   -open
   Opentelemetry_core.Common_)
  (libraries
-  opentelemetry.core
+  (re_export opentelemetry.core)
   opentelemetry.proto
-  opentelemetry.util
-  opentelemetry.ambient-context
-  opentelemetry.atomic
+  (re_export opentelemetry.util)
+  (re_export opentelemetry.ambient-context)
+  (re_export opentelemetry.atomic)
   ptime
   ptime.clock.os
   pbrt
