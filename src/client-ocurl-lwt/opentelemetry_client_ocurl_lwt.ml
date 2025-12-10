@@ -90,12 +90,13 @@ let create_exporter ?(config = Config.make ()) () =
 
 let create_backend = create_exporter
 
-let setup_ ?config () : unit =
+let setup_ ?config () : Exporter.t =
   let exp = create_backend ?config () in
   Main_exporter.set exp;
-  ()
+  exp
 
-let setup ?config ?(enable = true) () = if enable then setup_ ?config ()
+let setup ?config ?(enable = true) () =
+  if enable then ignore (setup_ ?config () : Exporter.t)
 
 let remove_exporter () : unit Lwt.t =
   let done_fut, done_u = Lwt.wait () in
@@ -104,18 +105,21 @@ let remove_exporter () : unit Lwt.t =
 
 let remove_backend = remove_exporter
 
-let with_setup ?(config = Config.make ()) ?(enable = true) () f : _ Lwt.t =
-  if enable then (
+let with_setup ?(after_shutdown = ignore) ?(config = Config.make ())
+    ?(enable = true) () f : _ Lwt.t =
+  if enable then
     let open Lwt.Syntax in
-    setup_ ~config ();
+    let exp = setup_ ~config () in
 
     Lwt.catch
       (fun () ->
         let* res = f () in
         let+ () = remove_backend () in
+        after_shutdown exp;
         res)
       (fun exn ->
         let* () = remove_backend () in
+        after_shutdown exp;
         Lwt.reraise exn)
-  ) else
+  else
     f ()

@@ -170,8 +170,18 @@ let () =
     Printf.printf "\ndone. %d spans in %.4fs (%.4f/s)\n%!" (Atomic.get num_tr)
       elapsed n_per_sec
   in
+  let after_exp_shutdown exp =
+    (* print some stats *)
+    if !final_stats then (
+      let ms = OT.Exporter.self_metrics exp in
+      Format.eprintf "@[exporter metrics:@ %a@]@."
+        (Format.pp_print_list Opentelemetry.Metrics.pp)
+        ms
+    )
+  in
 
   Lwt_main.run
   @@
   let@ () = Fun.protect ~finally in
   Opentelemetry_client_ocurl_lwt.with_setup ~config () run
+    ~after_shutdown:after_exp_shutdown
