@@ -23,6 +23,7 @@ module Common = struct
     num_discarded: unit -> int;  (** How many items were discarded? *)
     size: unit -> int;
         (** Snapshot of how many items are currently in the queue *)
+    high_watermark: unit -> int;  (** Maximum size of the queue *)
   }
 
   let[@inline] num_discarded self = self.num_discarded ()
@@ -30,6 +31,8 @@ module Common = struct
   let[@inline] closed (self : t) : bool = self.closed ()
 
   let[@inline] size (self : t) : int = self.size ()
+
+  let[@inline] high_watermark self = self.high_watermark ()
 end
 
 (** Receiving side *)
@@ -51,6 +54,8 @@ module Recv = struct
   let[@inline] num_discarded self = self.common.num_discarded ()
 
   let[@inline] size self = self.common.size ()
+
+  let[@inline] high_watermark self = self.common.high_watermark ()
 
   let map (type a b) (f : a -> b) (self : a t) : b t =
     {
@@ -85,6 +90,8 @@ module Send = struct
   let[@inline] num_discarded self = self.common.num_discarded ()
 
   let[@inline] size self = self.common.size ()
+
+  let[@inline] high_watermark self = self.common.high_watermark ()
 
   let map (type a b) (f : a list -> b list) (self : b t) : a t =
     {

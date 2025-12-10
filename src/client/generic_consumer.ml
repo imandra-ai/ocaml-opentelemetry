@@ -209,7 +209,7 @@ end = struct
     let now = OTEL.Timestamp_ns.now_unix_ns () in
     let attrs = [ "otel.component.name", `String "otel_ocaml" ] in
     [
-      sum ~name:"otel.sd.exporter.errors" ~is_monotonic:true
+      sum ~name:"otel.sdk.exporter.errors" ~is_monotonic:true
         [ int ~now (Atomic.get n_errors) ~attrs ];
       sum ~name:"otel.sdk.exporter.span.exported" ~is_monotonic:true
         [ int ~now (Atomic.get self.m_spans) ~attrs ];

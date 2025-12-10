@@ -50,15 +50,17 @@ let create ~(q : OTEL.Any_signal_l.t Bounded_queue.t)
   let self_metrics () : _ list =
     let now = OTEL.Timestamp_ns.now_unix_ns () in
     let m_size =
-      OTEL.Metrics.gauge ~name:"otel_ocaml.exporter_queue.size"
+      OTEL.Metrics.gauge ~name:"otel.sdk.exporter.queue.size"
         [ OTEL.Metrics.int ~now (Bounded_queue.Recv.size q.recv) ]
-    in
-    let m_discarded =
+    and m_cap =
+      OTEL.Metrics.gauge ~name:"otel.sdk.exporter.queue.capacity"
+        [ OTEL.Metrics.int ~now (Bounded_queue.Recv.high_watermark q.recv) ]
+    and m_discarded =
       OTEL.Metrics.sum ~is_monotonic:true
         ~name:"otel_ocaml.exporter_queue.discarded"
         [ OTEL.Metrics.int ~now (Bounded_queue.Recv.num_discarded q.recv) ]
     in
-    m_size :: m_discarded :: Consumer.self_metrics consumer
+    m_size :: m_cap :: m_discarded :: Consumer.self_metrics consumer
   in
 
   let shutdown () =

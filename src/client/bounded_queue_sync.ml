@@ -43,7 +43,7 @@ end = struct
     a value of type [bool] which OCaml's memory model should guarantee. *)
   let[@inline] closed self = self.closed
 
-  (* NOTE: race condition here is also benign in absoence of tearing. *)
+  (* NOTE: race condition here is also benign in absence of tearing. *)
   let[@inline] size self = Queue.length self.q
 
   let close (self : _ t) =
@@ -115,12 +115,13 @@ let to_bounded_queue (self : 'a state) : 'a BQ.t =
   let on_non_empty = Cb_set.register self.on_non_empty in
   let try_pop () = try_pop self in
   let size () = Q.size self.q in
+  let high_watermark () = self.high_watermark in
   let close () =
     Q.close self.q;
     (* waiters will want to know *)
     Cb_set.trigger self.on_non_empty
   in
-  let common = { BQ.Common.closed; num_discarded; size } in
+  let common = { BQ.Common.closed; num_discarded; size; high_watermark } in
   {
     BQ.send = { push; close; common };
     recv = { try_pop; on_non_empty; common };
