@@ -198,7 +198,7 @@ end = struct
     let open OTEL.Metrics in
     let now = Mtime_clock.now () in
     [
-      sum ~name:"otel-ocaml.export.errors" ~is_monotonic:true
+      sum ~name:"otel_ocaml.export.errors" ~is_monotonic:true
         [ int ~now:(Mtime.to_uint64_ns now) (Atomic.get n_errors) ];
     ]
 

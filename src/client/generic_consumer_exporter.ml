@@ -115,7 +115,7 @@ end = struct
     let open OTEL.Metrics in
     let now = Mtime_clock.now () in
     [
-      sum ~name:"otel-ocaml.export.discarded-by-bounded-queue"
+      sum ~name:"otel_ocaml.export.batches_discarded_by_bounded_queue"
         ~is_monotonic:true
         [
           int ~now:(Mtime.to_uint64_ns now)
