@@ -1,4 +1,4 @@
-module UM = Opentelemetry_util.Util_mutex
+module UM = Util_mutex
 
 type 'a t = {
   mutex: Mutex.t;

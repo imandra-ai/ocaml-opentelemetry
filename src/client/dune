@@ -9,6 +9,7 @@
   opentelemetry.proto
   opentelemetry.domain
   pbrt
+  threads.posix
   mtime
   mtime.clock.os)
  (synopsis

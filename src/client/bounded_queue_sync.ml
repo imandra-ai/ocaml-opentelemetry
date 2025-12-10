@@ -28,7 +28,7 @@ module Q : sig
       number of items that could not be pushed, and [old_size] is the size
       before anything was pushed. *)
 end = struct
-  module UM = Opentelemetry_util.Util_mutex
+  module UM = Util_mutex
 
   type 'a t = {
     mutex: Mutex.t;
