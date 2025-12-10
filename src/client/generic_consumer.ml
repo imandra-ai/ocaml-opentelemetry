@@ -194,7 +194,7 @@ end = struct
 
     self
 
-  let self_metrics (self : state) : OTEL.Metrics.t list =
+  let self_metrics (_self : state) : OTEL.Metrics.t list =
     let open OTEL.Metrics in
     let now = Mtime_clock.now () in
     [
