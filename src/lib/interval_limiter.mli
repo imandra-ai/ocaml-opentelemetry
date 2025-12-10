@@ -1,3 +1,6 @@
+(** Interval limiter. This is a form of rate limiting where an event cannot be
+    followed by another event until a given interval of time has passed. *)
+
 type t
 
 val create : min_interval:Mtime.span -> unit -> t

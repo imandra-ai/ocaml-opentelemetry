@@ -16,14 +16,20 @@ val add_metrics_cb : t -> (unit -> Metrics.t list) -> unit
     metrics. It might be called regularly by the backend, in particular (but not
     only) when {!Exporter.tick} is called. *)
 
-val add_to_exporter : Exporter.t -> t -> unit
-(** Make sure we export metrics at every [tick] of the exporter *)
+val add_to_exporter : ?min_interval:Mtime.span -> Exporter.t -> t -> unit
+(** Make sure we try to export metrics at every [tick] of the exporter.
+    @param min_interval
+      the minimum duration between two consecutive exports, using
+      {!Interval_limiter}. We don't want a too frequent [tick] to spam metrics.
+      Default [4s], minimum [0.1s]. *)
 
-val with_set_added_to_exporter : Exporter.t -> (t -> 'a) -> 'a
+val with_set_added_to_exporter :
+  ?min_interval:Mtime.span -> Exporter.t -> (t -> 'a) -> 'a
 (** [with_set_added_to_exporter exp f] creates a set, adds it to the exporter,
     and calls [f] on it *)
 
-val with_set_added_to_main_exporter : (t -> unit) -> unit
+val with_set_added_to_main_exporter :
+  ?min_interval:Mtime.span -> (t -> unit) -> unit
 (** If there is a main exporter, add a set to it and call [f set], else do not
     call [f] at all *)
 
