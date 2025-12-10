@@ -51,6 +51,9 @@ val trace_id : t -> Trace_id.t
 
 val is_not_dummy : t -> bool
 
+val dummy : t
+(** Dummy span, will not record anything *)
+
 val create_new :
   ?kind:kind ->
   ?id:Span_id.t ->

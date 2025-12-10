@@ -44,6 +44,12 @@ let make ?(kind = !default_kind) ?trace_state ?(attrs = []) ?(events = [])
   in
   span
 
+let dummy : t =
+  Proto.Trace.make_span
+    ~trace_id:Trace_id.(dummy |> to_bytes)
+    ~span_id:Span_id.(dummy |> to_bytes)
+    ()
+
 let create_new ?kind ?(id = Span_id.create ()) ?trace_state ?attrs ?events
     ?status ~trace_id ?parent ?links ~start_time ~end_time name : t =
   make ?kind ~id ~trace_id ?trace_state ?attrs ?events ?status ?parent ?links
@@ -84,7 +90,8 @@ let[@inline] to_span_ctx (self : t) : Span_ctx.t =
 let[@inline] add_event self ev : unit =
   if is_not_dummy self then span_set_events self (ev :: self.events)
 
-let add_event' self ev : unit = if is_not_dummy self then add_event self (ev ())
+let add_event' self ev : unit =
+  if is_not_dummy self then span_set_events self (ev () :: self.events)
 
 let record_exception (self : t) (exn : exn) (bt : Printexc.raw_backtrace) : unit
     =
@@ -117,7 +124,7 @@ let add_attrs' (self : t) (attrs : unit -> Key_value.t list) : unit =
   )
 
 let add_links (self : t) (links : Span_link.t list) : unit =
-  if links <> [] then (
+  if is_not_dummy self && links <> [] then (
     let links = List.rev_append links self.links in
     span_set_links self links
   )
