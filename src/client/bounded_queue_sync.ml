@@ -47,11 +47,13 @@ end = struct
 
   let try_pop (self : 'a t) : 'a BQ.pop_result =
     UM.protect self.mutex @@ fun () ->
-    if self.closed then
-      `Closed
-    else (
-      try `Item (Queue.pop self.q) with Queue.Empty -> `Empty
-    )
+    (* first, try to pop the queue. We want to drain it even if it's closed. *)
+    try `Item (Queue.pop self.q)
+    with Queue.Empty ->
+      if self.closed then
+        `Closed
+      else
+        `Empty
 
   let push_while_not_full ~high_watermark (self : 'a t) (xs : 'a list) :
       push_res =
