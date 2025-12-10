@@ -61,18 +61,19 @@ end = struct
     if self.closed then
       Closed
     else (
-      let xs = ref xs in
+      let to_push = ref xs in
 
       let continue = ref true in
       while !continue && Queue.length self.q < high_watermark do
-        match !xs with
+        match !to_push with
         | [] -> continue := false
         | x :: tl_xs ->
-          xs := tl_xs;
+          to_push := tl_xs;
           Queue.push x self.q
       done;
 
-      let num_discarded = List.length !xs in
+      let num_discarded = List.length !to_push in
+      (* Printf.eprintf "bq: pushed %d items\n%!" (List.length xs - num_discarded); *)
       Pushed { num_discarded }
     )
 end
@@ -90,13 +91,10 @@ let push (self : _ state) x =
       Q.push_while_not_full self.q ~high_watermark:self.high_watermark x
     with
     | Closed ->
-      Printf.eprintf "bounded queue: warning: queue is closed\n%!";
       ignore (Atomic.fetch_and_add self.n_discarded (List.length x) : int)
     | Pushed { num_discarded } ->
-      if num_discarded > 0 then (
-        Printf.eprintf "DISCARD %d items\n%!" num_discarded;
-        ignore (Atomic.fetch_and_add self.n_discarded num_discarded : int)
-      );
+      if num_discarded > 0 then
+        ignore (Atomic.fetch_and_add self.n_discarded num_discarded : int);
 
       (* wake up potentially asleep consumers *)
       Cb_set.trigger self.on_non_empty
