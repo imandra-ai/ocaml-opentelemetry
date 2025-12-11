@@ -13,5 +13,6 @@ let update_cas (type res) (self : 'a Atomic.t) (f : 'a -> res * 'a) : res =
 
       Opentelemetry_domain.relax_loop !backoff;
       backoff := min 128 (2 * !backoff)
-    done
+    done;
+    assert false
   with Ret r -> r
