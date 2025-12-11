@@ -39,17 +39,17 @@ end
 (** The extension events for {!Trace_core}. *)
 module Extensions : sig
   type Otrace.extension_event +=
-    | Ev_link_span of Otrace.explicit_span * OTEL.Span_ctx.t
+    | Ev_link_span of Otrace.span * OTEL.Span_ctx.t
           (** Link the given span to the given context. The context isn't the
               parent, but the link can be used to correlate both spans. *)
     | Ev_record_exn of {
-        sp: Otrace.explicit_span;
+        sp: Otrace.span;
         exn: exn;
         bt: Printexc.raw_backtrace;
       }
           (** Record exception and potentially turn span to an error *)
-    | Ev_set_span_kind of Otrace.explicit_span * OTEL.Span_kind.t
-    | Ev_set_span_status of Otrace.explicit_span * OTEL.Span_status.t
+    | Ev_set_span_kind of Otrace.span * OTEL.Span_kind.t
+    | Ev_set_span_status of Otrace.span * OTEL.Span_status.t
 end
 
 val on_internal_error : (string -> unit) ref
@@ -78,28 +78,34 @@ val collector : unit -> Trace_core.collector
 (* NOTE: we cannot be sure that [sc2] is still alive and findable 
    in the active spans table. We could provide this operation under
    the explicit precondition that it is?
-
 val link_spans : Otrace.explicit_span -> Otrace.explicit_span -> unit
 (** [link_spans sp1 sp2] modifies [sp1] by adding a span link to [sp2].
     @since 0.11 *)
 *)
 
-val link_span_to_otel_ctx : Otrace.explicit_span -> OTEL.Span_ctx.t -> unit
+val link_span_to_otel_ctx : Otrace.span -> OTEL.Span_ctx.t -> unit
 (** [link_spans sp1 sp_ctx2] modifies [sp1] by adding a span link to [sp_ctx2].
     It must be the case that [sp1] is a currently active span.
     @since NEXT_RELEASE *)
 
-val set_span_kind : Otrace.explicit_span -> OTEL.Span.kind -> unit
-(** [set_span_kind sp k] sets the span's kind.
-    @since 0.11 *)
+val set_span_kind : Otrace.span -> OTEL.Span.kind -> unit
+(** [set_span_kind sp k] sets the span's kind. *)
 
-val set_span_status : Otrace.explicit_span -> OTEL.Span_status.t -> unit
+val set_span_status : Otrace.span -> OTEL.Span_status.t -> unit
 (** @since NEXT_RELEASE *)
 
-val record_exception :
-  Otrace.explicit_span -> exn -> Printexc.raw_backtrace -> unit
-(** Record exception in the current span.
-    @since 0.11 *)
+val record_exception : Otrace.span -> exn -> Printexc.raw_backtrace -> unit
+(** Record exception in the current span. *)
+
+val with_ambient_span : Otrace.explicit_span -> (unit -> 'a) -> 'a
+(** [with_ambient_span sp f] calls [f()] in an ambient context where [sp] is the
+    current span.
+
+    Explicit spans are typically entered and exited using [enter_manual_span]
+    and [exit_manual_span], whereas ambient-context requires a
+    [with_span span f] kind of approach. This function is here to bridge the gap
+    whenever possible. For regular [Otrace.span] this is not needed because the
+    collector will set the ambient span automatically. *)
 
 module Well_known : sig end
 [@@deprecated
