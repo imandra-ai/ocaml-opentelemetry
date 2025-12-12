@@ -20,7 +20,7 @@ type t = private {
           [i] items. If [None], there is no batching.
 
           Note that traces and metrics are batched separately. Default
-          [Some 20]. *)
+          [Some 200]. *)
   batch_logs: int option;
       (** Batch logs? See {!batch_metrics} for details. Default [Some 400] *)
   batch_timeout_ms: int;
@@ -29,8 +29,8 @@ type t = private {
           this is only checked when a new event occurs or when a tick is
           emitted. Default 2_000. *)
   self_trace: bool;
-      (** If true, the OTEL library will also emit its own spans. Default
-          [false].
+      (** If true, the OTEL library will perform some self-instrumentation.
+          Default [false].
           @since 0.7 *)
   http_concurrency_level: int option;
       (** How many HTTP requests can be done simultaneously (at most)?

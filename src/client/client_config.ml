@@ -132,7 +132,7 @@ module Env () : ENV = struct
   let set_headers s = headers := s
 
   let make k ?(debug = get_debug ()) ?url ?url_traces ?url_metrics ?url_logs
-      ?(batch_traces = Some 400) ?(batch_metrics = Some 20)
+      ?(batch_traces = Some 400) ?(batch_metrics = Some 200)
       ?(batch_logs = Some 400) ?(headers = get_headers ())
       ?(batch_timeout_ms = 2_000) ?(self_trace = false) ?http_concurrency_level
       =
