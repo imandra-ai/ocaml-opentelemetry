@@ -48,6 +48,8 @@ module Encode : sig
   (** [traces ts] is a protobuf encoded string of the traces [ts]
 
       @param encoder provide an encoder state to reuse *)
+
+  val any : ?encoder:Pbrt.Encoder.t -> Any_resource.t -> string
 end
 
 (** Decode signals from protobuf encoded strings, received over the wire *)

@@ -12,7 +12,7 @@ type t = {
           [ticker_thread] is [true]. This will be clamped between [2 ms] and
           some longer interval (maximum [60s] currently). Default 500.
           @since 0.7 *)
-  common: Opentelemetry_client.Config.t;
+  common: Opentelemetry_client.Client_config.t;
       (** Common configuration options
           @since 0.12*)
 }
@@ -29,7 +29,7 @@ val make :
   ?ticker_interval_ms:int ->
   unit ->
   t)
-  Opentelemetry_client.Config.make
+  Opentelemetry_client.Client_config.make
 (** Make a configuration {!t}. *)
 
-module Env : Opentelemetry_client.Config.ENV
+module Env : Opentelemetry_client.Client_config.ENV

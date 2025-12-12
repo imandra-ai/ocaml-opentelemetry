@@ -24,11 +24,8 @@ val emit_telemetry : bool -> Logs.Tag.set
     {!emit_telemetry_tag} as its only member *)
 
 val otel_reporter :
-  ?service_name:string ->
-  ?attributes:(string * Opentelemetry.value) list ->
-  unit ->
-  Logs.reporter
-(** [otel_reporter ?service_name ?tag_value_pp_buffer_size ?attrs ()] creates a
+  ?attributes:(string * Opentelemetry.value) list -> unit -> Logs.reporter
+(** [otel_reporter ?tag_value_pp_buffer_size ?attrs ()] creates a
     [Logs.reporter] that will create and emit an OTel log with the following
     info:
     {ul
@@ -61,19 +58,17 @@ val otel_reporter :
     Example use: [Logs.set_reporter (Opentelemetery_logs.otel_reporter ())] *)
 
 val attach_otel_reporter :
-  ?service_name:string ->
   ?attributes:(string * Opentelemetry.value) list ->
   Logs.reporter ->
   Logs.reporter
-(** [attach_otel_reporter ?service_name ?attributes reporter] will create a
-    reporter that first calls the reporter passed as an argument, then an otel
-    report created via {!otel_reporter}, for every log. This is useful for if
-    you want to emit logs to stderr and to OTel at the same time.
+(** [attach_otel_reporter ?attributes reporter] will create a reporter that
+    first calls the reporter passed as an argument, then an otel report created
+    via {!otel_reporter}, for every log. This is useful for if you want to emit
+    logs to stderr and to OTel at the same time.
 
     Example:
     {[
       let reporter = Logs_fmt.reporter () in
       Logs.set_reporter
-        (Opentelemetry_logs.attach_otel_reporter ?service_name ?attributes
-           reporter)
+        (Opentelemetry_logs.attach_otel_reporter ?attributes reporter)
     ]} *)

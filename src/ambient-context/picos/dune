@@ -1,0 +1,6 @@
+(library
+ (name opentelemetry_ambient_context_picos)
+ (public_name opentelemetry.ambient-context.picos)
+ (optional) ; picos
+ (synopsis "Storage backend for ambient-context using Picos' FLS")
+ (libraries picos opentelemetry.ambient-context.core))

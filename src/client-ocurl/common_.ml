@@ -1,8 +1,8 @@
 module Atomic = Opentelemetry_atomic.Atomic
-include Opentelemetry.Lock
+module Proto = Opentelemetry_proto
 
 let spf = Printf.sprintf
 
 let ( let@ ) = ( @@ )
 
-let tid () = Thread.id @@ Thread.self ()
+let[@inline] tid () = Thread.id @@ Thread.self ()

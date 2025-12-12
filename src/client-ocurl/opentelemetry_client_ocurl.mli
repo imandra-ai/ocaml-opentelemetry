@@ -8,20 +8,22 @@ val get_headers : unit -> (string * string) list
 val set_headers : (string * string) list -> unit
 (** Set http headers that are sent on every http query to the collector. *)
 
-module Atomic = Opentelemetry_atomic.Atomic
 module Config = Config
 
 val n_bytes_sent : unit -> int
 (** Global counter of bytes sent (or attempted to be sent) *)
 
-val create_backend :
-  ?stop:bool Atomic.t ->
-  ?config:Config.t ->
-  unit ->
-  (module Opentelemetry.Collector.BACKEND)
+val consumer :
+  ?config:Config.t -> unit -> Opentelemetry_client.Consumer.any_signal_l_builder
+(** Consumer that pulls from a queue *)
 
-val setup :
-  ?stop:bool Atomic.t -> ?config:Config.t -> ?enable:bool -> unit -> unit
+val create_exporter : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+(** @since NEXT_RELEASE *)
+
+val create_backend : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
+[@@deprecated "use create_exporter"]
+
+val setup : ?config:Config.t -> ?enable:bool -> unit -> unit
 (** Setup endpoint. This modifies {!Opentelemetry.Collector.backend}.
     @param enable
       actually setup the backend (default true). This can be used to
@@ -31,11 +33,15 @@ val setup :
       an atomic boolean. When it becomes true, background threads will all stop
       after a little while. *)
 
+val remove_exporter : unit -> unit
+(** @since NEXT_RELEASE *)
+
 val remove_backend : unit -> unit
+[@@deprecated "use remove_exporter"]
 (** @since 0.12 *)
 
 val with_setup :
-  ?stop:bool Atomic.t ->
+  ?after_shutdown:(Opentelemetry.Exporter.t -> unit) ->
   ?config:Config.t ->
   ?enable:bool ->
   unit ->

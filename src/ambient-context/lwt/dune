@@ -4,4 +4,4 @@
  (optional) ; lwt
  (synopsis
   "Storage backend for ambient-context using Lwt's sequence-associated storage")
- (libraries lwt opentelemetry.ambient-context thread-local-storage))
+ (libraries lwt opentelemetry.ambient-context.core))

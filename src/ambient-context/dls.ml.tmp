@@ -1,0 +1,46 @@
+(* TODO: conditional compilation, and use Basic_map in each DLS *)
+
+(** Storage using DLS. *)
+
+open Opentelemetry_ambient_context_core
+
+open struct
+  module DLS = Domain.DLS
+
+  module Int_map = Map.Make (struct
+    type t = int
+
+    let compare : t -> t -> int = Stdlib.compare
+  end)
+
+  (* key used to access the context *)
+  let dls_k_context : Context.t ref Int_map.t DLS.key =
+    DLS.new_key
+      ~split_from_parent:(fun _ -> Int_map.empty)
+      (fun _ -> Int_map.empty)
+
+  let dls_get () =
+    let tid = Thread.id @@ Thread.self () in
+    let map_ref = DLS.get dls_k_context in
+    try !(Int_map.find tid map_ref) with Not_found -> Hmap.empty
+
+  let dls_with ctx f =
+    let tid = Thread.id @@ Thread.self () in
+    let map = DLS.get dls_k_context in
+    let ctx_ref =
+      try Int_map.find tid map
+      with Not_found ->
+        let r = ref Context.empty in
+        DLS.set dls_k_context (Int_map.add tid r map);
+        r
+    in
+
+    let old_ctx = !ctx_ref in
+    ctx_ref := ctx;
+
+    let finally () = ctx_ref := old_ctx in
+    Fun.protect ~finally f
+end
+
+let storage : Storage.t =
+  { name = "dls-int-map"; get_context = dls_get; with_context = dls_with }

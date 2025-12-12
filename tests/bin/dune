@@ -4,8 +4,26 @@
  (libraries
   unix
   opentelemetry
-  opentelemetry.client
+  opentelemetry-client
   opentelemetry-client-ocurl))
+
+(executable
+ (name emit1_ocurl_lwt)
+ (modules emit1_ocurl_lwt)
+ (preprocess
+  (pps lwt_ppx))
+ (libraries
+  unix
+  lwt
+  lwt.unix
+  opentelemetry
+  opentelemetry-client
+  opentelemetry-client-ocurl-lwt))
+
+(executable
+ (name emit1_stdout)
+ (modules emit1_stdout)
+ (libraries unix opentelemetry opentelemetry-client))
 
 (executable
  (name emit1_cohttp)
@@ -16,7 +34,7 @@
   unix
   opentelemetry
   opentelemetry-lwt
-  opentelemetry.client
+  opentelemetry-client
   opentelemetry-client-cohttp-lwt
   lwt.unix))
 
@@ -32,7 +50,7 @@
   logs.fmt
   logs.threaded
   opentelemetry
-  opentelemetry.client
+  opentelemetry-client
   opentelemetry-client-cohttp-eio))
 
 (executable

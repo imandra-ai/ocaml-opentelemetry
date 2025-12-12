@@ -1,30 +1,28 @@
-open Opentelemetry
 open Lwt.Syntax
-module Span_id = Span_id
-module Trace_id = Trace_id
-module Event = Event
-module Span = Span
-module Span_link = Span_link
-module Globals = Globals
-module Timestamp_ns = Timestamp_ns
-module GC_metrics = GC_metrics
-module Metrics_callbacks = Metrics_callbacks
-module Trace_context = Trace_context
+include Opentelemetry
+
+module Main_exporter = struct
+  include Main_exporter
+
+  let remove () : unit Lwt.t =
+    let p, resolve = Lwt.wait () in
+    Aswitch.on_turn_off (active ()) (fun () -> Lwt.wakeup_later resolve ());
+    p
+end
 
 external reraise : exn -> 'a = "%reraise"
 (** This is equivalent to [Lwt.reraise]. We inline it here so we don't force to
     use Lwt's latest version *)
 
-module Trace = struct
-  include Trace
+module Tracer = struct
+  include Tracer
 
   (** Sync span guard *)
-  let with_ ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
-      ?trace_id ?parent ?scope ?links name (cb : Scope.t -> 'a Lwt.t) : 'a Lwt.t
-      =
+  let with_ (self : t) ?force_new_trace_id ?trace_state ?attrs ?kind ?trace_id
+      ?parent ?links name (cb : Span.t -> 'a Lwt.t) : 'a Lwt.t =
     let thunk, finally =
-      with_' ?force_new_trace_id ?trace_state ?service_name ?attrs ?kind
-        ?trace_id ?parent ?scope ?links name cb
+      with_thunk_and_finally self ?force_new_trace_id ?trace_state ?attrs ?kind
+        ?trace_id ?parent ?links name cb
     in
 
     try%lwt
@@ -37,11 +35,14 @@ module Trace = struct
       reraise e
 end
 
+module Trace = Tracer [@@deprecated "use Tracer"]
+
 module Metrics = struct
   include Metrics
 end
 
 module Logs = struct
   include Proto.Logs
-  include Logs
+  include Log_record
+  include Logger
 end

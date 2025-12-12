@@ -1,0 +1,6 @@
+(library
+ (name opentelemetry_ambient_context_tls)
+ (public_name opentelemetry.ambient-context.tls)
+ (synopsis "Implementation of ambient-context from thread-local-storage")
+ (optional) ; TLS
+ (libraries opentelemetry.ambient-context.core thread-local-storage))

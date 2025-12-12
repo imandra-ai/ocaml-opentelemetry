@@ -3,13 +3,18 @@
  (public_name opentelemetry.ambient-context)
  (synopsis
   "Abstraction over thread-local storage and fiber-local storage mechanisms")
- (private_modules hmap_key_)
+ (flags
+  :standard
+  -open
+  Opentelemetry_ambient_context_core
+  -open
+  Opentelemetry_atomic)
  (libraries
-  thread-local-storage
-  threads
-  atomic
-  opentelemetry.ambient-context.types
+  hmap
+  opentelemetry.ambient-context.core
+  opentelemetry.atomic
   (select
-   hmap_key_.ml
+   default_.ml
    from
-   (-> hmap_key_.new.ml))))
+   (opentelemetry.ambient-context.tls -> default_.tls.ml)
+   (-> default_.map.ml))))

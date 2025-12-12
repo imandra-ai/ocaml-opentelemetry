@@ -1,57 +1,43 @@
 open Alcotest
 module Otel = Opentelemetry
 
-let spans_emitted : Otel.Proto.Trace.resource_spans list ref = ref []
+let spans_emitted : Otel.Span.t list ref = ref []
 
-module Test_backend = struct
-  open Otel.Collector
-  open Otel.Proto
-  include Noop_backend
+let test_exporter : Otel.Exporter.t =
+  let open Otel.Exporter in
+  {
+    (dummy ()) with
+    emit_spans = Opentelemetry_emitter.To_list.to_list spans_emitted;
+  }
 
-  let record_emitted_spans (l : Trace.resource_spans list) ~ret =
-    spans_emitted := l @ !spans_emitted;
-    ret ()
-
-  let send_trace : Trace.resource_spans list sender =
-    { send = record_emitted_spans }
-end
-
-let with_test_backend f =
+let with_test_exporter f =
   (* uncomment for eprintf debugging: *)
-  (* let module Debug_and_test_backend = Otel.Collector.Debug_backend (Test_backend) in
-     let backend = (module Debug_and_test_backend : Otel.Collector.BACKEND) in *)
-  let backend = (module Test_backend : Otel.Collector.BACKEND) in
-  Otel.Collector.with_setup_debug_backend backend () f
+  (* let test_exporter = Opentelemetry_client.Exporter_debug.debug test_exporter in*)
+  Otel.Main_exporter.with_setup_debug_backend test_exporter () f
 
-let bytes_to_hex = Otel.Util_.bytes_to_hex
+let bytes_to_hex = Opentelemetry_util.Util_bytes_.bytes_to_hex
 
 let test_stack_based_implicit_scope () =
   let run () =
-    Otel.Trace.with_ "first trace" @@ fun _scope ->
+    let tracer = Otel.Tracer.get_main () in
+    Otel.Tracer.with_ tracer "first trace" @@ fun _scope ->
     Thread.delay 0.2;
-    Otel.Trace.with_ "second trace" @@ fun _scope ->
+    Otel.Tracer.with_ tracer "second trace" @@ fun _scope ->
     Thread.delay 0.2;
-    Otel.Trace.with_ "third trace" @@ fun _scope ->
+    Otel.Tracer.with_ tracer "third trace" @@ fun _scope ->
     Thread.delay 0.2;
     ()
   in
-  with_test_backend @@ fun () ->
+  with_test_exporter @@ fun () ->
   (* start *)
   run ();
   check' int ~msg:"count of spans emitted"
     ~actual:(List.length !spans_emitted)
     ~expected:3;
   let open Otel.Proto.Trace in
-  let f prev_span_id { scope_spans; _ } =
-    Format.printf "\n%a@\n" (Format.pp_print_list pp_scope_spans) scope_spans;
-    check' int ~msg:"count of scope_spans in emitted span"
-      ~actual:(List.length scope_spans) ~expected:1;
-    let { scope; spans; _ } = List.hd scope_spans in
-    check' bool ~msg:"scope exists in emitted span"
-      ~actual:(Option.is_some scope) ~expected:true;
-    check' int ~msg:"count of spans in scope_span" ~actual:(List.length spans)
-      ~expected:1;
-    let { name; trace_id; span_id; parent_span_id; _ } = List.hd spans in
+  let f prev_span_id (sp : Otel.Span.t) =
+    Format.printf "%a@." pp_span sp;
+    let { name; trace_id; span_id; parent_span_id; _ } = sp in
     Printf.printf
       "name='%s' trace_id='%s' span_id='%s' parent_span_id='%s' \
        prev_span_id='%s'\n"

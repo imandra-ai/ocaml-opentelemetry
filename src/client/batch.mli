@@ -1,4 +1,4 @@
-(** A thread-safe batch of resources to be popper when ready . *)
+(** A thread-safe batch of resources, to be sent together when ready . *)
 
 type 'a t
 
@@ -13,8 +13,7 @@ val make :
 
     @param batch
       the number of elements after which the batch will be considered {b full},
-      and ready to pop. Set to [0] to disable batching. It is required that
-      [batch >= 0]. Default [1].
+      and ready to pop. It is required that [batch >= 0]. Default [100].
 
     @param high_watermark
       the batch size limit after which new elements will be [`Dropped] by
@@ -50,3 +49,15 @@ val push : 'a t -> 'a list -> [ `Dropped | `Ok ]
 (** [push b xs] is [`Ok] if it succeeds in pushing the values in [xs] into the
     batch [b], or [`Dropped] if the current size of the batch has exceeded the
     high water mark determined by the [batch] argument to [{!make}]. ) *)
+
+val push' : 'a t -> 'a list -> unit
+(** Like {!push} but ignores the result *)
+
+val cur_size : _ t -> int
+(** Number of elements in the current batch *)
+
+open Opentelemetry_emitter
+
+val wrap_emitter : 'a t -> 'a Emitter.t -> 'a Emitter.t
+(** [wrap_emitter batch e] is an emitter that uses batch [batch] to gather
+    signals into larger lists before passing them to [e]. *)

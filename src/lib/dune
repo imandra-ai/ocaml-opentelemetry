@@ -1,0 +1,25 @@
+(library
+ (name opentelemetry)
+ (public_name opentelemetry)
+ (synopsis "API for opentelemetry instrumentation")
+ (flags
+  :standard
+  -warn-error
+  -a+8
+  -open
+  Opentelemetry_util
+  -open
+  Opentelemetry_core
+  -open
+  Opentelemetry_core.Common_)
+ (libraries
+  (re_export opentelemetry.core)
+  opentelemetry.proto
+  (re_export opentelemetry.util)
+  (re_export opentelemetry.ambient-context)
+  (re_export opentelemetry.atomic)
+  ptime
+  ptime.clock.os
+  pbrt
+  threads
+  hmap))
