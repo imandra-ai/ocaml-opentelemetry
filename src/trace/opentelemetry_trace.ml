@@ -108,8 +108,10 @@ module Internal = struct
 
   let exit_span_ { span } : OTEL.Span.t =
     let open OTEL in
-    let end_time = Timestamp_ns.now_unix_ns () in
-    Proto.Trace.span_set_end_time_unix_nano span end_time;
+    if Span.is_not_dummy span then (
+      let end_time = Timestamp_ns.now_unix_ns () in
+      Proto.Trace.span_set_end_time_unix_nano span end_time
+    );
     span
 
   let exit_span' (self : state) otrace_id otel_span_begin =
